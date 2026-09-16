@@ -1,0 +1,1301 @@
+<title>Chaos Narratif</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,500;0,7..72,600;0,7..72,700;1,7..72,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#e9e2d2;
+    --paper-raised:#f5f0e4;
+    --paper-raised-2:#efe8d8;
+    --ink:#2a2420;
+    --ink-soft:#5c5348;
+    --ink-faint:#8a8071;
+    --accent:#a8721f;
+    --accent-ink:#6e4d16;
+    --accent2:#a3392c;
+    --line:#cabf9f;
+    --line-strong:#a99c78;
+    --shadow: 0 1px 2px rgba(42,36,32,.06), 0 6px 16px -8px rgba(42,36,32,.18);
+    --font-display:'Special Elite','Courier New',ui-monospace,monospace;
+    --font-body:'Literata',Georgia,'Times New Roman',serif;
+    --font-mono:'IBM Plex Mono',ui-monospace,'SFMono-Regular',Menlo,monospace;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --paper:#1c1814;
+      --paper-raised:#272119;
+      --paper-raised-2:#211c16;
+      --ink:#ece3d2;
+      --ink-soft:#b9ac93;
+      --ink-faint:#867a63;
+      --accent:#dba64a;
+      --accent-ink:#f0c169;
+      --accent2:#dd7157;
+      --line:#453c2f;
+      --line-strong:#5c5140;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 10px 24px -10px rgba(0,0,0,.5);
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#1c1814;
+    --paper-raised:#272119;
+    --paper-raised-2:#211c16;
+    --ink:#ece3d2;
+    --ink-soft:#b9ac93;
+    --ink-faint:#867a63;
+    --accent:#dba64a;
+    --accent-ink:#f0c169;
+    --accent2:#dd7157;
+    --line:#453c2f;
+    --line-strong:#5c5140;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 10px 24px -10px rgba(0,0,0,.5);
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:var(--font-body);
+    line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+  }
+  .page{
+    max-width:900px;
+    margin:0 auto;
+    padding:3rem 1.5rem 5rem;
+  }
+  h1,h2,h3{ text-wrap:balance; margin:0; }
+  p{ margin:0; }
+  a{ color:var(--accent-ink); }
+  .eyebrow{
+    font-family:var(--font-mono);
+    font-size:.72rem;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:var(--accent-ink);
+    font-weight:600;
+  }
+  button{ font-family:inherit; cursor:pointer; }
+  button:focus-visible, [tabindex]:focus-visible, input:focus-visible{
+    outline:2px solid var(--accent2);
+    outline-offset:2px;
+  }
+
+  /* ---------- header ---------- */
+  header.hero{
+    display:flex;
+    flex-direction:column;
+    gap:.9rem;
+    padding-bottom:1.5rem;
+  }
+  h1.title{
+    font-family:var(--font-display);
+    font-size:clamp(2.1rem, 5vw, 3rem);
+    letter-spacing:.01em;
+    color:var(--ink);
+  }
+  .hero p.lede{
+    font-size:1.05rem;
+    max-width:66ch;
+    color:var(--ink-soft);
+  }
+  .hero p.lede strong{ color:var(--ink); font-weight:600; }
+
+  /* ---------- tab bar ---------- */
+  .tabbar{
+    display:flex;
+    gap:.25rem;
+    border-bottom:1px solid var(--line);
+    position:sticky;
+    top:0;
+    background:var(--paper);
+    z-index:5;
+  }
+  .tabbar [role="tab"]{
+    background:none;
+    border:none;
+    padding:.8rem 1.1rem;
+    margin-bottom:-1px;
+    font-family:var(--font-mono);
+    font-size:.85rem;
+    letter-spacing:.05em;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+    border-bottom:2px solid transparent;
+  }
+  .tabbar [role="tab"]:hover{ color:var(--ink); }
+  .tabbar [role="tab"][aria-selected="true"]{
+    color:var(--ink);
+    font-weight:600;
+    border-bottom-color:var(--accent2);
+  }
+
+  .panel-intro{
+    padding-top:1.75rem;
+  }
+
+  .chaos-bar{
+    display:flex;
+    align-items:center;
+    gap:.9rem;
+    flex-wrap:wrap;
+    margin-top:1.1rem;
+  }
+  .btn-chaos{
+    display:inline-flex;
+    align-items:center;
+    gap:.55rem;
+    background:var(--accent2);
+    color:#fbf3ea;
+    border:none;
+    padding:.75rem 1.15rem;
+    border-radius:3px;
+    font-family:var(--font-mono);
+    font-weight:600;
+    font-size:.85rem;
+    letter-spacing:.04em;
+    text-transform:uppercase;
+    box-shadow:var(--shadow);
+    transition:transform .15s ease, box-shadow .15s ease;
+  }
+  .btn-chaos:hover{ transform:translateY(-1px); }
+  .btn-chaos:active{ transform:translateY(0); }
+  .btn-chaos svg{ width:1.05rem; height:1.05rem; }
+  .hint-inline{
+    font-family:var(--font-mono);
+    font-size:.78rem;
+    color:var(--ink-faint);
+  }
+
+  /* ---------- generic section ---------- */
+  section.block{ margin-top:3rem; }
+  .section-head{
+    display:flex;
+    align-items:baseline;
+    gap:.75rem;
+    margin-bottom:1.25rem;
+  }
+  .section-head .num{
+    font-family:var(--font-mono);
+    color:var(--accent-ink);
+    font-size:.85rem;
+  }
+  h2.section-title{
+    font-family:var(--font-display);
+    font-size:1.4rem;
+    font-weight:400;
+  }
+  .section-sub{
+    color:var(--ink-soft);
+    max-width:64ch;
+    margin-top:.4rem;
+    font-size:.98rem;
+  }
+
+  /* ---------- timeline ---------- */
+  .timeline{
+    position:relative;
+    padding-left:2.75rem;
+  }
+  .timeline::before{
+    content:"";
+    position:absolute;
+    left:1.05rem;
+    top:.6rem;
+    bottom:.6rem;
+    width:1px;
+    background:var(--line-strong);
+  }
+  .stage{
+    position:relative;
+    padding-bottom:1.6rem;
+  }
+  .stage:last-child{ padding-bottom:0; }
+  .stage::before{
+    content:attr(data-n);
+    position:absolute;
+    left:-2.75rem;
+    top:0;
+    width:2.1rem;
+    height:2.1rem;
+    border-radius:50%;
+    background:var(--paper);
+    border:1px solid var(--line-strong);
+    color:var(--accent-ink);
+    font-family:var(--font-mono);
+    font-size:.78rem;
+    font-weight:600;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .stage h3{
+    font-family:var(--font-body);
+    font-weight:700;
+    font-size:1.02rem;
+    margin-bottom:.2rem;
+  }
+  .stage p{ color:var(--ink-soft); font-size:.95rem; max-width:60ch; }
+
+  .tips{
+    margin-top:1.75rem;
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(220px,1fr));
+    gap:.9rem;
+  }
+  .tip{
+    background:var(--paper-raised);
+    border:1px solid var(--line);
+    border-left:3px solid var(--accent);
+    padding:.9rem 1rem;
+    border-radius:2px;
+    font-size:.92rem;
+    color:var(--ink-soft);
+  }
+  .tip b{ color:var(--ink); }
+
+  /* ---------- cards grid ---------- */
+  .grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(260px,1fr));
+    gap:1rem;
+  }
+  .card{
+    background:var(--paper-raised);
+    border:1px solid var(--line);
+    border-radius:3px;
+    box-shadow:var(--shadow);
+    overflow:hidden;
+    transition:transform .15s ease;
+  }
+  .card:hover{ transform:translateY(-2px); }
+  .card-toggle{
+    width:100%;
+    display:flex;
+    align-items:center;
+    gap:.6rem;
+    background:none;
+    border:none;
+    padding:.85rem 1rem .5rem;
+    text-align:left;
+    color:inherit;
+  }
+  .card-num{
+    font-family:var(--font-mono);
+    font-size:.72rem;
+    color:var(--ink-faint);
+  }
+  .card-label{
+    font-family:var(--font-mono);
+    font-size:.72rem;
+    letter-spacing:.09em;
+    text-transform:uppercase;
+    color:var(--accent-ink);
+    font-weight:600;
+    flex:1;
+  }
+  .card-chevron{
+    color:var(--ink-faint);
+    transition:transform .18s ease;
+    font-size:.85rem;
+  }
+  .card[data-open="true"] .card-chevron{ transform:rotate(90deg); }
+  .card-body{
+    display:flex;
+    align-items:flex-start;
+    gap:.6rem;
+    padding:0 1rem 1rem;
+  }
+  .card-value{
+    flex:1;
+    font-size:.98rem;
+    color:var(--ink);
+    min-height:2.6em;
+  }
+  .card-value.rolling{ color:var(--ink-faint); }
+  .card-reroll{
+    flex-shrink:0;
+    background:var(--paper-raised-2);
+    border:1px solid var(--line);
+    border-radius:3px;
+    width:2.1rem;
+    height:2.1rem;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    color:var(--accent2);
+    transition:transform .4s cubic-bezier(.2,.8,.2,1), border-color .15s ease;
+  }
+  .card-reroll:hover{ border-color:var(--accent2); }
+  .card-reroll.spin{ transform:rotate(300deg); }
+  .card-reroll svg{ width:1.1rem; height:1.1rem; }
+  .card-options{
+    list-style:none;
+    margin:0;
+    padding:.25rem .5rem .75rem;
+    border-top:1px dashed var(--line);
+  }
+  .opt-row{
+    display:flex;
+    align-items:center;
+    gap:.25rem;
+  }
+  .opt-pick{
+    flex:1;
+    display:block;
+    text-align:left;
+    background:none;
+    border:none;
+    padding:.45rem .5rem;
+    border-radius:2px;
+    font-size:.88rem;
+    color:var(--ink-soft);
+    font-family:var(--font-body);
+  }
+  .opt-pick:hover{ background:var(--paper-raised-2); color:var(--ink); }
+  .opt-pick[aria-current="true"]{ color:var(--accent-ink); font-weight:600; }
+  .custom-tag{
+    font-family:var(--font-mono);
+    font-size:.62rem;
+    letter-spacing:.07em;
+    text-transform:uppercase;
+    color:var(--ink-faint);
+    white-space:nowrap;
+    flex-shrink:0;
+  }
+  .card-remove{
+    background:none;
+    border:none;
+    color:var(--ink-faint);
+    font-size:1rem;
+    line-height:1;
+    padding:.15rem .35rem;
+    flex-shrink:0;
+    border-radius:2px;
+  }
+  .card-remove:hover{ color:var(--accent2); }
+  .card-add-row{
+    display:flex;
+    gap:.4rem;
+    padding:.65rem .5rem .25rem;
+    margin-top:.25rem;
+    border-top:1px dashed var(--line);
+  }
+  .card-add-input{
+    flex:1;
+    min-width:0;
+    background:var(--paper);
+    border:1px solid var(--line);
+    border-radius:2px;
+    padding:.4rem .55rem;
+    font-family:var(--font-body);
+    font-size:.85rem;
+    color:var(--ink);
+  }
+  .card-add-input::placeholder{ color:var(--ink-faint); }
+  .card-add-btn{
+    flex-shrink:0;
+    background:var(--paper-raised-2);
+    border:1px solid var(--line-strong);
+    border-radius:2px;
+    padding:.4rem .65rem;
+    font-family:var(--font-mono);
+    font-size:.72rem;
+    letter-spacing:.02em;
+    color:var(--accent-ink);
+  }
+  .card-add-btn:hover{ border-color:var(--accent-ink); }
+
+  /* ---------- manuscript / assembled text ---------- */
+  .manuscript-wrap{
+    position:relative;
+    background:var(--paper-raised);
+    border:1px solid var(--line);
+    border-radius:3px;
+    box-shadow:var(--shadow);
+    padding:1.75rem 1.75rem 1.75rem 3.25rem;
+  }
+  .manuscript-wrap::before{
+    content:"";
+    position:absolute;
+    left:2.15rem;
+    top:0;
+    bottom:0;
+    width:1px;
+    background:var(--accent2);
+    opacity:.55;
+  }
+  .pitch-text{
+    font-family:var(--font-body);
+    font-size:1.02rem;
+    color:var(--ink);
+    white-space:pre-wrap;
+  }
+  .manuscript-foot{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:1rem;
+    flex-wrap:wrap;
+    margin-top:1.25rem;
+    padding-top:1rem;
+    border-top:1px dashed var(--line);
+  }
+  .foot-actions{
+    display:flex;
+    gap:.6rem;
+    flex-wrap:wrap;
+  }
+  .btn-copy{
+    background:var(--paper-raised-2);
+    border:1px solid var(--line-strong);
+    color:var(--ink);
+    padding:.55rem .9rem;
+    border-radius:3px;
+    font-family:var(--font-mono);
+    font-size:.8rem;
+    letter-spacing:.03em;
+  }
+  .btn-copy:hover{ border-color:var(--accent-ink); color:var(--accent-ink); }
+  .copy-note{
+    font-family:var(--font-mono);
+    font-size:.78rem;
+    color:var(--ink-faint);
+  }
+  .grain-note{
+    font-size:.86rem;
+    color:var(--ink-faint);
+    margin-top:1rem;
+    max-width:64ch;
+  }
+
+  /* ---------- next steps ---------- */
+  .next-steps{
+    display:flex;
+    flex-wrap:wrap;
+    gap:.6rem;
+    margin-top:1rem;
+  }
+  .next-steps span{
+    font-family:var(--font-mono);
+    font-size:.8rem;
+    color:var(--ink-soft);
+    background:var(--paper-raised);
+    border:1px solid var(--line);
+    padding:.35rem .65rem;
+    border-radius:20px;
+  }
+  footer{
+    margin-top:3.5rem;
+    padding-top:1.5rem;
+    border-top:1px solid var(--line);
+    color:var(--ink-faint);
+    font-size:.82rem;
+    font-family:var(--font-mono);
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *, *::before, *::after{
+      animation-duration:.001ms !important;
+      transition-duration:.001ms !important;
+    }
+  }
+</style>
+
+<div class="page">
+
+  <header class="hero">
+    <p class="eyebrow">Générateur d’histoires · fiche pratique</p>
+    <h1 class="title">Chaos Narratif</h1>
+    <p class="lede">Deux ateliers, un seul principe : les cartes décident, tu écris ce qui en sort. <strong>Enquête</strong> pour construire un roman, <strong>Poème</strong> pour un texte plus court, inspiré des grands. Ajoute tes propres cartes quand l’envie te prend — elles entrent dans le tirage comme les autres.</p>
+  </header>
+
+  <nav class="tabbar" role="tablist" aria-label="Ateliers d’écriture">
+    <button type="button" role="tab" id="tab-btn-enquete" aria-controls="panel-enquete" aria-selected="true" data-tab="enquete">Enquête</button>
+    <button type="button" role="tab" id="tab-btn-poeme" aria-controls="panel-poeme" aria-selected="false" data-tab="poeme">Poème</button>
+  </nav>
+
+  <!-- ============ ONGLET ENQUÊTE ============ -->
+  <section id="panel-enquete" role="tabpanel" aria-labelledby="tab-btn-enquete">
+
+    <div class="panel-intro">
+      <p class="lede">Tu n’as pas d’idée ? Tant mieux. <strong>Cette page en a treize, à tirer au sort.</strong> Chaque carte est un dé sur les ingrédients d’un roman — genre, personnage, ennemi, rebondissements, fin. Lance-les un par un ou tous en même temps : le pitch en bas de page s’assemble tout seul à partir de ce qui tombe.</p>
+      <div class="chaos-bar">
+        <button class="btn-chaos" id="rollAllEnquete" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8" cy="8" r="1.3" fill="currentColor" stroke="none"/><circle cx="16" cy="8" r="1.3" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.3" fill="currentColor" stroke="none"/><circle cx="8" cy="16" r="1.3" fill="currentColor" stroke="none"/><circle cx="16" cy="16" r="1.3" fill="currentColor" stroke="none"/></svg>
+          Chaos total — tout relancer
+        </button>
+        <span class="hint-inline">ou déplie une carte pour choisir — ou ajoute la tienne tout en bas de la liste</span>
+      </div>
+    </div>
+
+    <section class="block" aria-labelledby="anatomie-title-enquete">
+      <div class="section-head">
+        <span class="num">01</span>
+        <h2 class="section-title" id="anatomie-title-enquete">L’anatomie d’un roman, en bref</h2>
+      </div>
+      <p class="section-sub">Avant de tirer au sort : voici, très condensée, la mécanique commune à presque toutes les histoires qui fonctionnent. Le générateur plus bas remplit chacune de ces cases pour toi.</p>
+
+      <div class="timeline">
+        <div class="stage" data-n="1">
+          <h3>Élément déclencheur</h3>
+          <p>Quelque chose casse le quotidien du héros. Avant, la vie était supportable ; après, elle ne l’est plus.</p>
+        </div>
+        <div class="stage" data-n="2">
+          <h3>La décision</h3>
+          <p>Le héros s’engage — volontairement ou non. À partir de là, reculer coûterait plus cher qu’avancer.</p>
+        </div>
+        <div class="stage" data-n="3">
+          <h3>Milieu : ça se complique</h3>
+          <p>Les enjeux montent. Un rebondissement retourne ce que le héros — et le lecteur — croyait acquis.</p>
+        </div>
+        <div class="stage" data-n="4">
+          <h3>Point de non-retour</h3>
+          <p>Le héros perd presque tout : un allié, une certitude, l’avantage. Le plan initial ne suffit plus.</p>
+        </div>
+        <div class="stage" data-n="5">
+          <h3>Climax</h3>
+          <p>L’affrontement direct avec ce qui s’oppose à lui. Il faut choisir, agir, payer le prix annoncé au début.</p>
+        </div>
+        <div class="stage" data-n="6">
+          <h3>Résolution</h3>
+          <p>Le nouveau monde, après. Le héros a changé — sinon, rien de tout cela n’aura servi à grand-chose.</p>
+        </div>
+      </div>
+
+      <div class="tips">
+        <div class="tip"><b>Désir ≠ besoin.</b> Ton personnage veut une chose précise (récupérer, prouver, fuir) mais a besoin d’autre chose (faire confiance, pardonner). L’histoire naît de la collision entre les deux.</div>
+        <div class="tip"><b>Le thème est une question,</b> pas une leçon. « Peut-on réparer ce qu’on a cassé ? » fait un meilleur roman qu’une réponse déjà décidée.</div>
+        <div class="tip"><b>L’enjeu doit se voir.</b> Si le héros échoue, quelque chose de précis et de concret doit être perdu — pas juste « c’est grave ».</div>
+      </div>
+    </section>
+
+    <section class="block" aria-labelledby="tirage-title-enquete">
+      <div class="section-head">
+        <span class="num">02</span>
+        <h2 class="section-title" id="tirage-title-enquete">Le tirage : treize cartes, un roman</h2>
+      </div>
+      <p class="section-sub">Chaque carte propose huit possibilités. Clique le dé pour en relancer une seule, ou déplie une carte pour piocher toi-même dans la liste. Tu peux aussi écrire tes propres idées tout en bas de chaque liste : ce sont tes cartes, elles entrent dans le tirage au même titre que les autres. Les associations bizarres sont le but du jeu.</p>
+      <div class="grid" id="grid-enquete"></div>
+    </section>
+
+    <section class="block" aria-labelledby="pitch-title-enquete">
+      <div class="section-head">
+        <span class="num">03</span>
+        <h2 class="section-title" id="pitch-title-enquete">Le pitch, assemblé</h2>
+      </div>
+      <p class="section-sub">Ce paragraphe se met à jour à chaque tirage. Il est volontairement brut de décoffrage.</p>
+
+      <div class="manuscript-wrap">
+        <div id="pitch-enquete" class="pitch-text"></div>
+        <div class="manuscript-foot">
+          <div class="foot-actions">
+            <button class="btn-copy" id="copyBtnEnquete" type="button">Copier le pitch</button>
+            <button class="btn-copy" id="shareBtnEnquete" type="button">Copier le lien de partage</button>
+          </div>
+          <span class="copy-note" id="copyNoteEnquete">&nbsp;</span>
+        </div>
+      </div>
+      <p class="grain-note">Les accords et les articulations seront à corriger à la main — c’est fait exprès. Le but n’est pas une phrase propre, c’est une étincelle : dès qu’une combinaison te fait dire « tiens, et si… », arrête de tirer et commence à écrire. Le lien de partage recrée ce tirage exact — cartes perso comprises — même chez quelqu’un qui n’a jamais ouvert cette page.</p>
+
+      <div class="next-steps">
+        <span>→ nomme ton ou ta protagoniste</span>
+        <span>→ écris la scène de l’élément déclencheur</span>
+        <span>→ décide ce que le lecteur doit croire au début, et qui sera faux</span>
+      </div>
+    </section>
+  </section>
+
+  <!-- ============ ONGLET POÈME ============ -->
+  <section id="panel-poeme" role="tabpanel" aria-labelledby="tab-btn-poeme" hidden>
+
+    <div class="panel-intro">
+      <p class="lede">Même principe, trame allégée : pas d’ennemi ni de plan en trois actes, juste une image qui accroche, une scène qui tourne, un petit basculement, et une chute — comme chez <strong>Prévert</strong> ou <strong>La Fontaine</strong>. Sept cartes suffisent pour un poème.</p>
+      <div class="chaos-bar">
+        <button class="btn-chaos" id="rollAllPoeme" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8" cy="8" r="1.3" fill="currentColor" stroke="none"/><circle cx="16" cy="8" r="1.3" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.3" fill="currentColor" stroke="none"/><circle cx="8" cy="16" r="1.3" fill="currentColor" stroke="none"/><circle cx="16" cy="16" r="1.3" fill="currentColor" stroke="none"/></svg>
+          Chaos total — tout relancer
+        </button>
+        <span class="hint-inline">ou déplie une carte pour choisir — ou ajoute la tienne tout en bas de la liste</span>
+      </div>
+    </div>
+
+    <section class="block" aria-labelledby="anatomie-title-poeme">
+      <div class="section-head">
+        <span class="num">01</span>
+        <h2 class="section-title" id="anatomie-title-poeme">Ce qui fait tenir un poème</h2>
+      </div>
+      <p class="section-sub">Un poème n’a pas besoin d’un plan en trois actes. Chez Prévert comme chez La Fontaine, la mécanique tient en quatre temps — bien plus courte que celle d’un roman.</p>
+
+      <div class="timeline">
+        <div class="stage" data-n="1">
+          <h3>Le déclic</h3>
+          <p>Une image, un objet, un animal accroche l’attention. Pas besoin d’intrigue : juste un point de départ qui intrigue, lui.</p>
+        </div>
+        <div class="stage" data-n="2">
+          <h3>Le développement</h3>
+          <p>On tourne autour : une liste qui déraille (Prévert), un dialogue, une scène qui s’installe et se répète.</p>
+        </div>
+        <div class="stage" data-n="3">
+          <h3>Le grain de sable</h3>
+          <p>Quelque chose bascule — souvent un détail minuscule plutôt qu’un grand drame.</p>
+        </div>
+        <div class="stage" data-n="4">
+          <h3>La chute</h3>
+          <p>Une pirouette, une morale ironique (La Fontaine), ou juste une image qui reste. Le poème se referme sans forcément conclure.</p>
+        </div>
+      </div>
+
+      <div class="tips">
+        <div class="tip"><b>L’image gagne contre la logique.</b> Chez Prévert, on montre — on n’explique jamais. Une valise oubliée en dit plus long qu’un paragraphe.</div>
+        <div class="tip"><b>La morale est une pirouette,</b> pas un sermon. Chez La Fontaine, elle est souvent ironique, parfois volontairement discutable.</div>
+        <div class="tip"><b>Un refrain change de sens</b> à chaque retour. Le troisième « et voilà tout » ne pèse jamais comme le premier.</div>
+      </div>
+    </section>
+
+    <section class="block" aria-labelledby="tirage-title-poeme">
+      <div class="section-head">
+        <span class="num">02</span>
+        <h2 class="section-title" id="tirage-title-poeme">Le tirage : sept cartes, un poème</h2>
+      </div>
+      <p class="section-sub">Style, voix, décor, image, bascule, refrain, chute. Relance une carte, pioche dans la liste, ou glisse ta propre idée tout en bas — elle rejoint le tirage définitivement, sur ce navigateur.</p>
+      <div class="grid" id="grid-poeme"></div>
+    </section>
+
+    <section class="block" aria-labelledby="pitch-title-poeme">
+      <div class="section-head">
+        <span class="num">03</span>
+        <h2 class="section-title" id="pitch-title-poeme">Le canevas, assemblé</h2>
+      </div>
+      <p class="section-sub">Pas le poème — juste ce qu’il faut pour t’y mettre.</p>
+
+      <div class="manuscript-wrap">
+        <div id="pitch-poeme" class="pitch-text"></div>
+        <div class="manuscript-foot">
+          <div class="foot-actions">
+            <button class="btn-copy" id="copyBtnPoeme" type="button">Copier le canevas</button>
+            <button class="btn-copy" id="shareBtnPoeme" type="button">Copier le lien de partage</button>
+          </div>
+          <span class="copy-note" id="copyNotePoeme">&nbsp;</span>
+        </div>
+      </div>
+      <p class="grain-note">Comme pour le roman : ne cherche pas une phrase propre. Le canevas n’est pas le poème, c’est ce qui te met en mouvement pour l’écrire, vers après vers. Le lien de partage recrée ce tirage exact — cartes perso comprises.</p>
+
+      <div class="next-steps">
+        <span>→ lis ton image centrale à voix haute, trois fois</span>
+        <span>→ écris une liste de six vers autour du décor, à la Prévert</span>
+        <span>→ termine par la chute, même si le reste n’est pas fini</span>
+      </div>
+    </section>
+  </section>
+
+  <footer>Tes tirages (et tes cartes perso) restent dans ce navigateur, pour les deux ateliers — recharge la page, tu retrouveras tout.</footer>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  var diceIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8" cy="8" r="1.2" fill="currentColor" stroke="none"/><circle cx="16" cy="8" r="1.2" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.2" fill="currentColor" stroke="none"/><circle cx="8" cy="16" r="1.2" fill="currentColor" stroke="none"/><circle cx="16" cy="16" r="1.2" fill="currentColor" stroke="none"/></svg>';
+
+  /* ================= DONNÉES — ENQUÊTE (roman) ================= */
+  var categoriesEnquete = [
+    { id:"genre", num:"01", label:"Genre", options:[
+      "Fantasy épique",
+      "Anticipation, dystopie",
+      "Thriller psychologique",
+      "Polar noir",
+      "Horreur cosmique",
+      "Comédie douce-amère",
+      "Aventure historique",
+      "Réalisme magique"
+    ]},
+    { id:"decor", num:"02", label:"Décor", options:[
+      "une ville flottante que la rouille dévore lentement",
+      "un village coupé du monde par la neige depuis trois hivers",
+      "une station spatiale à l’abandon, encore habitée",
+      "une capitale, cinquante ans dans notre futur",
+      "un monastère au sommet d’une montagne qu’on dit interdite",
+      "une jungle qui reprend une civilisation, pierre après pierre",
+      "un archipel où chaque île vit dans un siècle différent",
+      "une maison de famille qui garde tous les secrets qu’on lui confie"
+    ]},
+    { id:"protagoniste", num:"03", label:"Protagoniste", options:[
+      "une horlogère qui répare le temps lui-même, en cachette",
+      "un déserteur qui cherche moins le pardon que l’oubli",
+      "une voleuse de souvenirs, qui a fini par voler les siens",
+      "un médecin qui a cessé de croire à la médecine",
+      "une gardienne de phare qui n’a jamais quitté son île",
+      "un escroc si doué qu’il n’arnaque plus que lui-même",
+      "une traductrice pour une langue qui n’existe pas encore",
+      "un enfant élevé par la mauvaise personne, avec les meilleures intentions"
+    ]},
+    { id:"faille", num:"04", label:"Faille intérieure", options:[
+      "ne fait confiance à personne depuis la trahison qui a tout changé",
+      "croit, au fond, ne mériter d’être aimé de personne",
+      "fuit systématiquement dès que quelque chose compte vraiment",
+      "ment sans arrêt, même quand ce serait plus simple de ne pas mentir",
+      "sacrifie les autres plutôt que de perdre le contrôle une seconde",
+      "ne sait pas pardonner, à commencer par lui-même ou elle-même",
+      "confond être aimé et être sauvé",
+      "vit dans la peur de devenir exactement comme son père ou sa mère"
+    ]},
+    { id:"desir", num:"05", label:"Désir & besoin", options:[
+      "veut récupérer ce qu’on lui a volé — a besoin d’apprendre à lâcher prise",
+      "veut prouver qu’il ou elle avait raison — a besoin de faire enfin confiance",
+      "veut venger quelqu’un — a besoin de se pardonner",
+      "veut s’échapper, une bonne fois pour toutes — a besoin d’arrêter de fuir",
+      "veut une place qu’on lui refuse — a besoin de choisir qui il ou elle devient",
+      "veut percer un secret de famille — a besoin d’accepter de l’aide",
+      "veut sauver ce qu’il reste — a besoin d’admettre que perdre n’est pas mourir",
+      "veut retrouver quelqu’un qu’on lui a pris — a besoin de se retrouver lui-même"
+    ]},
+    { id:"antagoniste", num:"06", label:"Antagoniste", options:[
+      "un ancien allié devenu l’adversaire qui le comprend le mieux",
+      "une institution entière — empire, culte, administration — sans visage précis",
+      "un double qui a fait, systématiquement, les choix inverses",
+      "la version que le héros deviendra s’il ne change rien",
+      "quelqu’un qui a raison, mais pour de très mauvaises raisons",
+      "une force naturelle, indifférente, qu’aucune négociation n’arrête",
+      "un mentor qui a trahi ses propres idéaux en chemin",
+      "quelqu’un que le héros aime encore, malgré tout"
+    ]},
+    { id:"declencheur", num:"07", label:"Élément déclencheur", options:[
+      "une lettre arrive, vingt ans trop tard",
+      "quelqu’un meurt et laisse une dernière volonté impossible à tenir",
+      "un objet qu’on croyait détruit refait surface",
+      "le héros découvre qu’on lui a menti depuis toujours",
+      "une porte qui n’existait pas hier apparaît, ce matin",
+      "un inconnu frappe à la porte en pleine nuit",
+      "une dette du passé revient réclamer son dû",
+      "le monde change en une nuit — et personne d’autre ne semble le remarquer"
+    ]},
+    { id:"enjeu", num:"08", label:"Enjeu", options:[
+      "si le héros échoue, quelqu’un qu’il aime disparaît pour de bon",
+      "la dernière chance de réparer une erreur qu’on croyait irréparable",
+      "la vérité sur qui il ou elle est vraiment",
+      "la survie d’un lieu qui, sinon, n’existera plus jamais",
+      "la possibilité même de faire confiance à quelqu’un, un jour",
+      "le dernier souvenir qui reste d’un monde disparu",
+      "le droit de choisir sa propre fin, pour une fois",
+      "tout ce que le héros a mis une vie à construire"
+    ]},
+    { id:"allie", num:"09", label:"Allié ou mentor", options:[
+      "quelqu’un qui ment sur tout, sauf sur ce qui compte vraiment",
+      "un enfant plus lucide que tous les adultes de l’histoire",
+      "un ennemi juré, forcé de coopérer le temps d’une trêve",
+      "quelqu’un qui a déjà vécu cette histoire, dans une autre vie",
+      "une créature qui comprend tout, sauf les mots",
+      "quelqu’un que personne ne croit — sauf le héros",
+      "un rival qui veut la même chose, pour des raisons opposées",
+      "quelqu’un de mort, dont les conseils arrivent encore, on ne sait comment"
+    ]},
+    { id:"milieu", num:"10", label:"Rebondissement — milieu", options:[
+      "ce que le héros cherchait n’existe pas — ou plus",
+      "l’allié le plus proche travaille pour l’autre camp depuis le début",
+      "le héros obtient exactement ce qu’il voulait — et rien ne change",
+      "la vraie menace n’était pas celle qu’on croyait",
+      "le héros découvre qu’il a déjà vécu cet échec, une fois",
+      "la victime présumée est en réalité coupable — ou l’inverse",
+      "ce que le héros fuyait le rattrape plus vite que prévu",
+      "un allié révèle qu’il connaît déjà la fin de l’histoire"
+    ]},
+    { id:"twist", num:"11", label:"Rebondissement — avant la fin", options:[
+      "tout ce que le héros a gagné doit être sacrifié pour finir",
+      "l’antagoniste avait raison depuis le début, sur un point essentiel",
+      "le prix de la victoire dépasse celui de la défaite",
+      "quelqu’un qu’on croyait mort réapparaît, au pire moment",
+      "pour gagner, le héros doit devenir ce qu’il combattait",
+      "le véritable ennemi était caché dans le camp du héros",
+      "une seule personne peut encore tout arranger — et elle refuse",
+      "le héros doit choisir entre deux personnes qu’il aime"
+    ]},
+    { id:"theme", num:"12", label:"Thème", options:[
+      "peut-on réparer ce qu’on a cassé ?",
+      "que sommes-nous prêts à sacrifier pour ceux qu’on aime ?",
+      "une vérité vaut-elle toujours d’être dite ?",
+      "peut-on échapper à ce qu’on nous a fait ?",
+      "sommes-nous nos choix, ou notre passé ?",
+      "vaut-il mieux avoir raison, ou être en paix ?",
+      "le pardon se mérite-t-il, ou se donne-t-il ?",
+      "qu’est-ce qu’on doit à ceux qu’on a blessés ?"
+    ]},
+    { id:"fin", num:"13", label:"Fin", options:[
+      "une victoire qui coûte presque tout",
+      "une défaite qui libère plus qu’une victoire ne l’aurait fait",
+      "une fin ouverte — le vrai combat ne fait que commencer",
+      "un sacrifice qui donne, enfin, un sens à tout le reste",
+      "un retour au point de départ — mais plus personne n’est le même",
+      "une dernière révélation qui change le sens de toute l’histoire",
+      "une paix fragile, qu’on sait provisoire",
+      "le héros gagne seul ce qu’il aurait dû partager"
+    ]}
+  ];
+
+  function buildPitchEnquete(getText){
+    return (
+      "Genre : " + getText("genre") + ".\n\n" +
+      "Dans " + getText("decor") + ", on suit " + getText("protagoniste") + " — iel " + getText("faille") + ". " +
+      "Iel " + getText("desir") + ".\n\n" +
+      "Un jour, " + getText("declencheur") + ". En face : " + getText("antagoniste") + ". Ce qui est en jeu : " + getText("enjeu") + ".\n\n" +
+      "Heureusement, il y a " + getText("allie") + ". Mais à mi-parcours, " + getText("milieu") + " — et juste avant la fin, " + getText("twist") + ".\n\n" +
+      "Cette histoire pose une question : « " + getText("theme") + " »\n" +
+      "Et à la fin ? " + getText("fin") + "."
+    );
+  }
+
+  /* ================= DONNÉES — POÈME ================= */
+  var categoriesPoeme = [
+    { id:"style", num:"01", label:"Style, inspiration", options:[
+      "Fable à la La Fontaine (avec morale)",
+      "Inventaire à la Prévert (une liste qui déraille)",
+      "Sonnet d’amour à la Ronsard (carpe diem)",
+      "Spleen à la Baudelaire",
+      "Chanson triste à la Verlaine",
+      "Calligramme à la Apollinaire (le poème dessine ce qu’il dit)",
+      "Poème de résistance à la Éluard",
+      "Exercice de style à la Queneau (la même scène, autrement)"
+    ]},
+    { id:"personnage", num:"02", label:"Personnage ou voix", options:[
+      "un corbeau vaniteux, qui adore qu’on le complimente",
+      "une horloge qui refuse d’avancer",
+      "deux amants sur un banc public, un dimanche",
+      "une vieille valise oubliée sur le quai d’une gare",
+      "un renard qui a tout compris, mais trop tard",
+      "la mer, qui n’écoute jamais personne",
+      "un enfant qui compte les nuages au lieu d’écouter la leçon",
+      "un ouvrier qui rêve tout haut, debout devant sa machine"
+    ]},
+    { id:"decor", num:"03", label:"Décor, instant", options:[
+      "un café qui ferme à l’heure où personne ne dort encore",
+      "une forêt où les bêtes se réunissent en secret",
+      "un port, un dimanche de pluie",
+      "une cour d’école, cinq minutes avant la sonnerie",
+      "un jardin en novembre, quand tout devient gris",
+      "une gare, cinq minutes avant le départ",
+      "une chambre où la lumière n’entre plus tout à fait",
+      "un marché aux poissons, à l’aube"
+    ]},
+    { id:"image", num:"04", label:"Image centrale", options:[
+      "des feuilles mortes qu’on ramasse à la pelle",
+      "une clé qui n’ouvre plus aucune porte",
+      "un parapluie retourné par le vent",
+      "une lettre écrite, jamais postée",
+      "un fromage qui tombe du bec, une fois de trop",
+      "des pas dans la neige qui ne mènent nulle part",
+      "une horloge sans aiguilles, accrochée quand même au mur",
+      "un oiseau en cage, qui regarde la fenêtre grande ouverte"
+    ]},
+    { id:"bascule", num:"05", label:"Ce qui bascule", options:[
+      "la ruse échoue, juste là où on ne l’attendait pas",
+      "ce qu’on croyait perdu n’était que caché",
+      "celui qui se croyait fort tombe pour un mot de trop",
+      "l’orgueil se prend les pieds dans un détail ridicule",
+      "l’amour arrive pile au moment où plus personne n’y croyait",
+      "le temps finit par donner raison à celui qu’on avait oublié",
+      "un rien suffit à faire basculer tout le reste",
+      "la vérité sort de la bouche de celui qu’on écoutait le moins"
+    ]},
+    { id:"refrain", num:"06", label:"Refrain possible", options:[
+      "et je me suis dit : ça y est, c’est fait",
+      "comme ça, sans raison",
+      "rien de plus, rien de moins",
+      "et personne n’a rien vu venir",
+      "et voilà tout",
+      "sans un mot, sans un bruit",
+      "au petit bonheur la chance",
+      "et c’est ainsi que va le monde"
+    ]},
+    { id:"chute", num:"07", label:"Chute ou morale", options:[
+      "on ne loue jamais que ceux qui n’en ont pas besoin",
+      "méfie-toi des compliments, surtout à jeun",
+      "les plus beaux jours sont ceux qu’on n’a pas vus passer",
+      "on ne récolte que ce qu’on a semé — et parfois même pas ça",
+      "ce qu’on croit perdu n’est pas toujours ce qu’on pense",
+      "rira bien qui rira le dernier — ou peut-être pas",
+      "il n’y a pas de morale ici, juste une image qui reste",
+      "et tout ça pour un peu de fromage"
+    ]}
+  ];
+
+  function buildPitchPoeme(getText){
+    return (
+      "Style : " + getText("style") + ".\n\n" +
+      "Voix ou personnage : " + getText("personnage") + ".\n" +
+      "Décor : " + getText("decor") + ".\n\n" +
+      "Image centrale : " + getText("image") + ".\n\n" +
+      "Ce qui bascule : " + getText("bascule") + ".\n\n" +
+      "Un refrain possible, à glisser deux ou trois fois : « " + getText("refrain") + " »\n\n" +
+      "Chute : " + getText("chute") + "."
+    );
+  }
+
+  /* ================= MOTEUR PARTAGÉ ================= */
+  function createDeck(cfg){
+    var key = cfg.key;
+    var categories = cfg.categories;
+    var gridEl = cfg.gridEl;
+    var pitchEl = cfg.pitchEl;
+    var buildText = cfg.buildText;
+
+    var PICKS_KEY = "cn-picks-" + key + "-v1";
+    var CUSTOMS_KEY = "cn-customs-" + key + "-v1";
+
+    var customs = {};
+    categories.forEach(function(c){ customs[c.id] = []; });
+    try {
+      var savedCustoms = JSON.parse(localStorage.getItem(CUSTOMS_KEY) || "null");
+      if (savedCustoms && typeof savedCustoms === "object") {
+        categories.forEach(function(c){
+          if (Array.isArray(savedCustoms[c.id])) {
+            customs[c.id] = savedCustoms[c.id].filter(function(o){
+              return o && typeof o.id === "string" && typeof o.text === "string";
+            });
+          }
+        });
+      }
+    } catch (e) { /* ignore */ }
+
+    var state = {};
+    categories.forEach(function(c){ state[c.id] = "d0"; });
+    try {
+      var savedPicks = JSON.parse(localStorage.getItem(PICKS_KEY) || "null");
+      if (savedPicks && typeof savedPicks === "object") {
+        categories.forEach(function(c){
+          if (typeof savedPicks[c.id] === "string") state[c.id] = savedPicks[c.id];
+        });
+      }
+    } catch (e) { /* ignore */ }
+
+    function byId(id){ return categories.filter(function(c){ return c.id === id; })[0]; }
+
+    function effectiveOptions(cat){
+      var base = cat.options.map(function(text, i){ return { id:"d"+i, text:text, custom:false }; });
+      return base.concat(customs[cat.id] || []);
+    }
+
+    function entryFor(catId){
+      var cat = byId(catId);
+      var opts = effectiveOptions(cat);
+      var found = opts.filter(function(o){ return o.id === state[catId]; })[0];
+      return found || opts[0];
+    }
+
+    function getText(catId){ return entryFor(catId).text; }
+
+    function persistPicks(){ try { localStorage.setItem(PICKS_KEY, JSON.stringify(state)); } catch (e) {} }
+    function persistCustoms(){ try { localStorage.setItem(CUSTOMS_KEY, JSON.stringify(customs)); } catch (e) {} }
+
+    function optionsListHTML(cat){
+      var opts = effectiveOptions(cat);
+      var selectedId = entryFor(cat.id).id;
+      var rows = opts.map(function(o){
+        var pick = '<button type="button" class="opt-pick" data-action="pick" data-cat="' + cat.id + '" data-id="' + o.id + '" aria-current="' + (o.id === selectedId ? "true" : "false") + '">' + o.text + '</button>';
+        var extra = o.custom
+          ? '<span class="custom-tag">' + (o.shared ? "partagé" : "perso") + '</span><button type="button" class="card-remove" data-action="removecustom" data-cat="' + cat.id + '" data-id="' + o.id + '" aria-label="Supprimer cette carte">×</button>'
+          : '';
+        return '<li class="opt-row' + (o.custom ? ' is-custom' : '') + '">' + pick + extra + '</li>';
+      }).join("");
+      var addRow = '<li class="card-add-row"><input type="text" class="card-add-input" data-role="add-input" data-cat="' + cat.id + '" maxlength="140" placeholder="Ajoute ta propre carte…"><button type="button" class="card-add-btn" data-action="addcustom" data-cat="' + cat.id + '">+ Ajouter</button></li>';
+      return rows + addRow;
+    }
+
+    function cardHTML(cat){
+      return (
+        '<article class="card" data-cat="' + cat.id + '" data-open="false">' +
+          '<button class="card-toggle" type="button" data-action="toggle" data-cat="' + cat.id + '" aria-expanded="false">' +
+            '<span class="card-num">' + cat.num + '</span>' +
+            '<span class="card-label">' + cat.label + '</span>' +
+            '<span class="card-chevron">›</span>' +
+          '</button>' +
+          '<div class="card-body">' +
+            '<p class="card-value" data-role="value">' + getText(cat.id) + '</p>' +
+            '<button class="card-reroll" type="button" data-action="reroll" data-cat="' + cat.id + '" aria-label="Relancer : ' + cat.label + '">' + diceIcon + '</button>' +
+          '</div>' +
+          '<ul class="card-options" data-role="options" hidden>' + optionsListHTML(cat) + '</ul>' +
+        '</article>'
+      );
+    }
+
+    gridEl.innerHTML = categories.map(cardHTML).join("");
+
+    function updatePitch(){ pitchEl.textContent = buildText(getText); }
+
+    function refreshOptionsList(catId){
+      var cat = byId(catId);
+      var card = gridEl.querySelector('.card[data-cat="' + catId + '"]');
+      card.querySelector('[data-role="options"]').innerHTML = optionsListHTML(cat);
+    }
+
+    function setCard(catId, id, opts){
+      opts = opts || {};
+      state[catId] = id;
+      var card = gridEl.querySelector('.card[data-cat="' + catId + '"]');
+      card.querySelector('[data-role="value"]').textContent = getText(catId);
+      var pickButtons = card.querySelectorAll(".opt-pick");
+      for (var i = 0; i < pickButtons.length; i++) {
+        pickButtons[i].setAttribute("aria-current", pickButtons[i].dataset.id === id ? "true" : "false");
+      }
+      if (!opts.silent) updatePitch();
+      persistPicks();
+    }
+
+    function rollOne(catId, opts){
+      opts = opts || {};
+      var cat = byId(catId);
+      var card = gridEl.querySelector('.card[data-cat="' + catId + '"]');
+      var valueEl = card.querySelector('[data-role="value"]');
+      var diceBtn = card.querySelector('.card-reroll');
+      var pool = effectiveOptions(cat);
+      var finalEntry = entryFor(catId);
+      if (pool.length > 1) {
+        while (finalEntry.id === state[catId]) { finalEntry = pool[Math.floor(Math.random() * pool.length)]; }
+      }
+
+      diceBtn.classList.add("spin");
+      setTimeout(function(){ diceBtn.classList.remove("spin"); }, 420);
+
+      if (reduceMotion) { setCard(catId, finalEntry.id, opts); return; }
+
+      valueEl.classList.add("rolling");
+      var frames = 5, delay = 55, i = 0;
+      var flicker = setInterval(function(){
+        valueEl.textContent = pool[Math.floor(Math.random() * pool.length)].text;
+        i++;
+        if (i >= frames) {
+          clearInterval(flicker);
+          valueEl.classList.remove("rolling");
+          setCard(catId, finalEntry.id, opts);
+        }
+      }, delay);
+    }
+
+    function rollAll(){
+      categories.forEach(function(c, i){
+        setTimeout(function(){ rollOne(c.id, { silent: i < categories.length - 1 }); }, i * 90);
+      });
+    }
+
+    function addCustom(catId, text){
+      text = (text || "").trim();
+      if (!text) return;
+      var id = "c" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+      customs[catId].push({ id: id, text: text, custom: true });
+      persistCustoms();
+      refreshOptionsList(catId);
+      setCard(catId, id);
+    }
+
+    function removeCustom(catId, id){
+      customs[catId] = customs[catId].filter(function(o){ return o.id !== id; });
+      persistCustoms();
+      if (state[catId] === id) { setCard(catId, "d0"); }
+      refreshOptionsList(catId);
+    }
+
+    gridEl.addEventListener("click", function(e){
+      var btn = e.target.closest("[data-action]");
+      if (!btn) return;
+      var action = btn.dataset.action;
+      var catId = btn.dataset.cat;
+      var card = gridEl.querySelector('.card[data-cat="' + catId + '"]');
+
+      if (action === "toggle") {
+        var open = card.dataset.open === "true";
+        card.dataset.open = open ? "false" : "true";
+        btn.setAttribute("aria-expanded", open ? "false" : "true");
+        card.querySelector('[data-role="options"]').hidden = open;
+      } else if (action === "reroll") {
+        rollOne(catId);
+      } else if (action === "pick") {
+        setCard(catId, btn.dataset.id);
+        card.dataset.open = "false";
+        card.querySelector(".card-toggle").setAttribute("aria-expanded", "false");
+        card.querySelector('[data-role="options"]').hidden = true;
+      } else if (action === "addcustom") {
+        var input = card.querySelector('.card-add-input[data-cat="' + catId + '"]');
+        addCustom(catId, input.value);
+        input.value = "";
+        input.focus();
+      } else if (action === "removecustom") {
+        removeCustom(catId, btn.dataset.id);
+      }
+    });
+
+    gridEl.addEventListener("keydown", function(e){
+      if (e.key === "Enter" && e.target.classList && e.target.classList.contains("card-add-input")) {
+        e.preventDefault();
+        var catId = e.target.dataset.cat;
+        addCustom(catId, e.target.value);
+        e.target.value = "";
+      }
+    });
+
+    cfg.rollAllBtn.addEventListener("click", rollAll);
+
+    cfg.copyBtn.addEventListener("click", function(){
+      var text = buildText(getText);
+      var note = cfg.copyNote;
+      function ok(){ note.textContent = "Copié dans le presse-papiers."; setTimeout(function(){ note.textContent = " "; }, 2200); }
+      function fail(){ note.textContent = "Sélectionne le texte à la main pour le copier."; }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(ok, fail);
+      } else {
+        fail();
+      }
+    });
+
+    function shareArray(){
+      return categories.map(function(cat){
+        var e = entryFor(cat.id);
+        return e.custom ? e.text : Number(e.id.slice(1));
+      });
+    }
+
+    function shareUrl(){
+      var data = encodeURIComponent(JSON.stringify(shareArray()));
+      return location.origin + location.pathname + location.search + "#" + key + "?d=" + data;
+    }
+
+    if (cfg.shareBtn) {
+      cfg.shareBtn.addEventListener("click", function(){
+        var url = shareUrl();
+        var note = cfg.copyNote;
+        function ok(){ note.textContent = "Lien copié — colle-le pour partager ce tirage exact."; setTimeout(function(){ note.textContent = " "; }, 3200); }
+        function fail(){ note.textContent = "Copie impossible ici : " + url; }
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(url).then(ok, fail);
+        } else {
+          fail();
+        }
+      });
+    }
+
+    function applyShareArray(arr){
+      if (!Array.isArray(arr)) return;
+      categories.forEach(function(cat, i){
+        if (i >= arr.length) return;
+        var val = arr[i];
+        var id;
+        if (typeof val === "number" && isFinite(val)) {
+          var idx = Math.max(0, Math.min(cat.options.length - 1, Math.floor(val)));
+          id = "d" + idx;
+        } else if (typeof val === "string" && val.trim()) {
+          var text = val.trim().slice(0, 140);
+          var existing = (customs[cat.id] || []).filter(function(o){ return o.text === text; })[0];
+          if (existing) {
+            id = existing.id;
+          } else {
+            id = "c" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6) + i;
+            customs[cat.id].push({ id: id, text: text, custom: true, shared: true });
+          }
+        } else {
+          return;
+        }
+        state[cat.id] = id;
+      });
+      persistCustoms();
+      persistPicks();
+      gridEl.innerHTML = categories.map(cardHTML).join("");
+      updatePitch();
+    }
+
+    updatePitch();
+
+    return { applyShareArray: applyShareArray };
+  }
+
+  var decks = {};
+
+  decks.enquete = createDeck({
+    key: "enquete",
+    categories: categoriesEnquete,
+    gridEl: document.getElementById("grid-enquete"),
+    pitchEl: document.getElementById("pitch-enquete"),
+    buildText: buildPitchEnquete,
+    rollAllBtn: document.getElementById("rollAllEnquete"),
+    copyBtn: document.getElementById("copyBtnEnquete"),
+    shareBtn: document.getElementById("shareBtnEnquete"),
+    copyNote: document.getElementById("copyNoteEnquete")
+  });
+
+  decks.poeme = createDeck({
+    key: "poeme",
+    categories: categoriesPoeme,
+    gridEl: document.getElementById("grid-poeme"),
+    pitchEl: document.getElementById("pitch-poeme"),
+    buildText: buildPitchPoeme,
+    rollAllBtn: document.getElementById("rollAllPoeme"),
+    copyBtn: document.getElementById("copyBtnPoeme"),
+    shareBtn: document.getElementById("shareBtnPoeme"),
+    copyNote: document.getElementById("copyNotePoeme")
+  });
+
+  /* ================= ONGLETS & LIENS DE PARTAGE ================= */
+  var tabButtons = document.querySelectorAll('.tabbar [role="tab"]');
+  var panels = {
+    enquete: document.getElementById("panel-enquete"),
+    poeme: document.getElementById("panel-poeme")
+  };
+
+  function activateTab(name){
+    if (!panels[name]) name = "enquete";
+    tabButtons.forEach(function(b){
+      b.setAttribute("aria-selected", b.dataset.tab === name ? "true" : "false");
+    });
+    Object.keys(panels).forEach(function(k){ panels[k].hidden = (k !== name); });
+    try { localStorage.setItem("cn-active-tab-v1", name); } catch (e) {}
+  }
+
+  function currentSavedTab(){
+    try {
+      var t = localStorage.getItem("cn-active-tab-v1");
+      if (t === "enquete" || t === "poeme") return t;
+    } catch (e) {}
+    return "enquete";
+  }
+
+  // Le hash a la forme #enquete ou #poeme?d=<tirage encodé> — chaque onglet a
+  // ainsi son propre segment d’URL, et ce segment peut porter une sélection.
+  function parseHash(){
+    var h = location.hash || "";
+    if (h.charAt(0) === "#") h = h.slice(1);
+    var qIndex = h.indexOf("?");
+    var tabPart = qIndex === -1 ? h : h.slice(0, qIndex);
+    var rest = qIndex === -1 ? "" : h.slice(qIndex + 1);
+    var data = null;
+    if (rest) {
+      try {
+        var params = new URLSearchParams(rest);
+        var d = params.get("d");
+        if (d) data = JSON.parse(d);
+      } catch (e) { data = null; }
+    }
+    return {
+      tab: (tabPart === "enquete" || tabPart === "poeme") ? tabPart : null,
+      data: Array.isArray(data) ? data : null
+    };
+  }
+
+  function applyHash(){
+    var info = parseHash();
+    var tab = info.tab || currentSavedTab();
+    activateTab(tab);
+    if (info.data && decks[tab]) decks[tab].applyShareArray(info.data);
+    if (!info.tab) {
+      try { history.replaceState(null, "", "#" + tab); } catch (e) {}
+    }
+  }
+
+  tabButtons.forEach(function(b){
+    b.addEventListener("click", function(){ location.hash = b.dataset.tab; });
+  });
+
+  window.addEventListener("hashchange", applyHash);
+  applyHash();
+
+})();
+</script>
