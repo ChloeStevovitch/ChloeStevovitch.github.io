@@ -97,6 +97,30 @@
     --shadow: 0 1px 2px rgba(0,0,0,.35), 0 10px 26px -12px rgba(0,0,0,.55);
   }
 
+  /* ---------- onglet Enquête : thème « dossier noir », fixe (ne suit pas le
+     mode clair/sombre du visiteur — c’est un parti pris, pas un fond d’écran) ---------- */
+  #panel-enquete{
+    --paper:#120f0f;
+    --paper-raised:#1c1717;
+    --paper-raised-2:#171212;
+    --ink:#ece4e0;
+    --ink-soft:#ab9d97;
+    --ink-faint:#756863;
+    --accent:#8a2b2b;
+    --accent-ink:#d9534f;
+    --accent2:#c81e1e;
+    --line:#3a2f2d;
+    --line-strong:#55433f;
+    --shadow: 0 1px 2px rgba(0,0,0,.5), 0 12px 28px -12px rgba(0,0,0,.75);
+
+    background:var(--paper);
+    color:var(--ink);
+    border:1px solid var(--line-strong);
+    border-radius:2px;
+    padding:1.75rem clamp(1rem,4vw,2.25rem) 2.25rem;
+    margin-top:.5rem;
+  }
+
   *{box-sizing:border-box;}
   body{
     margin:0;
@@ -178,6 +202,9 @@
   }
   .tabbar [role="tab"][data-tab="poeme"][aria-selected="true"]{
     border-bottom-color:#5c8a52;
+  }
+  .tabbar [role="tab"][data-tab="enquete"][aria-selected="true"]{
+    border-bottom-color:#c81e1e;
   }
   @media (prefers-color-scheme: dark){
     :root:not([data-theme="light"]) .tabbar [role="tab"][data-tab="poeme"][aria-selected="true"]{
@@ -578,6 +605,23 @@
     color:var(--accent);
     opacity:.65;
     margin:1.2rem 0 0;
+  }
+
+  /* ---------- onglet Enquête : silhouette « dossier », coins nets ---------- */
+  #panel-enquete .card,
+  #panel-enquete .manuscript-wrap,
+  #panel-enquete .tip,
+  #panel-enquete .btn-chaos,
+  #panel-enquete .btn-copy,
+  #panel-enquete .card-add-btn,
+  #panel-enquete .card-reroll{
+    border-radius:0;
+  }
+  #panel-enquete .section-head .num{
+    border:1px solid var(--accent);
+    color:var(--accent-ink);
+    padding:.05rem .4rem;
+    letter-spacing:.06em;
   }
 
   @media (prefers-reduced-motion: reduce){
