@@ -1164,7 +1164,12 @@
       cfg.shareBtn.addEventListener("click", function(){
         var url = shareUrl();
         var note = cfg.copyNote;
-        function ok(){ note.textContent = "Lien copié — colle-le pour partager ce tirage exact."; setTimeout(function(){ note.textContent = " "; }, 3200); }
+        var long = url.length > 2000;
+        function ok(){
+          note.textContent = "Lien copié — colle-le pour partager ce tirage exact." +
+            (long ? " (" + url.length.toLocaleString("fr-FR") + " caractères, à cause des cartes perso longues : ça marche partout, mais évite le SMS classique.)" : "");
+          setTimeout(function(){ note.textContent = " "; }, long ? 5000 : 3200);
+        }
         function fail(){ note.textContent = "Copie impossible ici : " + url; }
         if (navigator.clipboard && navigator.clipboard.writeText) {
           navigator.clipboard.writeText(url).then(ok, fail);
