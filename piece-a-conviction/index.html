@@ -1,0 +1,798 @@
+<title>Pièce à Conviction</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Work+Sans:wght@400;500;600;700&display=swap">
+<style>
+  :root{
+    --paper:#E6D8B8; --paper-2:#D8C69C; --paper-raised:#F1E6C8;
+    --ink:#241D12; --ink-dim:#6E5E3E; --line:rgba(36,29,18,.22);
+    --accent:#9C2B24; --accent-ink:#F8EFD8; --good:#3F6B45; --good-ink:#F8EFD8;
+    --neutral-chip:#C9B98D; --shadow:rgba(36,29,18,.28);
+    --font-display:'Special Elite',ui-monospace,'Courier New',monospace;
+    --font-body:'Work Sans',system-ui,-apple-system,sans-serif;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --paper:#1B1712; --paper-2:#262019; --paper-raised:#2E271C;
+      --ink:#EDE0BE; --ink-dim:#A8966C; --line:rgba(237,224,190,.16);
+      --accent:#D9584A; --accent-ink:#1B1712; --good:#6FA374; --good-ink:#12200F;
+      --neutral-chip:#3A3222; --shadow:rgba(0,0,0,.5);
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#1B1712; --paper-2:#262019; --paper-raised:#2E271C;
+    --ink:#EDE0BE; --ink-dim:#A8966C; --line:rgba(237,224,190,.16);
+    --accent:#D9584A; --accent-ink:#1B1712; --good:#6FA374; --good-ink:#12200F;
+    --neutral-chip:#3A3222; --shadow:rgba(0,0,0,.5);
+  }
+  *{box-sizing:border-box;}
+  @media (prefers-reduced-motion: reduce){ *{transition:none!important; animation:none!important;} }
+  body{
+    margin:0; background:var(--paper); color:var(--ink); font-family:var(--font-body);
+    background-image:
+      radial-gradient(circle at 20% 10%, rgba(36,29,18,.05) 0, transparent 45%),
+      radial-gradient(circle at 80% 60%, rgba(36,29,18,.04) 0, transparent 40%),
+      repeating-linear-gradient(0deg, rgba(36,29,18,.025) 0px, transparent 1px, transparent 3px);
+  }
+  h1,h2,h3{ font-family:var(--font-display); font-weight:400; text-wrap:balance; letter-spacing:.01em; margin:0; }
+  a{ color:var(--accent); }
+  button{ font-family:var(--font-body); }
+  :focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+
+  .app{ max-width:1080px; margin:0 auto; padding:28px 20px 80px; }
+
+  /* ---------- Masthead ---------- */
+  .masthead{
+    display:flex; justify-content:space-between; align-items:flex-end; gap:20px;
+    flex-wrap:wrap; padding-bottom:18px; margin-bottom:22px; border-bottom:3px double var(--line);
+    position:relative;
+  }
+  .masthead-left{ position:relative; }
+  .case-no{
+    font-family:var(--font-display); font-size:12px; letter-spacing:.14em; color:var(--ink-dim);
+    margin:0 0 6px;
+  }
+  .masthead h1{ font-size:clamp(28px,4vw,40px); margin:0; }
+  .stamp{
+    position:absolute; top:-14px; right:-6px; font-family:var(--font-display); font-size:13px;
+    color:var(--accent); border:2.5px solid var(--accent); border-radius:4px; padding:3px 9px;
+    transform:rotate(-9deg); opacity:.55; letter-spacing:.1em; pointer-events:none;
+  }
+  .tagline{ margin:6px 0 0; color:var(--ink-dim); font-size:14.5px; }
+  .masthead-right{ display:flex; flex-direction:column; align-items:flex-end; gap:8px; }
+  .save-row{ display:flex; gap:8px; }
+  .save-status{ margin:0; font-size:12.5px; color:var(--ink-dim); min-height:16px; }
+
+  .btn{
+    font-size:13.5px; font-weight:600; padding:9px 14px; border-radius:3px; cursor:pointer;
+    border:1.5px solid var(--line); background:var(--paper-2); color:var(--ink);
+    transition:background .12s ease, transform .08s ease;
+  }
+  .btn:hover{ background:var(--paper-raised); }
+  .btn:active{ transform:translateY(1px); }
+  .btn-primary{ background:var(--accent); border-color:var(--accent); color:var(--accent-ink); }
+  .btn-primary:hover{ filter:brightness(1.08); background:var(--accent); }
+  .btn-ghost{ background:transparent; }
+  .btn-sm{ padding:5px 10px; font-size:12.5px; border-radius:3px; }
+  .btn-icon{ padding:5px 9px; font-size:14px; line-height:1; }
+
+  /* ---------- Tabs ---------- */
+  .tabs{ display:flex; gap:4px; flex-wrap:wrap; }
+  .tab-btn{
+    font-family:var(--font-display); font-size:13.5px; letter-spacing:.03em;
+    padding:10px 18px 9px; border:1.5px solid var(--line); border-bottom:none;
+    background:var(--paper-2); color:var(--ink-dim); border-radius:6px 6px 0 0;
+    cursor:pointer; position:relative; top:1px;
+  }
+  .tab-btn:hover{ color:var(--ink); }
+  .tab-btn.active{ background:var(--paper-raised); color:var(--ink); border-color:var(--line); z-index:2; }
+  .sheet{
+    background:var(--paper-raised); border:1.5px solid var(--line); border-radius:0 8px 8px 8px;
+    padding:26px; box-shadow:0 10px 24px -14px var(--shadow); min-height:420px;
+  }
+  .panel{ display:none; }
+  .panel.active{ display:block; }
+  .panel-head{ display:flex; justify-content:space-between; align-items:flex-start; gap:14px; margin-bottom:6px; flex-wrap:wrap; }
+  .panel-head h2{ font-size:21px; }
+  .panel-sub{ color:var(--ink-dim); font-size:13.5px; margin:4px 0 22px; max-width:62ch; line-height:1.5; }
+  .hint{ color:var(--ink-dim); font-size:13.5px; font-style:italic; padding:18px 0; }
+
+  /* ---------- Field blocks ---------- */
+  .field{ margin-bottom:20px; }
+  .field-label{
+    display:flex; align-items:center; gap:8px; font-family:var(--font-display); font-size:12.5px;
+    letter-spacing:.08em; text-transform:uppercase; color:var(--ink-dim); margin-bottom:9px;
+  }
+  .chip-row{ display:flex; flex-wrap:wrap; gap:7px; align-items:center; }
+  .chip{
+    font-size:13px; padding:7px 12px; border-radius:16px; border:1.5px solid var(--line);
+    background:var(--neutral-chip); color:var(--ink); cursor:pointer; transition:background .1s;
+  }
+  .chip:hover{ filter:brightness(1.06); }
+  .chip.selected{ background:var(--accent); border-color:var(--accent); color:var(--accent-ink); font-weight:600; }
+  .dice{
+    border-radius:16px; border:1.5px dashed var(--line); background:transparent; color:var(--ink-dim);
+    cursor:pointer; padding:6px 10px; font-size:13px;
+  }
+  .dice:hover{ color:var(--ink); border-color:var(--ink-dim); }
+
+  .truth-card{
+    background:var(--paper-2); border:1.5px solid var(--line); border-radius:6px; padding:18px 20px;
+    margin-top:22px; position:relative;
+  }
+  .truth-card::before{
+    content:"VÉRITÉ — CONFIDENTIEL"; position:absolute; top:10px; right:14px; font-family:var(--font-display);
+    font-size:10.5px; letter-spacing:.12em; color:var(--accent); opacity:.6;
+  }
+  .truth-text{ font-family:var(--font-display); font-size:15px; line-height:1.7; margin:14px 0 0; }
+  .truth-text b{ font-weight:400; color:var(--accent); }
+
+  /* ---------- Suspects ---------- */
+  .suspect-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:16px; }
+  .suspect-card{
+    background:var(--paper-2); border:1.5px solid var(--line); border-radius:6px; padding:16px;
+    display:flex; flex-direction:column; gap:12px; position:relative;
+  }
+  .suspect-card.is-coupable{ border-color:var(--accent); box-shadow:0 0 0 1px var(--accent) inset; }
+  .suspect-top{ display:flex; gap:8px; align-items:center; }
+  .suspect-name{
+    flex:1; font-family:var(--font-display); font-size:16px; background:var(--paper-raised);
+    border:1.5px solid var(--line); border-radius:4px; padding:7px 10px; color:var(--ink);
+  }
+  .toggle3{ display:flex; gap:4px; }
+  .toggle3 button{
+    flex:1; font-size:11.5px; font-weight:600; padding:6px 4px; border-radius:3px; border:1.5px solid var(--line);
+    background:var(--paper-raised); color:var(--ink-dim); cursor:pointer;
+  }
+  .toggle3 button.on-oui{ background:var(--good); border-color:var(--good); color:var(--good-ink); }
+  .toggle3 button.on-peut{ background:var(--neutral-chip); color:var(--ink); }
+  .toggle3 button.on-non{ background:transparent; color:var(--ink-dim); text-decoration:line-through; }
+  .mini-label{ font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-dim); }
+  .card-del{
+    position:absolute; top:10px; right:10px; background:transparent; border:none; color:var(--ink-dim);
+    cursor:pointer; font-size:13px;
+  }
+  .card-del:hover{ color:var(--accent); }
+  .coupable-pin{
+    background:transparent; border:1.5px solid var(--line); border-radius:14px; padding:5px 11px; font-size:11.5px;
+    cursor:pointer; color:var(--ink-dim); font-weight:600; letter-spacing:.03em;
+  }
+  .coupable-pin.on{ background:var(--accent); border-color:var(--accent); color:var(--accent-ink); }
+
+  /* ---------- Matrix / Timeline ---------- */
+  .matrix-wrap{ overflow-x:auto; }
+  table.matrix{ border-collapse:collapse; width:100%; min-width:520px; }
+  table.matrix th, table.matrix td{ border:1px solid var(--line); padding:8px; text-align:left; vertical-align:middle; }
+  table.matrix thead th{
+    font-family:var(--font-display); font-size:12px; color:var(--ink-dim); font-weight:400;
+    writing-mode:vertical-rl; text-orientation:mixed; padding:10px 6px; white-space:nowrap; max-width:34px;
+  }
+  table.matrix thead th.corner{ writing-mode:horizontal-tb; }
+  .row-name-cell{ display:flex; align-items:center; gap:6px; min-width:210px; }
+  .row-input{
+    flex:1; font-size:13.5px; background:var(--paper-raised); border:1.5px solid var(--line); border-radius:4px;
+    padding:6px 8px; color:var(--ink);
+  }
+  .niveau-badge{
+    font-family:var(--font-display); font-size:11px; border:1.5px solid var(--line); border-radius:12px;
+    padding:2px 8px; cursor:pointer; color:var(--ink-dim); white-space:nowrap;
+  }
+  .mark-cell{ text-align:center; }
+  .mark-btn{
+    width:100%; min-width:64px; padding:8px 4px; font-size:11px; font-weight:600; border-radius:3px;
+    border:1.5px solid var(--line); background:var(--paper-2); color:var(--ink-dim); cursor:pointer;
+    letter-spacing:.02em;
+  }
+  .mark-btn.mk-accuse{ background:var(--accent); border-color:var(--accent); color:var(--accent-ink); }
+  .mark-btn.mk-innocente{ background:var(--good); border-color:var(--good); color:var(--good-ink); }
+  .mark-btn.mk-decisif{ background:var(--accent); border-color:var(--ink); color:var(--accent-ink); box-shadow:0 0 0 2px var(--paper-raised) inset, 0 0 0 3px var(--ink) inset; }
+  .legend{ display:flex; gap:16px; flex-wrap:wrap; margin:14px 0 20px; font-size:12.5px; color:var(--ink-dim); }
+  .legend span{ display:inline-flex; align-items:center; gap:6px; }
+  .swatch{ width:13px; height:13px; border-radius:3px; border:1.5px solid var(--line); display:inline-block; }
+
+  .slot-card{ background:var(--paper-2); border:1.5px solid var(--line); border-radius:6px; padding:14px 16px; margin-bottom:14px; }
+  .slot-top{ display:flex; gap:8px; align-items:center; margin-bottom:12px; }
+  .slot-label{
+    font-family:var(--font-display); font-size:14.5px; background:var(--paper-raised); border:1.5px solid var(--line);
+    border-radius:4px; padding:6px 10px; flex:0 0 auto; width:180px; color:var(--ink);
+  }
+  .presence-row{ display:flex; flex-wrap:wrap; gap:8px; }
+  .presence-chip{
+    font-size:12.5px; padding:7px 11px; border-radius:16px; border:1.5px dashed var(--line);
+    background:transparent; color:var(--ink-dim); cursor:pointer;
+  }
+  .presence-chip.st-present{ border-style:solid; background:var(--good); border-color:var(--good); color:var(--good-ink); }
+  .presence-chip.st-vu{ border-style:solid; background:var(--neutral-chip); color:var(--ink); }
+  .presence-chip.st-absent{ border-style:solid; color:var(--ink-dim); text-decoration:line-through; opacity:.7; }
+
+  /* ---------- Chaos ---------- */
+  .chaos-buttons{ display:flex; flex-wrap:wrap; gap:10px; margin-bottom:22px; }
+  .chaos-log{ display:flex; flex-direction:column; gap:10px; }
+  .chaos-card{
+    background:var(--paper-2); border:1.5px solid var(--line); border-left:4px solid var(--accent);
+    border-radius:4px; padding:12px 14px; display:flex; justify-content:space-between; gap:12px; align-items:center;
+  }
+  .chaos-kind{ font-family:var(--font-display); font-size:10.5px; letter-spacing:.1em; color:var(--accent); text-transform:uppercase; display:block; margin-bottom:4px; }
+  .chaos-text{ font-size:14px; line-height:1.5; }
+  .chaos-actions{ display:flex; gap:6px; flex:0 0 auto; }
+
+  /* ---------- Checklist ---------- */
+  .checklist{ display:flex; flex-direction:column; gap:2px; }
+  .check-item{
+    display:flex; gap:12px; align-items:flex-start; padding:12px 6px; border-bottom:1px solid var(--line);
+    cursor:pointer;
+  }
+  .check-item:last-child{ border-bottom:none; }
+  .check-box{
+    flex:0 0 auto; width:20px; height:20px; border:1.5px solid var(--line); border-radius:3px; margin-top:1px;
+    display:flex; align-items:center; justify-content:center; background:var(--paper-raised); font-size:13px;
+  }
+  .check-item.checked .check-box{ background:var(--good); border-color:var(--good); color:var(--good-ink); }
+  .check-item.auto .check-box{ border-style:dashed; }
+  .check-text{ font-size:14.5px; line-height:1.45; }
+  .check-tag{ font-size:11px; color:var(--ink-dim); letter-spacing:.04em; }
+  .progress-line{ font-family:var(--font-display); font-size:13px; color:var(--ink-dim); margin-bottom:16px; }
+
+  footer.note{ text-align:center; color:var(--ink-dim); font-size:12px; margin-top:30px; }
+</style>
+
+<div class="app" id="app">
+  <header class="masthead">
+    <div class="masthead-left">
+      <span class="stamp" id="example-stamp">EXEMPLE</span>
+      <p class="case-no" id="case-no">DOSSIER N° 0000</p>
+      <h1>Pièce à Conviction</h1>
+      <p class="tagline">Atelier de construction d'enquête à démêler — clic plutôt que clavier</p>
+    </div>
+    <div class="masthead-right">
+      <div class="save-row">
+        <button class="btn btn-primary" data-action="save-dossier">Sauvegarder le dossier</button>
+        <button class="btn btn-ghost" data-action="reset-dossier">Nouveau dossier</button>
+      </div>
+      <p class="save-status" id="save-status"></p>
+    </div>
+  </header>
+
+  <nav class="tabs" id="tabs">
+    <button class="tab-btn" data-action="switch-tab" data-tab="solution">1 · La vérité</button>
+    <button class="tab-btn" data-action="switch-tab" data-tab="suspects">2 · Suspects</button>
+    <button class="tab-btn" data-action="switch-tab" data-tab="chrono">3 · Chronologie</button>
+    <button class="tab-btn" data-action="switch-tab" data-tab="matrice">4 · Matrice</button>
+    <button class="tab-btn" data-action="switch-tab" data-tab="chaos">5 · Chaos</button>
+    <button class="tab-btn" data-action="switch-tab" data-tab="checklist">6 · Checklist</button>
+  </nav>
+
+  <main class="sheet">
+    <section id="panel-solution" class="panel"></section>
+    <section id="panel-suspects" class="panel"></section>
+    <section id="panel-chrono" class="panel"></section>
+    <section id="panel-matrice" class="panel"></section>
+    <section id="panel-chaos" class="panel"></section>
+    <section id="panel-checklist" class="panel"></section>
+  </main>
+
+  <footer class="note">Tout se construit ici par clics et tirages aléatoires — le nom des suspects est la seule chose à taper.</footer>
+</div>
+
+<script id="state-data" type="application/json">{"meta":{"caseNo":"0417","example":true},"solution":{"mobile":"Chantage","methode":"Poison","lieu":"le jardin d'hiver","faille":"a laissé une trace numérique (appel, message, badge)"},"suspects":[{"id":"s1","name":"Élise Vasseur","archetype":"L'associé ambitieux","mobile":"Chantage","secret":"Une dette de jeu","moyen":"oui","opportunite":"oui","coupable":true},{"id":"s2","name":"Marc Feillet","archetype":"Le rival professionnel","mobile":"Rivalité ancienne","secret":"Une liaison cachée","moyen":"peut-être","opportunite":"oui","coupable":false},{"id":"s3","name":"Nadia Orsel","archetype":"La journaliste curieuse","mobile":"Pouvoir","secret":"Une fausse identité","moyen":"non","opportunite":"oui","coupable":false}],"timeline":{"slots":[{"id":"t1","label":"T-1h","presence":{"s1":"present","s2":"present","s3":"absent"}},{"id":"t2","label":"T0 — le crime","presence":{"s1":"present","s2":"vu","s3":"present"}},{"id":"t3","label":"T+30min","presence":{"s1":"vu","s2":"present","s3":"present"}}]},"clues":[{"id":"c1","name":"Verre à moitié plein","niveau":1,"marks":{"s1":"accuse","s2":"neutre","s3":"neutre"}},{"id":"c2","name":"Badge d'accès horodaté","niveau":2,"marks":{"s1":"decisif","s2":"neutre","s3":"innocente"}},{"id":"c3","name":"Témoignage du voisin","niveau":2,"marks":{"s1":"neutre","s2":"accuse","s3":"innocente"}}],"chaosLog":[],"checklist":{"c1":true,"c2":false,"c3":false,"c4":false,"c5":false,"c6":false,"c7":false,"c8":false}}</script>
+<script id="app-script">
+(function(){
+  "use strict";
+
+  /* ============ Banques de mots ============ */
+  var BANKS = {
+    mobile: ["Argent","Vengeance","Amour trahi","Jalousie","Chantage","Honneur","Peur d'être découvert","Héritage","Pouvoir","Secret professionnel","Rivalité ancienne","Protection d'un proche"],
+    methode: ["Poison","Arme à feu","Coup porté à la tête","Chute provoquée","Étouffement","Objet contondant","Sabotage mécanique","Incendie volontaire","Overdose provoquée","Noyade"],
+    lieu: ["la bibliothèque","la cave à vin","le jardin d'hiver","le bureau","la cuisine","le garage","le grenier","le salon","la terrasse","l'atelier"],
+    faille: ["a oublié un objet personnel sur place","a menti sur son emploi du temps","a été aperçu(e) par un témoin qu'il/elle ignorait","a laissé une trace numérique (appel, message, badge)","a mal calculé l'heure d'un alibi","a paniqué et nettoyé une preuve de façon visible","a confié un détail de trop à un proche"],
+    archetype: ["L'associé ambitieux","La veuve / Le veuf trop calme","Le majordome fidèle","L'amant(e) secret(ète)","Le rival professionnel","L'héritier(ère) endetté(e)","Le témoin trop précis","Le/La journaliste curieux(se)","L'ancien(ne) employé(e) renvoyé(e)","Le/La voisin(e) envahissant(e)"],
+    secret: ["Une liaison cachée","Une dette de jeu","Une fausse identité","Une addiction dissimulée","Un scandale familial étouffé","Un enfant caché","Une faillite imminente","Un plagiat professionnel","Une double vie","Un casier judiciaire ancien"],
+    objet: ["Une lettre froissée","Un mégot de cigarette","Un trousseau de clés","Une montre arrêtée","Un ticket de train","Un verre à moitié plein","Un mouchoir taché","Un carnet codé","Un bouton arraché","Une facture déchirée"],
+    rebondissement: ["Un deuxième témoin se rétracte","La victime menait elle-même une enquête secrète","L'arme du crime a disparu de la scène","Deux suspects ont un alibi commun… et mentent tous les deux","Un indice a été déplacé par une personne innocente","La victime avait changé son testament la semaine précédente"]
+  };
+
+  var CHECKLIST_ITEMS = [
+    {key:"c1", auto:false, text:"La solution et la chronologie complète existent avant le premier indice écrit."},
+    {key:"c2", auto:true,  text:"Chaque suspect a un mobile ET un secret renseignés."},
+    {key:"c3", auto:false, text:"La matrice ne laisse aucune ambiguïté non voulue entre deux suspects."},
+    {key:"c4", auto:true,  text:"Chaque innocent est disculpé par au moins un indice."},
+    {key:"c5", auto:false, text:"Aucun indice seul ne suffit à conclure — il faut un recoupement."},
+    {key:"c6", auto:false, text:"Les fausses pistes s'appuient sur les secrets définis, pas inventées après coup."},
+    {key:"c7", auto:false, text:"Relecture à l'envers faite : aucune contradiction avec la chronologie."},
+    {key:"c8", auto:false, text:"(Jeu) La distribution des indices entre joueurs permet la mise en commun."}
+  ];
+
+  var PRESENCE_CYCLE = ["?","present","vu","absent"];
+  var PRESENCE_LABEL = {"?":"Inconnu", present:"Présent", vu:"Vu par un témoin", absent:"Absent"};
+  var MARK_CYCLE = ["neutre","accuse","innocente","decisif"];
+  var MARK_LABEL = {neutre:"Neutre", accuse:"Accuse", innocente:"Innocente", decisif:"Décisif"};
+  var MOYEN_CYCLE = ["?","oui","peut-être","non"];
+
+  var LS_KEY = "piece-a-conviction:v1";
+
+  /* ============ Utilitaires ============ */
+  function rand(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+  function randExcl(arr, excl){
+    if (arr.length <= 1) return rand(arr);
+    var v = rand(arr);
+    var tries = 0;
+    while (v === excl && tries < 8){ v = rand(arr); tries++; }
+    return v;
+  }
+  function uid(prefix){ return prefix + Math.random().toString(36).slice(2,9); }
+  function escapeHtml(s){
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function(c){
+      return ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[c];
+    });
+  }
+
+  /* ============ Capture du gabarit source AVANT tout rendu ============ */
+  var SHELL_HTML = document.head.outerHTML + "\n" + document.body.outerHTML;
+
+  /* ============ Chargement de l'état ============ */
+  function blankState(){
+    return {
+      meta:{ caseNo: String(1000+Math.floor(Math.random()*9000)), example:false },
+      solution:{ mobile:null, methode:null, lieu:null, faille:null },
+      suspects:[],
+      timeline:{ slots:[] },
+      clues:[],
+      chaosLog:[],
+      checklist:{ c1:false,c2:false,c3:false,c4:false,c5:false,c6:false,c7:false,c8:false }
+    };
+  }
+
+  var STATE;
+  (function loadState(){
+    try {
+      var stored = localStorage.getItem(LS_KEY);
+      if (stored) { STATE = JSON.parse(stored); return; }
+    } catch(e){}
+    try {
+      STATE = JSON.parse(document.getElementById("state-data").textContent);
+    } catch(e){
+      STATE = blankState();
+    }
+  })();
+
+  function saveLocal(){
+    try { localStorage.setItem(LS_KEY, JSON.stringify(STATE)); } catch(e){}
+  }
+
+  /* ============ Intégrité des données croisées ============ */
+  function syncCrossData(){
+    var ids = STATE.suspects.map(function(s){ return s.id; });
+    STATE.clues.forEach(function(c){
+      var m = c.marks || {};
+      ids.forEach(function(id){ if (!(id in m)) m[id] = "neutre"; });
+      Object.keys(m).forEach(function(id){ if (ids.indexOf(id) === -1) delete m[id]; });
+      c.marks = m;
+    });
+    STATE.timeline.slots.forEach(function(sl){
+      var p = sl.presence || {};
+      ids.forEach(function(id){ if (!(id in p)) p[id] = "?"; });
+      Object.keys(p).forEach(function(id){ if (ids.indexOf(id) === -1) delete p[id]; });
+      sl.presence = p;
+    });
+  }
+
+  function getCoupable(){ return STATE.suspects.find(function(s){ return s.coupable; }) || null; }
+
+  /* ============ Auto-calculs de la checklist ============ */
+  function computeAuto(key){
+    if (key === "c2"){
+      if (!STATE.suspects.length) return false;
+      return STATE.suspects.every(function(s){ return s.mobile && s.secret; });
+    }
+    if (key === "c4"){
+      var innocents = STATE.suspects.filter(function(s){ return !s.coupable; });
+      if (!innocents.length) return false;
+      return innocents.every(function(s){
+        return STATE.clues.some(function(c){ return c.marks && c.marks[s.id] === "innocente"; });
+      });
+    }
+    return null;
+  }
+
+  /* ============ Rendu : composants partagés ============ */
+  function chips(bank, current, action, id, extra){
+    return '<div class="chip-row">' +
+      bank.map(function(v){
+        var sel = v === current ? " selected" : "";
+        return '<button type="button" class="chip' + sel + '" data-action="' + action + '" data-id="' + id + '" data-value="' + escapeHtml(v) + '">' + escapeHtml(v) + '</button>';
+      }).join("") +
+      '<button type="button" class="dice" title="Tirer au hasard" data-action="' + (extra && extra.randAction ? extra.randAction : action.replace("set-","rand-")) + '" data-id="' + id + '">🎲</button>' +
+      '</div>';
+  }
+
+  /* ============ Rendu : Onglet Solution ============ */
+  function renderSolution(){
+    var el = document.getElementById("panel-solution");
+    var c = getCoupable();
+    var s = STATE.solution;
+    var html = '';
+    html += '<div class="panel-head"><h2>La vérité (à écrire en premier)</h2>' +
+            '<button class="btn btn-sm" data-action="rand-solution-all">🎲 Tout générer</button></div>';
+    html += '<p class="panel-sub">Fixez ici le socle caché avant d\'écrire le moindre indice : qui, pourquoi, comment, et par où le coupable s\'est trahi. Personne d\'autre ne verra cette page — c\'est votre boussole.</p>';
+
+    html += '<div class="field"><div class="field-label">Coupable</div>';
+    if (!STATE.suspects.length){
+      html += '<p class="hint">Ajoutez d\'abord des suspects dans l\'onglet « Suspects ».</p>';
+    } else {
+      html += '<div class="chip-row">' + STATE.suspects.map(function(sp){
+        var sel = sp.coupable ? " selected" : "";
+        return '<button type="button" class="chip' + sel + '" data-action="set-coupable" data-id="' + sp.id + '">' + escapeHtml(sp.name || "(sans nom)") + '</button>';
+      }).join("") + '</div>';
+    }
+    html += '</div>';
+
+    html += '<div class="field"><div class="field-label">Mobile</div>' + chips(BANKS.mobile, s.mobile, "set-solution-mobile", "solution") + '</div>';
+    html += '<div class="field"><div class="field-label">Méthode</div>' + chips(BANKS.methode, s.methode, "set-solution-methode", "solution") + '</div>';
+    html += '<div class="field"><div class="field-label">Lieu du crime</div>' + chips(BANKS.lieu, s.lieu, "set-solution-lieu", "solution") + '</div>';
+    html += '<div class="field"><div class="field-label">Sa faille (ce qui va le trahir)</div>' + chips(BANKS.faille, s.faille, "set-solution-faille", "solution") + '</div>';
+
+    var complete = c && s.mobile && s.methode && s.lieu && s.faille;
+    html += '<div class="truth-card"><div class="field-label" style="margin:0 0 4px;">Résumé</div>';
+    if (complete){
+      html += '<p class="truth-text"><b>' + escapeHtml(c.name || "Le coupable") + '</b> a commis le crime dans ' + escapeHtml(s.lieu) +
+              ', par <b>' + escapeHtml(s.mobile.toLowerCase()) + '</b>, à l\'aide de : <b>' + escapeHtml(s.methode.toLowerCase()) + '</b>.<br>' +
+              'Sa faille : ' + escapeHtml(c.name || "il/elle") + ' ' + escapeHtml(s.faille) + '.</p>';
+    } else {
+      html += '<p class="truth-text" style="opacity:.6;">Choisissez un coupable et complétez les quatre champs pour voir le résumé se former.</p>';
+    }
+    html += '</div>';
+
+    el.innerHTML = html;
+  }
+
+  /* ============ Rendu : Onglet Suspects ============ */
+  function renderSuspects(){
+    var el = document.getElementById("panel-suspects");
+    var html = '<div class="panel-head"><h2>Suspects</h2><button class="btn btn-sm btn-primary" data-action="add-suspect">+ Nouveau suspect</button></div>';
+    html += '<p class="panel-sub">Chaque suspect — coupable ou non — a besoin d\'un mobile, d\'un moyen, d\'une opportunité et d\'un secret. C\'est ce qui rend les fausses pistes honnêtes.</p>';
+
+    if (!STATE.suspects.length){
+      html += '<p class="hint">Aucun suspect pour l\'instant. Cliquez sur « + Nouveau suspect ».</p>';
+    } else {
+      html += '<div class="suspect-grid">';
+      STATE.suspects.forEach(function(sp){
+        html += '<div class="suspect-card' + (sp.coupable ? ' is-coupable' : '') + '">';
+        html += '<button class="card-del" title="Supprimer" data-action="del-suspect" data-id="' + sp.id + '">✕</button>';
+        html += '<div class="suspect-top">';
+        html += '<input class="suspect-name" data-bind="suspect-name" data-id="' + sp.id + '" value="' + escapeHtml(sp.name) + '" placeholder="Nom du suspect">';
+        html += '</div>';
+        html += '<button type="button" class="coupable-pin' + (sp.coupable ? ' on' : '') + '" data-action="set-coupable" data-id="' + sp.id + '">' + (sp.coupable ? '★ Coupable' : 'Marquer comme coupable') + '</button>';
+
+        html += '<div><div class="mini-label">Archétype</div>' + chips(BANKS.archetype, sp.archetype, "set-archetype", sp.id) + '</div>';
+        html += '<div><div class="mini-label">Mobile</div>' + chips(BANKS.mobile, sp.mobile, "set-mobile", sp.id) + '</div>';
+        html += '<div><div class="mini-label">Secret (non-criminel)</div>' + chips(BANKS.secret, sp.secret, "set-secret", sp.id) + '</div>';
+
+        html += '<div><div class="mini-label">Moyen (clic pour changer)</div><div class="toggle3">' +
+          '<button type="button" class="' + moyenClass(sp.moyen) + '" data-action="cycle-moyen" data-id="' + sp.id + '">' + labelMoyen(sp.moyen) + '</button></div></div>';
+
+        html += '<div><div class="mini-label">Opportunité (clic pour changer)</div><div class="toggle3">' +
+          '<button type="button" class="' + moyenClass(sp.opportunite) + '" data-action="cycle-opportunite" data-id="' + sp.id + '">' + labelMoyen(sp.opportunite) + '</button></div></div>';
+
+        html += '</div>';
+      });
+      html += '</div>';
+    }
+    el.innerHTML = html;
+  }
+  function labelMoyen(v){
+    if (v === "oui") return "✓ Oui";
+    if (v === "peut-être") return "~ Peut-être";
+    if (v === "non") return "✕ Non";
+    return "? Inconnu";
+  }
+  function moyenClass(v){
+    if (v === "oui") return "on-oui";
+    if (v === "peut-être") return "on-peut";
+    if (v === "non") return "on-non";
+    return "";
+  }
+
+  /* ============ Rendu : Onglet Chronologie ============ */
+  function renderChrono(){
+    var el = document.getElementById("panel-chrono");
+    var html = '<div class="panel-head"><h2>Chronologie</h2><button class="btn btn-sm btn-primary" data-action="add-slot">+ Ajouter un moment</button></div>';
+    html += '<p class="panel-sub">La vérité absolue : où était chaque suspect, à chaque instant. C\'est elle qui génère les alibis et les incohérences — cliquez les chips pour changer leur statut.</p>';
+
+    if (!STATE.suspects.length){
+      html += '<p class="hint">Ajoutez d\'abord des suspects dans l\'onglet « Suspects ».</p>';
+    } else if (!STATE.timeline.slots.length){
+      html += '<p class="hint">Aucun moment pour l\'instant. Cliquez sur « + Ajouter un moment ».</p>';
+    } else {
+      STATE.timeline.slots.forEach(function(sl){
+        html += '<div class="slot-card">';
+        html += '<div class="slot-top">';
+        html += '<input class="slot-label" data-bind="slot-label" data-id="' + sl.id + '" value="' + escapeHtml(sl.label) + '">';
+        html += '<button class="btn btn-icon btn-ghost" title="Supprimer ce moment" data-action="del-slot" data-id="' + sl.id + '">🗑</button>';
+        html += '</div>';
+        html += '<div class="presence-row">';
+        STATE.suspects.forEach(function(sp){
+          var st = (sl.presence && sl.presence[sp.id]) || "?";
+          html += '<button type="button" class="presence-chip st-' + st + '" data-action="cycle-presence" data-slot="' + sl.id + '" data-suspect="' + sp.id + '">' +
+            escapeHtml(sp.name || "(sans nom)") + ' — ' + PRESENCE_LABEL[st] + '</button>';
+        });
+        html += '</div></div>';
+      });
+    }
+    el.innerHTML = html;
+  }
+
+  /* ============ Rendu : Onglet Matrice ============ */
+  function renderMatrice(){
+    var el = document.getElementById("panel-matrice");
+    var html = '<div class="panel-head"><h2>Matrice indices × suspects</h2><button class="btn btn-sm btn-primary" data-action="add-clue">+ Ajouter un indice</button></div>';
+    html += '<p class="panel-sub">Cliquez une case pour la faire tourner : Neutre → Accuse → Innocente → Décisif. Chaque innocent doit avoir au moins une case « Innocente » ; aucune case seule ne doit suffire à conclure.</p>';
+    html += '<div class="legend">' +
+      '<span><i class="swatch" style="background:var(--neutral-chip)"></i>Neutre</span>' +
+      '<span><i class="swatch" style="background:var(--accent)"></i>Accuse</span>' +
+      '<span><i class="swatch" style="background:var(--good)"></i>Innocente</span>' +
+      '<span><i class="swatch" style="background:var(--accent);box-shadow:0 0 0 2px var(--ink) inset"></i>Décisif</span>' +
+      '</div>';
+
+    if (!STATE.suspects.length){
+      html += '<p class="hint">Ajoutez d\'abord des suspects dans l\'onglet « Suspects ».</p>';
+    } else if (!STATE.clues.length){
+      html += '<p class="hint">Aucun indice pour l\'instant. Cliquez sur « + Ajouter un indice » (ou passez par l\'onglet Chaos pour en générer).</p>';
+    } else {
+      html += '<div class="matrix-wrap"><table class="matrix"><thead><tr><th class="corner">Indice</th>';
+      STATE.suspects.forEach(function(sp){ html += '<th>' + escapeHtml(sp.name || "(sans nom)") + (sp.coupable ? ' ★' : '') + '</th>'; });
+      html += '</tr></thead><tbody>';
+      STATE.clues.forEach(function(c){
+        html += '<tr><td><div class="row-name-cell">';
+        html += '<input class="row-input" data-bind="clue-name" data-id="' + c.id + '" value="' + escapeHtml(c.name) + '">';
+        html += '<button type="button" class="niveau-badge" data-action="cycle-niveau" data-id="' + c.id + '">N' + c.niveau + '</button>';
+        html += '<button class="btn btn-icon btn-ghost" title="Supprimer" data-action="del-clue" data-id="' + c.id + '">🗑</button>';
+        html += '</div></td>';
+        STATE.suspects.forEach(function(sp){
+          var m = (c.marks && c.marks[sp.id]) || "neutre";
+          html += '<td class="mark-cell"><button type="button" class="mark-btn mk-' + m + '" data-action="cycle-mark" data-clue="' + c.id + '" data-suspect="' + sp.id + '">' + MARK_LABEL[m] + '</button></td>';
+        });
+        html += '</tr>';
+      });
+      html += '</tbody></table></div>';
+    }
+    el.innerHTML = html;
+  }
+
+  /* ============ Rendu : Onglet Chaos ============ */
+  function renderChaos(){
+    var el = document.getElementById("panel-chaos");
+    var html = '<div class="panel-head"><h2>Générateur de chaos</h2></div>';
+    html += '<p class="panel-sub">En panne d\'idée ? Tirez une piste, un objet ou un rebondissement — gardez ce qui vous plaît, jetez le reste.</p>';
+    html += '<div class="chaos-buttons">' +
+      '<button class="btn" data-action="chaos-fausse-piste">🎲 Fausse piste</button>' +
+      '<button class="btn" data-action="chaos-objet">🎲 Objet-indice</button>' +
+      '<button class="btn" data-action="chaos-rebondissement">🎲 Rebondissement</button>' +
+      '<button class="btn" data-action="chaos-archetype">🎲 Archétype de suspect</button>' +
+      (STATE.chaosLog.length ? '<button class="btn btn-ghost" data-action="chaos-clear">Vider le journal</button>' : '') +
+      '</div>';
+
+    if (!STATE.chaosLog.length){
+      html += '<p class="hint">Le journal est vide — tirez une idée ci-dessus.</p>';
+    } else {
+      html += '<div class="chaos-log">';
+      STATE.chaosLog.slice().reverse().forEach(function(entry, ri){
+        var i = STATE.chaosLog.length - 1 - ri;
+        html += '<div class="chaos-card"><div><span class="chaos-kind">' + escapeHtml(entry.kind) + '</span><span class="chaos-text">' + escapeHtml(entry.text) + '</span></div>';
+        html += '<div class="chaos-actions">';
+        if (entry.kind === "Objet-indice"){
+          html += '<button class="btn btn-sm" data-action="chaos-to-clue" data-idx="' + i + '">→ En faire un indice</button>';
+        }
+        html += '<button class="btn btn-icon btn-ghost" title="Retirer" data-action="chaos-remove" data-idx="' + i + '">✕</button>';
+        html += '</div></div>';
+      });
+      html += '</div>';
+    }
+    el.innerHTML = html;
+  }
+
+  /* ============ Rendu : Onglet Checklist ============ */
+  function renderChecklist(){
+    var el = document.getElementById("panel-checklist");
+    var html = '<div class="panel-head"><h2>Checklist finale</h2></div>';
+    html += '<p class="panel-sub">Avant de considérer l\'enquête terminée. Les items marqués « auto » se calculent seuls d\'après vos suspects et votre matrice.</p>';
+
+    var done = 0;
+    CHECKLIST_ITEMS.forEach(function(it){
+      var val = it.auto ? computeAuto(it.key) : !!STATE.checklist[it.key];
+      if (val) done++;
+    });
+    html += '<p class="progress-line">' + done + ' / ' + CHECKLIST_ITEMS.length + ' validés</p>';
+
+    html += '<div class="checklist">';
+    CHECKLIST_ITEMS.forEach(function(it){
+      var val = it.auto ? computeAuto(it.key) : !!STATE.checklist[it.key];
+      html += '<div class="check-item' + (val ? ' checked' : '') + (it.auto ? ' auto' : '') + '" data-action="' + (it.auto ? '' : 'toggle-checklist') + '" data-key="' + it.key + '">';
+      html += '<div class="check-box">' + (val ? '✓' : '') + '</div>';
+      html += '<div><div class="check-text">' + it.text + '</div>' + (it.auto ? '<div class="check-tag">calculé automatiquement</div>' : '') + '</div>';
+      html += '</div>';
+    });
+    html += '</div>';
+    el.innerHTML = html;
+  }
+
+  /* ============ Rendu global ============ */
+  var activeTab = "solution";
+  function renderAll(){
+    syncCrossData();
+    document.getElementById("case-no").textContent = "DOSSIER N° " + STATE.meta.caseNo;
+    document.getElementById("example-stamp").style.display = STATE.meta.example ? "" : "none";
+    renderSolution(); renderSuspects(); renderChrono(); renderMatrice(); renderChaos(); renderChecklist();
+    document.querySelectorAll(".tab-btn").forEach(function(b){ b.classList.toggle("active", b.getAttribute("data-tab") === activeTab); });
+    document.querySelectorAll(".panel").forEach(function(p){ p.classList.toggle("active", p.id === "panel-" + activeTab); });
+  }
+
+  /* ============ Mutations ============ */
+  function addSuspect(){
+    var sp = { id: uid("s"), name:"", archetype: rand(BANKS.archetype), mobile:null, secret:null, moyen:"?", opportunite:"?", coupable: STATE.suspects.length === 0 };
+    STATE.suspects.push(sp);
+  }
+  function delSuspect(id){
+    STATE.suspects = STATE.suspects.filter(function(s){ return s.id !== id; });
+    if (STATE.suspects.length && !STATE.suspects.some(function(s){return s.coupable;})) STATE.suspects[0].coupable = true;
+  }
+  function setCoupable(id){
+    STATE.suspects.forEach(function(s){ s.coupable = (s.id === id); });
+  }
+  function cycleMoyenLike(sp, field){
+    var i = MOYEN_CYCLE.indexOf(sp[field]);
+    sp[field] = MOYEN_CYCLE[(i+1) % MOYEN_CYCLE.length];
+  }
+  function addSlot(){
+    var n = STATE.timeline.slots.length;
+    var label = n === 0 ? "T-1h" : (n === 1 ? "T0 — le crime" : "T+" + (30*(n-1)) + "min");
+    var presence = {}; STATE.suspects.forEach(function(s){ presence[s.id] = "?"; });
+    STATE.timeline.slots.push({ id: uid("t"), label: label, presence: presence });
+  }
+  function addClue(name, niveau){
+    var marks = {}; STATE.suspects.forEach(function(s){ marks[s.id] = "neutre"; });
+    STATE.clues.push({ id: uid("c"), name: name || "Nouvel indice", niveau: niveau || 1, marks: marks });
+  }
+  function chaosPush(kind, text){
+    STATE.chaosLog.push({ kind: kind, text: text });
+  }
+
+  /* ============ Construction du document complet (pour publication) ============ */
+  function buildFullHtml(state){
+    var json = JSON.stringify(state).replace(/</g, "\\u003c");
+    var out = SHELL_HTML.replace(
+      /<script id="state-data" type="application\/json">[\s\S]*?<\/script>/,
+      '<script id="state-data" type="application/json">' + json + '<\/script>'
+    );
+    return "<!doctype html>\n<html>\n" + out + "\n</html>";
+  }
+
+  /* ============ Capacité d'artefact ============ */
+  var artifactCap = null;
+  function setStatus(msg){ document.getElementById("save-status").textContent = msg; }
+  (function initCapability(){
+    if (typeof window.claude === "undefined" || !window.claude.use){ setStatus("Sauvegarde locale seulement (ce navigateur)."); return; }
+    window.claude.use("artifact").then(function(ns){
+      artifactCap = ns;
+      if (!ns) setStatus("Sauvegarde locale seulement (ce navigateur).");
+    }).catch(function(){ setStatus("Sauvegarde locale seulement (ce navigateur)."); });
+  })();
+
+  function saveDossier(){
+    saveLocal();
+    if (artifactCap && artifactCap.publish){
+      setStatus("Sauvegarde du dossier…");
+      artifactCap.publish(buildFullHtml(STATE)).catch(function(err){
+        var code = err && err.code;
+        if (code === "conflict"){ setStatus("Une version plus récente existait — rechargement…"); }
+        else if (code === "not_granted" || code === "not_writer"){ setStatus("Lecture seule ici — conservé dans ce navigateur."); }
+        else { setStatus("Échec de la sauvegarde partagée — conservé dans ce navigateur."); }
+      });
+    } else {
+      setStatus("Enregistré dans ce navigateur.");
+    }
+  }
+
+  /* ============ Délégation d'événements ============ */
+  document.body.addEventListener("click", function(e){
+    var t = e.target.closest("[data-action]");
+    if (!t) return;
+    var action = t.getAttribute("data-action");
+    if (!action) return;
+    var id = t.getAttribute("data-id");
+    var value = t.getAttribute("data-value");
+
+    switch(action){
+      case "switch-tab": activeTab = t.getAttribute("data-tab"); break;
+      case "save-dossier": saveDossier(); break;
+      case "reset-dossier":
+        if (confirm("Repartir sur un dossier vierge ? Le dossier actuel sera remplacé (une sauvegarde reste disponible via l'historique de l'artefact).")){
+          STATE = blankState();
+        } else { return; }
+        break;
+
+      case "set-solution-mobile": STATE.solution.mobile = value; break;
+      case "set-solution-methode": STATE.solution.methode = value; break;
+      case "set-solution-lieu": STATE.solution.lieu = value; break;
+      case "set-solution-faille": STATE.solution.faille = value; break;
+      case "rand-solution-mobile": STATE.solution.mobile = randExcl(BANKS.mobile, STATE.solution.mobile); break;
+      case "rand-solution-methode": STATE.solution.methode = randExcl(BANKS.methode, STATE.solution.methode); break;
+      case "rand-solution-lieu": STATE.solution.lieu = randExcl(BANKS.lieu, STATE.solution.lieu); break;
+      case "rand-solution-faille": STATE.solution.faille = randExcl(BANKS.faille, STATE.solution.faille); break;
+      case "rand-solution-all":
+        STATE.solution.mobile = rand(BANKS.mobile); STATE.solution.methode = rand(BANKS.methode);
+        STATE.solution.lieu = rand(BANKS.lieu); STATE.solution.faille = rand(BANKS.faille);
+        break;
+
+      case "set-coupable": setCoupable(id); break;
+      case "add-suspect": addSuspect(); break;
+      case "del-suspect": delSuspect(id); break;
+      case "set-archetype": STATE.suspects.find(function(s){return s.id===id;}).archetype = value; break;
+      case "rand-archetype": (function(){ var s=STATE.suspects.find(function(x){return x.id===id;}); s.archetype = randExcl(BANKS.archetype, s.archetype); })(); break;
+      case "set-mobile": STATE.suspects.find(function(s){return s.id===id;}).mobile = value; break;
+      case "rand-mobile": (function(){ var s=STATE.suspects.find(function(x){return x.id===id;}); s.mobile = randExcl(BANKS.mobile, s.mobile); })(); break;
+      case "set-secret": STATE.suspects.find(function(s){return s.id===id;}).secret = value; break;
+      case "rand-secret": (function(){ var s=STATE.suspects.find(function(x){return x.id===id;}); s.secret = randExcl(BANKS.secret, s.secret); })(); break;
+      case "cycle-moyen": cycleMoyenLike(STATE.suspects.find(function(s){return s.id===id;}), "moyen"); break;
+      case "cycle-opportunite": cycleMoyenLike(STATE.suspects.find(function(s){return s.id===id;}), "opportunite"); break;
+
+      case "add-slot": addSlot(); break;
+      case "del-slot": STATE.timeline.slots = STATE.timeline.slots.filter(function(s){return s.id!==id;}); break;
+      case "cycle-presence": (function(){
+          var sl = STATE.timeline.slots.find(function(s){return s.id===t.getAttribute("data-slot");});
+          var sid = t.getAttribute("data-suspect");
+          var cur = sl.presence[sid] || "?";
+          sl.presence[sid] = PRESENCE_CYCLE[(PRESENCE_CYCLE.indexOf(cur)+1) % PRESENCE_CYCLE.length];
+        })(); break;
+
+      case "add-clue": addClue(); break;
+      case "del-clue": STATE.clues = STATE.clues.filter(function(c){return c.id!==id;}); break;
+      case "cycle-niveau": (function(){ var c=STATE.clues.find(function(x){return x.id===id;}); c.niveau = (c.niveau % 3) + 1; })(); break;
+      case "cycle-mark": (function(){
+          var c = STATE.clues.find(function(x){return x.id===t.getAttribute("data-clue");});
+          var sid = t.getAttribute("data-suspect");
+          var cur = c.marks[sid] || "neutre";
+          c.marks[sid] = MARK_CYCLE[(MARK_CYCLE.indexOf(cur)+1) % MARK_CYCLE.length];
+        })(); break;
+
+      case "chaos-fausse-piste": (function(){
+          if (!STATE.suspects.length){ chaosPush("Fausse piste", "Ajoutez d'abord des suspects pour générer une fausse piste."); return; }
+          var innocents = STATE.suspects.filter(function(s){return !s.coupable;});
+          var sp = rand(innocents.length ? innocents : STATE.suspects);
+          var sec = rand(BANKS.secret);
+          chaosPush("Fausse piste", (sp.name || "Ce suspect") + " se comporte étrangement parce qu'il/elle cache : " + sec.toLowerCase() + " — pas le crime.");
+        })(); break;
+      case "chaos-objet": chaosPush("Objet-indice", rand(BANKS.objet)); break;
+      case "chaos-rebondissement": chaosPush("Rebondissement", rand(BANKS.rebondissement)); break;
+      case "chaos-archetype": chaosPush("Archétype", rand(BANKS.archetype)); break;
+      case "chaos-clear": STATE.chaosLog = []; break;
+      case "chaos-remove": STATE.chaosLog.splice(parseInt(t.getAttribute("data-idx"),10), 1); break;
+      case "chaos-to-clue": (function(){
+          var idx = parseInt(t.getAttribute("data-idx"),10);
+          var entry = STATE.chaosLog[idx];
+          if (entry) addClue(entry.text, 1);
+        })(); break;
+
+      case "toggle-checklist": STATE.checklist[t.getAttribute("data-key")] = !STATE.checklist[t.getAttribute("data-key")]; break;
+
+      default: return;
+    }
+
+    STATE.meta.example = false;
+    saveLocal();
+    renderAll();
+  });
+
+  document.body.addEventListener("input", function(e){
+    var el = e.target.closest("[data-bind]");
+    if (!el) return;
+    var bind = el.getAttribute("data-bind");
+    var id = el.getAttribute("data-id");
+    if (bind === "suspect-name"){ STATE.suspects.find(function(s){return s.id===id;}).name = el.value; }
+    else if (bind === "slot-label"){ STATE.timeline.slots.find(function(s){return s.id===id;}).label = el.value; }
+    else if (bind === "clue-name"){ STATE.clues.find(function(c){return c.id===id;}).name = el.value; }
+    STATE.meta.example = false;
+    saveLocal();
+  });
+
+  renderAll();
+})();
+</script>
