@@ -1,0 +1,1003 @@
+<title>Alvéole</title>
+<meta name="description" content="Une formation complète pour débuter en apiculture : anatomie, castes, cycle de vie, ressources, communication, orientation, défense et entretien de la ruche.">
+<style>
+  :root{
+    --ink:#241a10;
+    --ink-soft:#5b4a37;
+    --ground:#f3e7cd;
+    --surface:#fffaf0;
+    --surface-2:#eaddbd;
+    --line: rgba(36,26,16,0.16);
+    --accent:#b9740f;
+    --accent-strong:#8a5710;
+    --accent-soft:#eed69c;
+    --moss:#4f6e46;
+    --moss-soft:#dbe6d0;
+    --alarm:#9c4430;
+    --alarm-soft:#f0dcd0;
+    --font-display:'Fraunces', Georgia, 'Iowan Old Style', serif;
+    --font-body:'Public Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --font-mono:'JetBrains Mono', ui-monospace, 'SF Mono', Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --ink:#f1e5c9;
+      --ink-soft:#c7b696;
+      --ground:#1a130b;
+      --surface:#231a10;
+      --surface-2:#2d2213;
+      --line: rgba(241,229,201,0.14);
+      --accent:#e6a83f;
+      --accent-strong:#f4c368;
+      --accent-soft:#4a3517;
+      --moss:#8fae80;
+      --moss-soft:#2a3524;
+      --alarm:#dd8365;
+      --alarm-soft:#3a241b;
+    }
+  }
+  :root[data-theme="dark"]{
+    --ink:#f1e5c9;
+    --ink-soft:#c7b696;
+    --ground:#1a130b;
+    --surface:#231a10;
+    --surface-2:#2d2213;
+    --line: rgba(241,229,201,0.14);
+    --accent:#e6a83f;
+    --accent-strong:#f4c368;
+    --accent-soft:#4a3517;
+    --moss:#8fae80;
+    --moss-soft:#2a3524;
+    --alarm:#dd8365;
+    --alarm-soft:#3a241b;
+  }
+
+  *{box-sizing:border-box;}
+  html{-webkit-text-size-adjust:100%;}
+  body{
+    margin:0;
+    background:var(--ground);
+    color:var(--ink);
+    font-family:var(--font-body);
+    font-size:16px;
+    line-height:1.65;
+  }
+  h1,h2,h3{
+    font-family:var(--font-display);
+    color:var(--ink);
+    text-wrap:balance;
+    font-weight:600;
+  }
+  a{color:var(--accent-strong);}
+  a:focus-visible, button:focus-visible, summary:focus-visible{
+    outline:2px solid var(--accent);
+    outline-offset:3px;
+    border-radius:2px;
+  }
+  ::selection{background:var(--accent-soft);}
+
+  /* ---------- masthead ---------- */
+  .masthead{
+    padding: 3.2rem 2rem 2.4rem;
+    max-width:1100px;
+    margin:0 auto;
+  }
+  .comb-row{
+    display:flex;
+    gap:6px;
+    margin-bottom:1.6rem;
+  }
+  .comb-row svg{display:block;}
+  .eyebrow{
+    font-family:var(--font-mono);
+    font-size:.72rem;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:var(--accent-strong);
+    margin:0 0 .9rem;
+  }
+  .masthead h1{
+    font-size:clamp(2.6rem, 2.1rem + 2.4vw, 4rem);
+    line-height:1.02;
+    margin:0 0 1rem;
+    letter-spacing:-0.01em;
+  }
+  .masthead h1 em{
+    font-style:italic;
+    font-weight:500;
+    color:var(--accent-strong);
+  }
+  .lede{
+    max-width:62ch;
+    font-size:1.15rem;
+    color:var(--ink-soft);
+    margin:0 0 1.8rem;
+  }
+  .meta-row{
+    display:flex;
+    flex-wrap:wrap;
+    gap:1.6rem 2.2rem;
+    font-family:var(--font-mono);
+    font-size:.82rem;
+    color:var(--ink-soft);
+    border-top:1px solid var(--line);
+    padding-top:1.1rem;
+  }
+  .meta-row strong{
+    display:block;
+    font-family:var(--font-body);
+    font-size:.95rem;
+    font-weight:600;
+    color:var(--ink);
+    margin-top:.15rem;
+  }
+
+  /* ---------- layout ---------- */
+  .layout{
+    max-width:1100px;
+    margin:0 auto;
+    padding:0 2rem 5rem;
+    display:grid;
+    grid-template-columns: 230px minmax(0,1fr);
+    gap:3.2rem;
+    align-items:start;
+  }
+  nav.toc{
+    position:sticky;
+    top:2rem;
+    font-size:.88rem;
+  }
+  nav.toc .toc-label{
+    font-family:var(--font-mono);
+    font-size:.7rem;
+    letter-spacing:.12em;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+    margin:0 0 .8rem;
+  }
+  nav.toc ol{
+    list-style:none;
+    margin:0;
+    padding:0;
+    border-left:1px solid var(--line);
+  }
+  nav.toc li{margin:0;}
+  nav.toc a{
+    display:flex;
+    gap:.6rem;
+    align-items:baseline;
+    text-decoration:none;
+    color:var(--ink-soft);
+    padding:.42rem .9rem;
+    margin-left:-1px;
+    border-left:1px solid transparent;
+    transition:color .15s ease, border-color .15s ease;
+  }
+  nav.toc a:hover{color:var(--ink);}
+  nav.toc a .n{
+    font-family:var(--font-mono);
+    font-size:.76rem;
+    color:var(--accent-strong);
+    flex:none;
+  }
+  nav.toc a.active{
+    color:var(--ink);
+    border-left-color:var(--accent);
+    font-weight:600;
+  }
+  nav.toc a.active .n{color:var(--accent-strong);}
+
+  main{min-width:0;}
+
+  .module{
+    padding-top:.4rem;
+    scroll-margin-top:1.6rem;
+  }
+  .module + .module{margin-top:0;}
+  .module-head{
+    display:flex;
+    align-items:baseline;
+    gap:1rem;
+    margin-bottom:1.3rem;
+  }
+  .module-num{
+    font-family:var(--font-mono);
+    font-size:1rem;
+    color:var(--accent-strong);
+    background:var(--accent-soft);
+    padding:.15rem .55rem;
+    border-radius:4px;
+    line-height:1.4;
+  }
+  .module-head h2{
+    font-size:clamp(1.5rem, 1.3rem + 0.8vw, 1.95rem);
+    margin:0;
+  }
+  .module-kicker{
+    font-family:var(--font-mono);
+    font-size:.72rem;
+    letter-spacing:.1em;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+    margin:0 0 .3rem;
+  }
+  .module p{max-width:68ch;}
+  .module ul, .module ol{max-width:66ch;}
+  .module li{margin-bottom:.4rem;}
+  .module h3{
+    font-size:1.08rem;
+    margin:1.6rem 0 .6rem;
+  }
+
+  .divider{
+    margin:3.2rem 0;
+    display:flex;
+    justify-content:flex-start;
+  }
+  .divider svg{display:block; opacity:.55;}
+
+  /* callouts */
+  .callout{
+    max-width:66ch;
+    padding:1rem 1.2rem;
+    border-left:3px solid var(--accent);
+    background:var(--surface);
+    border-radius:0 8px 8px 0;
+    margin:1.4rem 0;
+  }
+  .callout p{margin:0; max-width:none;}
+  .callout p + p{margin-top:.5rem;}
+  .callout .tag{
+    font-family:var(--font-mono);
+    font-size:.7rem;
+    letter-spacing:.1em;
+    text-transform:uppercase;
+    color:var(--accent-strong);
+    display:block;
+    margin-bottom:.4rem;
+  }
+  .callout--moss{border-left-color:var(--moss);}
+  .callout--moss .tag{color:var(--moss);}
+  .callout--alarm{border-left-color:var(--alarm);}
+  .callout--alarm .tag{color:var(--alarm);}
+
+  /* diagram frame */
+  figure.diagram{
+    margin:1.6rem 0 1.8rem;
+    max-width:100%;
+  }
+  figure.diagram .frame{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:1rem 1.2rem;
+    overflow-x:auto;
+  }
+  figure.diagram svg{display:block; max-width:100%; height:auto;}
+  figure.diagram figcaption{
+    font-family:var(--font-mono);
+    font-size:.78rem;
+    color:var(--ink-soft);
+    margin-top:.6rem;
+    max-width:66ch;
+  }
+
+  /* tables */
+  .table-wrap{overflow-x:auto; margin:1.4rem 0;}
+  table{
+    border-collapse:collapse;
+    width:100%;
+    max-width:66ch;
+    font-size:.94rem;
+  }
+  th,td{
+    text-align:left;
+    padding:.55rem .8rem;
+    border-bottom:1px solid var(--line);
+  }
+  th{
+    font-family:var(--font-mono);
+    font-size:.72rem;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+    font-weight:500;
+  }
+  td.num, th.num{font-family:var(--font-mono); font-variant-numeric:tabular-nums; text-align:right;}
+
+  /* caste badges */
+  .caste{
+    display:inline-flex;
+    align-items:center;
+    gap:.4rem;
+    font-family:var(--font-mono);
+    font-size:.78rem;
+    padding:.15rem .5rem;
+    border-radius:99px;
+    border:1px solid var(--line);
+  }
+  .caste .dot{width:.5rem;height:.5rem;border-radius:50%;}
+  .caste.reine .dot{background:var(--accent);}
+  .caste.ouvriere .dot{background:var(--moss);}
+  .caste.male .dot{background:var(--ink-soft);}
+
+  /* glossary */
+  .glossary{
+    display:grid;
+    grid-template-columns:1fr;
+    gap:.9rem 2rem;
+    max-width:none;
+  }
+  @media (min-width:640px){
+    .glossary{grid-template-columns:1fr 1fr;}
+  }
+  .glossary dt{
+    font-family:var(--font-display);
+    font-weight:600;
+    color:var(--ink);
+    font-size:1rem;
+  }
+  .glossary dd{
+    margin:.15rem 0 0;
+    color:var(--ink-soft);
+    font-size:.92rem;
+  }
+
+  footer.colophon{
+    max-width:1100px;
+    margin:0 auto;
+    padding:2.4rem 2rem 4rem;
+    border-top:1px solid var(--line);
+    color:var(--ink-soft);
+    font-size:.88rem;
+  }
+  footer.colophon p{max-width:60ch;}
+
+  @media (max-width:860px){
+    .layout{grid-template-columns:1fr;}
+    nav.toc{
+      position:static;
+      border:1px solid var(--line);
+      border-radius:10px;
+      padding:.4rem 0;
+      background:var(--surface);
+    }
+    nav.toc ol{border-left:none;}
+    nav.toc a{border-left:none; padding:.5rem 1rem;}
+    nav.toc a.active{background:var(--accent-soft);}
+  }
+
+  @media (prefers-reduced-motion: no-preference){
+    .module{animation:rise .5s ease both;}
+  }
+  @keyframes rise{
+    from{opacity:0; transform:translateY(8px);}
+    to{opacity:1; transform:translateY(0);}
+  }
+</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,500&family=Public+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+
+<header class="masthead">
+  <div class="comb-row" aria-hidden="true">
+    <svg width="620" height="26" viewBox="0 0 620 26">
+      <g fill="none" stroke="var(--accent)" stroke-width="1.4">
+        <polygon points="13,1 24,7 24,19 13,25 2,19 2,7"/>
+        <polygon points="35,1 46,7 46,19 35,25 24,19 24,7"/>
+        <polygon points="57,1 68,7 68,19 57,25 46,19 46,7"/>
+        <polygon points="79,1 90,7 90,19 79,25 68,19 68,7"/>
+        <polygon points="101,1 112,7 112,19 101,25 90,19 90,7"/>
+        <polygon points="123,1 134,7 134,19 123,25 112,19 112,7"/>
+      </g>
+      <g fill="none" stroke="var(--line)" stroke-width="1.2">
+        <polygon points="145,1 156,7 156,19 145,25 134,19 134,7"/>
+        <polygon points="167,1 178,7 178,19 167,25 156,19 156,7"/>
+        <polygon points="189,1 200,7 200,19 189,25 178,19 178,7"/>
+        <polygon points="211,1 222,7 222,19 211,25 200,19 200,7"/>
+        <polygon points="233,1 244,7 244,19 233,25 222,19 222,7"/>
+        <polygon points="255,1 266,7 266,19 255,25 244,19 244,7"/>
+        <polygon points="277,1 288,7 288,19 277,25 266,19 266,7"/>
+        <polygon points="299,1 310,7 310,19 299,25 288,19 288,7"/>
+        <polygon points="321,1 332,7 332,19 321,25 310,19 310,7"/>
+        <polygon points="343,1 354,7 354,19 343,25 332,19 332,7"/>
+        <polygon points="365,1 376,7 376,19 365,25 354,19 354,7"/>
+        <polygon points="387,1 398,7 398,19 387,25 376,19 376,7"/>
+        <polygon points="409,1 420,7 420,19 409,25 398,19 398,7"/>
+        <polygon points="431,1 442,7 442,19 431,25 420,19 420,7"/>
+        <polygon points="453,1 464,7 464,19 453,25 442,19 442,7"/>
+        <polygon points="475,1 486,7 486,19 475,25 464,19 464,7"/>
+        <polygon points="497,1 508,7 508,19 497,25 486,19 486,7"/>
+        <polygon points="519,1 530,7 530,19 519,25 508,19 508,7"/>
+        <polygon points="541,1 552,7 552,19 541,25 530,19 530,7"/>
+        <polygon points="563,1 574,7 574,19 563,25 552,19 552,7"/>
+        <polygon points="585,1 596,7 596,19 585,25 574,19 574,7"/>
+        <polygon points="607,1 618,7 618,19 607,25 596,19 596,7"/>
+      </g>
+    </svg>
+  </div>
+  <p class="eyebrow">Formation apiculture — niveau débutant — 10 modules</p>
+  <h1>Alv<em>é</em>ole</h1>
+  <p class="lede">Tout ce qu'il faut comprendre avant d'installer sa première ruche : comment l'abeille domestique (<em>Apis mellifera</em>) est bâtie, comment la colonie s'organise, fabrique ses ressources, communique, se défend — puis comment on obtient et entretient soi-même une colonie.</p>
+  <div class="meta-row">
+    <div>Espèce étudiée<strong>Apis mellifera</strong></div>
+    <div>Format<strong>10 modules, à lire dans l'ordre ou en piochant</strong></div>
+    <div>Prérequis<strong>Aucun — tout part de zéro</strong></div>
+    <div>Dernière mise à jour<strong>14 septembre 2026</strong></div>
+  </div>
+</header>
+
+<div class="layout">
+  <nav class="toc" aria-label="Sommaire de la formation">
+    <p class="toc-label">Sommaire</p>
+    <ol>
+      <li><a href="#m01"><span class="n">01</span> Anatomie</a></li>
+      <li><a href="#m02"><span class="n">02</span> La colonie & les castes</a></li>
+      <li><a href="#m03"><span class="n">03</span> Cycle de vie</a></li>
+      <li><a href="#m04"><span class="n">04</span> Les ressources</a></li>
+      <li><a href="#m05"><span class="n">05</span> Communication & danses</a></li>
+      <li><a href="#m06"><span class="n">06</span> Phéromones</a></li>
+      <li><a href="#m07"><span class="n">07</span> Orientation</a></li>
+      <li><a href="#m08"><span class="n">08</span> Défense</a></li>
+      <li><a href="#m09"><span class="n">09</span> Rythmes & comportements</a></li>
+      <li><a href="#m10"><span class="n">10</span> Débuter en apiculture</a></li>
+      <li><a href="#glossaire"><span class="n">—</span> Glossaire</a></li>
+    </ol>
+  </nav>
+
+  <main>
+
+    <!-- MODULE 01 — ANATOMIE -->
+    <section class="module" id="m01">
+      <p class="module-kicker">Module 01</p>
+      <div class="module-head">
+        <span class="module-num">01</span>
+        <h2>Anatomie : comment elles sont conçues</h2>
+      </div>
+      <p>Comme tout insecte, l'abeille a un corps en trois parties — tête, thorax, abdomen — mais chaque partie est un petit concentré d'ingénierie taillé pour la vie de la ruche.</p>
+
+      <h3>La tête</h3>
+      <p>Elle porte deux <strong>yeux composés</strong> (des milliers de facettes, sensibles à l'ultraviolet et à la lumière polarisée) et trois <strong>ocelles</strong>, de simples capteurs de luminosité disposés en triangle sur le sommet du crâne, qui aident à garder le cap en vol. Les <strong>antennes</strong> concentrent l'essentiel du flair de l'abeille : des milliers de récepteurs chimiques qui identifient les phéromones de la colonie, l'odeur des fleurs, le taux de CO₂ dans la ruche. La bouche associe des <strong>mandibules</strong> (pour mastiquer la cire, pétrir la propolis, nourrir les larves) et une <strong>langue</strong> (glosse) rétractable, véritable paille poilue pour aspirer le nectar au fond des corolles.</p>
+
+      <h3>Le thorax</h3>
+      <p>Moteur de l'abeille : il porte les <strong>trois paires de pattes</strong> et les <strong>deux paires d'ailes</strong>, reliées entre elles par une rangée de minuscules crochets (les hamuli) qui les solidarisent en vol. Sur la dernière paire de pattes de l'ouvrière se trouve la <strong>corbeille à pollen</strong> : une concavité bordée de poils raides où le pollen humidifié de nectar est comprimé en pelote.</p>
+
+      <h3>L'abdomen</h3>
+      <p>Il renferme le jabot (l'estomac social où le nectar est transporté et pré-digéré), les glandes cirières sur la face ventrale de l'ouvrière, et — uniquement chez les femelles — le <strong>dard</strong>, un ovipositor modifié relié à une glande à venin. Le mâle n'a pas de dard : il ne peut ni piquer, ni récolter, ni produire de cire.</p>
+
+      <figure class="diagram">
+        <div class="frame">
+          <svg viewBox="0 0 680 265" role="img" aria-labelledby="anat-title anat-desc">
+            <title id="anat-title">Schéma d'une ouvrière vue de profil</title>
+            <desc id="anat-desc">Corps en trois segments : tête avec antennes et yeux, thorax avec ailes et pattes, abdomen rayé se terminant par le dard.</desc>
+            <!-- abdomen -->
+            <ellipse cx="410" cy="140" rx="150" ry="58" fill="var(--accent-soft)" stroke="var(--ink)" stroke-width="2"/>
+            <g stroke="var(--ink)" stroke-width="2" opacity="0.55">
+              <line x1="300" y1="92" x2="300" y2="188"/>
+              <line x1="340" y1="86" x2="340" y2="194"/>
+              <line x1="382" y1="83" x2="382" y2="197"/>
+              <line x1="424" y1="83" x2="424" y2="197"/>
+              <line x1="466" y1="86" x2="466" y2="194"/>
+              <line x1="508" y1="92" x2="508" y2="188"/>
+            </g>
+            <!-- sting -->
+            <path d="M556,140 L588,140 L556,150 Z" fill="var(--ink)"/>
+            <!-- wings -->
+            <ellipse cx="330" cy="90" rx="70" ry="34" fill="var(--surface)" stroke="var(--ink)" stroke-width="1.6" opacity="0.9" transform="rotate(-14 330 90)"/>
+            <ellipse cx="380" cy="82" rx="52" ry="24" fill="var(--surface)" stroke="var(--ink)" stroke-width="1.4" opacity="0.85" transform="rotate(-10 380 82)"/>
+            <!-- thorax -->
+            <circle cx="248" cy="140" r="46" fill="var(--moss-soft)" stroke="var(--ink)" stroke-width="2"/>
+            <!-- legs -->
+            <g stroke="var(--ink)" stroke-width="2" fill="none">
+              <path d="M230,178 L210,210 L188,222"/>
+              <path d="M255,182 L245,216 L222,232"/>
+              <path d="M270,175 L268,208 L250,222"/>
+            </g>
+            <!-- pollen basket marker -->
+            <circle cx="222" cy="232" r="7" fill="var(--accent)"/>
+            <!-- head -->
+            <circle cx="168" cy="132" r="34" fill="var(--surface-2)" stroke="var(--ink)" stroke-width="2"/>
+            <!-- eye -->
+            <ellipse cx="176" cy="126" rx="13" ry="17" fill="var(--ink)" opacity="0.8" transform="rotate(20 176 126)"/>
+            <!-- ocelli -->
+            <circle cx="160" cy="104" r="2.4" fill="var(--ink)"/>
+            <circle cx="168" cy="100" r="2.4" fill="var(--ink)"/>
+            <circle cx="176" cy="103" r="2.4" fill="var(--ink)"/>
+            <!-- antennae -->
+            <path d="M150,110 C140,90 118,82 104,70" stroke="var(--ink)" stroke-width="2" fill="none"/>
+            <path d="M158,104 C154,82 138,68 128,52" stroke="var(--ink)" stroke-width="2" fill="none"/>
+            <!-- proboscis -->
+            <path d="M142,152 C130,166 122,178 116,196" stroke="var(--ink)" stroke-width="2" fill="none"/>
+
+            <!-- labels -->
+            <g font-family="var(--font-mono)" font-size="12" fill="var(--ink-soft)">
+              <line x1="104" y1="70" x2="70" y2="46" stroke="var(--line)"/>
+              <text x="20" y="42">antennes</text>
+
+              <line x1="176" y1="126" x2="176" y2="40" stroke="var(--line)"/>
+              <text x="140" y="34">œil composé</text>
+
+              <line x1="116" y1="196" x2="70" y2="222" stroke="var(--line)"/>
+              <text x="14" y="234">langue (glosse)</text>
+
+              <line x1="330" y1="70" x2="300" y2="22" stroke="var(--line)"/>
+              <text x="252" y="18">2 paires d'ailes</text>
+
+              <line x1="222" y1="232" x2="222" y2="250" stroke="var(--line)"/>
+              <text x="230" y="256">corbeille à pollen</text>
+
+              <line x1="410" y1="86" x2="440" y2="22" stroke="var(--line)"/>
+              <text x="400" y="18">abdomen (glandes cirières)</text>
+
+              <line x1="572" y1="145" x2="600" y2="170" stroke="var(--line)"/>
+              <text x="540" y="192">dard barbelé</text>
+            </g>
+          </svg>
+        </div>
+        <figcaption>Vue schématique d'une ouvrière. La reine a un abdomen plus long et un dard lisse ; le mâle a de grands yeux qui se rejoignent presque au sommet du crâne et ni dard ni corbeille à pollen.</figcaption>
+      </figure>
+
+      <div class="callout">
+        <span class="tag">À retenir</span>
+        <p>Une abeille « voit » dans l'ultraviolet et perçoit la polarisation de la lumière — deux sens que nous n'avons pas — mais distingue mal le rouge, qu'elle confond souvent avec le noir.</p>
+      </div>
+    </section>
+
+    <div class="divider" aria-hidden="true">
+      <svg width="260" height="24" viewBox="0 0 260 24"><g fill="none" stroke="var(--line)" stroke-width="1.2"><polygon points="12,1 22,7 22,17 12,23 2,17 2,7"/><polygon points="32,1 42,7 42,17 32,23 22,17 22,7"/><polygon points="52,1 62,7 62,17 52,23 42,17 42,7"/><polygon points="72,1 82,7 82,17 72,23 62,17 62,7"/><polygon points="92,1 102,7 102,17 92,23 82,17 82,7"/><polygon points="112,1 122,7 122,17 112,23 102,17 102,7"/></g></svg>
+    </div>
+
+    <!-- MODULE 02 — COLONIE & CASTES -->
+    <section class="module" id="m02">
+      <p class="module-kicker">Module 02</p>
+      <div class="module-head">
+        <span class="module-num">02</span>
+        <h2>La colonie et ses trois castes</h2>
+      </div>
+      <p>Une colonie n'est pas une addition d'individus mais un seul organisme réparti sur des milliers de corps : c'est ce que les biologistes appellent un <strong>superorganisme</strong>. Trois castes s'y partagent les rôles.</p>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Caste</th><th>Effectif type</th><th>Origine de l'œuf</th><th>Rôle</th></tr></thead>
+          <tbody>
+            <tr><td><span class="caste reine"><span class="dot"></span>Reine</span></td><td class="num">1</td><td>fécondé (diploïde)</td><td>pond tous les œufs de la colonie</td></tr>
+            <tr><td><span class="caste ouvriere"><span class="dot"></span>Ouvrières</span></td><td class="num">10 000–60 000</td><td>fécondé (diploïde)</td><td>tout le travail de la ruche</td></tr>
+            <tr><td><span class="caste male"><span class="dot"></span>Mâles (faux-bourdons)</span></td><td class="num">0–qq. centaines</td><td>non fécondé (haploïde)</td><td>se reproduire, rien d'autre</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>La reine</h3>
+      <p>Seule femelle sexuellement fonctionnelle de la colonie, elle ne fait qu'une chose : pondre — jusqu'à 2 000 œufs par jour en pleine saison. Elle s'accouple une seule fois dans sa vie, tôt, en vol, avec 10 à 20 mâles venus d'autres colonies (les « vols nuptiaux »), et stocke leur sperme à vie dans un organe dédié, la spermathèque. Elle choisit ensuite, œuf par œuf, de le féconder ou non.</p>
+
+      <h3>Les ouvrières</h3>
+      <p>Toutes stériles ou presque, toutes femelles, elles assurent la totalité des tâches : nettoyage, nourrissage du couvain, construction des rayons, gestion des réserves, garde de l'entrée, butinage. Leur rôle change avec l'âge — un mécanisme détaillé au module 09.</p>
+
+      <div class="callout callout--moss">
+        <span class="tag">Place des mâles</span>
+        <p>Le faux-bourdon n'a ni dard, ni corbeille à pollen, ni glandes cirières : il ne peut ni se défendre, ni butiner, ni construire. Il est nourri par les ouvrières et n'a qu'une fonction, féconder une reine vierge d'une <em>autre</em> colonie en vol — jamais la sienne, ce qui évite la consanguinité. L'accouplement lui est fatal : son organe reproducteur se déchire au moment du transfert de sperme. Ceux qui n'auront pas eu cette chance sont chassés de la ruche à l'automne — les ouvrières cessent de les nourrir et les expulsent — car ils ne servent plus à rien une fois la saison de reproduction close et que les réserves d'hiver se constituent.</p>
+        <p>Génétiquement, un mâle n'a pas de père : il est né d'un œuf non fécondé (haploïde), alors que reine et ouvrières viennent d'œufs fécondés (diploïdes). C'est ce mode de détermination du sexe, l'haplodiploïdie, que la reine pilote en fécondant — ou non — chaque œuf qu'elle pond.</p>
+      </div>
+    </section>
+
+    <div class="divider" aria-hidden="true">
+      <svg width="260" height="24" viewBox="0 0 260 24"><g fill="none" stroke="var(--line)" stroke-width="1.2"><polygon points="12,1 22,7 22,17 12,23 2,17 2,7"/><polygon points="32,1 42,7 42,17 32,23 22,17 22,7"/><polygon points="52,1 62,7 62,17 52,23 42,17 42,7"/><polygon points="72,1 82,7 82,17 72,23 62,17 62,7"/><polygon points="92,1 102,7 102,17 92,23 82,17 82,7"/><polygon points="112,1 122,7 122,17 112,23 102,17 102,7"/></g></svg>
+    </div>
+
+    <!-- MODULE 03 — CYCLE DE VIE -->
+    <section class="module" id="m03">
+      <p class="module-kicker">Module 03</p>
+      <div class="module-head">
+        <span class="module-num">03</span>
+        <h2>Cycle de vie : de l'œuf à l'abeille</h2>
+      </div>
+      <p>Les trois castes traversent les mêmes quatre étapes — œuf, larve, nymphe operculée, adulte — mais pas au même rythme, ni dans les mêmes cellules. Ce sont l'alimentation et la taille de l'alvéole qui décident du destin de l'œuf, pas sa génétique : n'importe quel œuf fécondé peut devenir reine s'il est nourri exclusivement de gelée royale.</p>
+
+      <figure class="diagram">
+        <div class="frame">
+          <svg viewBox="0 0 640 210" role="img" aria-labelledby="cycle-title cycle-desc">
+            <title id="cycle-title">Durée de développement par caste</title>
+            <desc id="cycle-desc">Trois barres montrant les étapes œuf, larve, nymphe operculée pour la reine (16 jours), l'ouvrière (21 jours) et le mâle (24 jours).</desc>
+            <!-- scale: x = 90 + day*20, day 0..24 -->
+            <g font-family="var(--font-mono)" font-size="11" fill="var(--ink-soft)">
+              <text x="90" y="14">0j</text>
+              <text x="210" y="14">6j</text>
+              <text x="330" y="14">12j</text>
+              <text x="450" y="14">18j</text>
+              <text x="570" y="14">24j</text>
+            </g>
+            <g stroke="var(--line)" stroke-width="1">
+              <line x1="90" y1="20" x2="90" y2="188"/>
+              <line x1="210" y1="20" x2="210" y2="188"/>
+              <line x1="330" y1="20" x2="330" y2="188"/>
+              <line x1="450" y1="20" x2="450" y2="188"/>
+              <line x1="570" y1="20" x2="570" y2="188"/>
+            </g>
+
+            <!-- Reine row y=40 h=26 : egg 0-3, larva 3-8, pupa 8-16 -->
+            <text x="20" y="58" font-family="var(--font-body)" font-size="13" fill="var(--ink)">Reine</text>
+            <rect x="90" y="40" width="60" height="26" fill="var(--surface-2)" stroke="var(--ink)" stroke-width="1"/>
+            <rect x="150" y="40" width="100" height="26" fill="var(--accent-soft)" stroke="var(--ink)" stroke-width="1"/>
+            <rect x="250" y="40" width="160" height="26" fill="var(--accent)" stroke="var(--ink)" stroke-width="1"/>
+            <text x="415" y="58" font-family="var(--font-mono)" font-size="12" fill="var(--ink-soft)">16 j</text>
+
+            <!-- Ouvriere row y=90 : egg 0-3, larva 3-9, pupa 9-21 -->
+            <text x="20" y="108" font-family="var(--font-body)" font-size="13" fill="var(--ink)">Ouvrière</text>
+            <rect x="90" y="90" width="60" height="26" fill="var(--surface-2)" stroke="var(--ink)" stroke-width="1"/>
+            <rect x="150" y="90" width="120" height="26" fill="var(--moss-soft)" stroke="var(--ink)" stroke-width="1"/>
+            <rect x="270" y="90" width="240" height="26" fill="var(--moss)" stroke="var(--ink)" stroke-width="1"/>
+            <text x="515" y="108" font-family="var(--font-mono)" font-size="12" fill="var(--ink-soft)">21 j</text>
+
+            <!-- Male row y=140 : egg 0-3, larva 3-10, pupa 10-24 -->
+            <text x="20" y="158" font-family="var(--font-body)" font-size="13" fill="var(--ink)">Mâle</text>
+            <rect x="90" y="140" width="60" height="26" fill="var(--surface-2)" stroke="var(--ink)" stroke-width="1"/>
+            <rect x="150" y="140" width="140" height="26" fill="var(--line)" stroke="var(--ink)" stroke-width="1"/>
+            <rect x="290" y="140" width="280" height="26" fill="var(--ink-soft)" stroke="var(--ink)" stroke-width="1"/>
+            <text x="575" y="158" font-family="var(--font-mono)" font-size="12" fill="var(--ink-soft)">24 j</text>
+
+            <!-- legend -->
+            <g font-family="var(--font-mono)" font-size="11" fill="var(--ink-soft)">
+              <rect x="90" y="190" width="12" height="12" fill="var(--surface-2)" stroke="var(--ink)" stroke-width="1"/>
+              <text x="107" y="200">œuf</text>
+              <rect x="150" y="190" width="12" height="12" fill="var(--accent-soft)" stroke="var(--ink)" stroke-width="1"/>
+              <text x="167" y="200">larve (cellule ouverte)</text>
+              <rect x="330" y="190" width="12" height="12" fill="var(--accent)" stroke="var(--ink)" stroke-width="1"/>
+              <text x="347" y="200">nymphe (cellule operculée)</text>
+            </g>
+          </svg>
+        </div>
+        <figcaption>Durées approximatives, en jours depuis la ponte. L'opercule de cire ferme la cellule au 8ᵉ jour pour la reine, au 9ᵉ pour l'ouvrière, au 10ᵉ pour le mâle.</figcaption>
+      </figure>
+
+      <h3>La longévité, elle, diverge complètement</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Caste</th><th class="num">Développement</th><th>Vie adulte</th></tr></thead>
+          <tbody>
+            <tr><td>Reine</td><td class="num">16 j</td><td>2 à 5 ans</td></tr>
+            <tr><td>Ouvrière d'été</td><td class="num">21 j</td><td>4 à 6 semaines, usée par le travail</td></tr>
+            <tr><td>Ouvrière d'hiver</td><td class="num">21 j</td><td>4 à 6 mois, quasi inactive, porte la colonie jusqu'au printemps</td></tr>
+            <tr><td>Mâle</td><td class="num">24 j</td><td>quelques semaines ; meurt à l'accouplement ou expulsé à l'automne</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Les « abeilles d'hiver », nées à l'automne, ne butinent presque jamais : leur corps gras est riche en réserves et en protéines, et ce sont elles qui, serrées en grappe autour de la reine, maintiennent la chaleur de la colonie jusqu'au retour des fleurs.</p>
+    </section>
+
+    <div class="divider" aria-hidden="true">
+      <svg width="260" height="24" viewBox="0 0 260 24"><g fill="none" stroke="var(--line)" stroke-width="1.2"><polygon points="12,1 22,7 22,17 12,23 2,17 2,7"/><polygon points="32,1 42,7 42,17 32,23 22,17 22,7"/><polygon points="52,1 62,7 62,17 52,23 42,17 42,7"/><polygon points="72,1 82,7 82,17 72,23 62,17 62,7"/><polygon points="92,1 102,7 102,17 92,23 82,17 82,7"/><polygon points="112,1 122,7 122,17 112,23 102,17 102,7"/></g></svg>
+    </div>
+
+    <!-- MODULE 04 — RESSOURCES -->
+    <section class="module" id="m04">
+      <p class="module-kicker">Module 04</p>
+      <div class="module-head">
+        <span class="module-num">04</span>
+        <h2>Les ressources : miel, cire, propolis, gelée royale, pollen</h2>
+      </div>
+      <p>Cinq matières, cinq fabrications distinctes — et un seul bâtiment pour toutes les stocker : le rayon de cire, quadrillé d'alvéoles hexagonales.</p>
+
+      <h3>Le miel</h3>
+      <p>Il commence comme nectar, aspiré dans les fleurs et stocké dans le jabot. En chemin vers la ruche, une enzyme (l'invertase) commence déjà à transformer les sucres. De retour à la ruche, le nectar est régurgité de bouche en bouche entre ouvrières (une étape qui l'enrichit encore en enzymes), puis étalé en fine couche dans les alvéoles où les butineuses le ventilent à grands coups d'ailes pour en chasser l'eau : d'environ 80 % d'humidité dans le nectar, on passe à 17–18 % dans le miel mûr. L'alvéole est alors operculée de cire — le miel est prêt à traverser l'hiver.</p>
+
+      <h3>La cire</h3>
+      <p>Sécrétée en minuscules écailles par quatre paires de glandes sous l'abdomen des jeunes ouvrières (12 à 18 jours), elle est raclée, mâchée, mélangée à de la salive puis façonnée en cellules hexagonales. L'hexagone n'est pas un hasard : c'est la forme qui, pour la plus petite quantité de cire, offre la plus grande résistance et le plus grand volume de stockage sans le moindre espace perdu entre les cellules.</p>
+
+      <h3>La propolis</h3>
+      <p>Une résine collectée sur les bourgeons et l'écorce de certains arbres (peuplier, conifères, bouleau), pétrie avec un peu de cire et de sécrétions salivaires. Antibactérienne et antifongique, elle sert de vernis et de mastic : colmater les fissures de la ruche, réduire l'entrée, et même embaumer un intrus trop gros pour être évacué — une souris, par exemple, momifiée sur place plutôt que laissée à se décomposer dans la ruche.</p>
+
+      <h3>La gelée royale</h3>
+      <p>Produite par les glandes hypopharyngiennes et mandibulaires des jeunes nourrices, elle est distribuée à toutes les larves durant leurs trois premiers jours. Seule la future reine continue d'en recevoir, en abondance, tout au long de son développement — et même à l'âge adulte. C'est cette alimentation exclusive, et non un gène particulier, qui déclenche chez la larve le développement des ovaires, d'un corps plus long et d'un comportement de reine.</p>
+
+      <h3>Le pollen</h3>
+      <p>Récolté sur les étamines, humidifié de nectar pour qu'il colle, comprimé en pelotes dans les corbeilles des pattes arrière. Stocké près du couvain, parfois légèrement fermenté par les enzymes et les levures de la ruche (on parle alors de « pain d'abeille »), c'est la seule source de protéines de la colonie — indispensable aux nourrices pour produire la gelée royale.</p>
+
+      <div class="callout">
+        <span class="tag">Bon à savoir</span>
+        <p>Les alvéoles ne sont pas toutes identiques : celles à couvain d'ouvrières mesurent environ 5,4 mm de large, celles à couvain de mâles environ 6,4 mm — plus grandes pour loger un corps plus volumineux — et la cellule royale, verticale, en forme de cacahuète, n'est construite qu'en période d'essaimage ou de remplacement de la reine.</p>
+      </div>
+    </section>
+
+    <div class="divider" aria-hidden="true">
+      <svg width="260" height="24" viewBox="0 0 260 24"><g fill="none" stroke="var(--line)" stroke-width="1.2"><polygon points="12,1 22,7 22,17 12,23 2,17 2,7"/><polygon points="32,1 42,7 42,17 32,23 22,17 22,7"/><polygon points="52,1 62,7 62,17 52,23 42,17 42,7"/><polygon points="72,1 82,7 82,17 72,23 62,17 62,7"/><polygon points="92,1 102,7 102,17 92,23 82,17 82,7"/><polygon points="112,1 122,7 122,17 112,23 102,17 102,7"/></g></svg>
+    </div>
+
+    <!-- MODULE 05 — COMMUNICATION / DANSES -->
+    <section class="module" id="m05">
+      <p class="module-kicker">Module 05</p>
+      <div class="module-head">
+        <span class="module-num">05</span>
+        <h2>Communication : les danses des butineuses</h2>
+      </div>
+      <p>Découvertes et décryptées par le zoologiste Karl von Frisch (prix Nobel 1973), les danses de l'abeille sont un langage gestuel exécuté sur les rayons verticaux, dans le noir de la ruche — les autres abeilles le « lisent » au toucher et à l'écoute des vibrations.</p>
+
+      <h3>La danse en rond</h3>
+      <p>Utilisée pour signaler une source proche (moins d'environ 50 à 100 mètres), elle consiste à tourner en cercles serrés, en alternant le sens. Elle indique seulement qu'une ressource existe à proximité ; son parfum sur le corps de la danseuse, et le nectar qu'elle partage par trophallaxie, suffisent aux autres pour la localiser en sortant.</p>
+
+      <h3>La danse frétillante (« en huit »)</h3>
+      <p>Pour une source plus lointaine, l'ouvrière trace un huit : une ligne droite au centre, en faisant vibrer vigoureusement son abdomen, puis une boucle de retour de chaque côté. Cette figure encode deux informations précises :</p>
+      <ul>
+        <li><strong>La direction</strong> : l'angle de la ligne droite par rapport à la verticale du rayon reproduit exactement l'angle entre la source de nourriture et la position du soleil.</li>
+        <li><strong>La distance</strong> : plus la phase vibrée dure longtemps, plus la source est éloignée — environ 75 ms de vibration supplémentaire par 100 mètres.</li>
+      </ul>
+
+      <figure class="diagram">
+        <div class="frame">
+          <svg viewBox="0 0 640 260" role="img" aria-labelledby="dance-title dance-desc">
+            <title id="dance-title">Danse frétillante en huit</title>
+            <desc id="dance-desc">Trajectoire en huit sur un rayon vertical, avec l'angle entre la ligne vibrée et la verticale correspondant à l'angle entre la source et le soleil.</desc>
+            <!-- comb frame -->
+            <rect x="20" y="20" width="600" height="220" rx="6" fill="var(--surface-2)" stroke="var(--line)" stroke-width="1"/>
+            <!-- vertical reference -->
+            <line x1="230" y1="230" x2="230" y2="40" stroke="var(--ink-soft)" stroke-width="1.4" stroke-dasharray="4 4"/>
+            <text x="236" y="46" font-family="var(--font-mono)" font-size="11" fill="var(--ink-soft)">verticale (= direction du soleil)</text>
+
+            <!-- waggle line at angle -->
+            <g transform="rotate(-38 230 210)">
+              <line x1="230" y1="210" x2="230" y2="118" stroke="var(--accent)" stroke-width="3"/>
+              <path d="M222,150 l16,0 M220,166 l20,0 M222,182 l16,0" stroke="var(--accent)" stroke-width="2"/>
+            </g>
+            <!-- angle arc -->
+            <path d="M230,180 A50,50 0 0 1 199.8,138.2" fill="none" stroke="var(--ink-soft)" stroke-width="1.4"/>
+            <text x="185" y="170" font-family="var(--font-mono)" font-size="12" fill="var(--ink)">angle α</text>
+
+            <!-- loops -->
+            <path d="M230,118 C300,100 320,150 230,210" fill="none" stroke="var(--moss)" stroke-width="2"/>
+            <path d="M230,118 C160,100 140,150 230,210" fill="none" stroke="var(--moss)" stroke-width="2"/>
+
+            <!-- sun + hive markers -->
+            <g transform="translate(500,60)">
+              <circle r="14" fill="var(--accent)"/>
+              <g stroke="var(--accent)" stroke-width="2">
+                <line x1="0" y1="-20" x2="0" y2="-28"/>
+                <line x1="16" y1="-12" x2="22" y2="-18"/>
+                <line x1="-16" y1="-12" x2="-22" y2="-18"/>
+              </g>
+              <text x="0" y="34" text-anchor="middle" font-family="var(--font-mono)" font-size="12" fill="var(--ink-soft)">soleil</text>
+            </g>
+            <text x="230" y="252" text-anchor="middle" font-family="var(--font-mono)" font-size="12" fill="var(--ink-soft)">angle α = même angle, entre la source et le soleil</text>
+          </svg>
+        </div>
+        <figcaption>Sur le rayon vertical, le haut symbolise la direction du soleil : la danseuse fait pivoter tout son huit de l'angle exact séparant la fleur du soleil, vu depuis la ruche.</figcaption>
+      </figure>
+
+      <div class="callout callout--moss">
+        <span class="tag">À observer</span>
+        <p>La danse ne fonctionne que grâce à l'horloge interne de l'abeille : le soleil se déplaçant dans le ciel, une danseuse qui recrute pendant plusieurs heures corrige progressivement l'angle qu'elle indique pour compenser ce mouvement.</p>
+      </div>
+    </section>
+
+    <div class="divider" aria-hidden="true">
+      <svg width="260" height="24" viewBox="0 0 260 24"><g fill="none" stroke="var(--line)" stroke-width="1.2"><polygon points="12,1 22,7 22,17 12,23 2,17 2,7"/><polygon points="32,1 42,7 42,17 32,23 22,17 22,7"/><polygon points="52,1 62,7 62,17 52,23 42,17 42,7"/><polygon points="72,1 82,7 82,17 72,23 62,17 62,7"/><polygon points="92,1 102,7 102,17 92,23 82,17 82,7"/><polygon points="112,1 122,7 122,17 112,23 102,17 102,7"/></g></svg>
+    </div>
+
+    <!-- MODULE 06 — PHEROMONES -->
+    <section class="module" id="m06">
+      <p class="module-kicker">Module 06</p>
+      <div class="module-head">
+        <span class="module-num">06</span>
+        <h2>Phéromones : la chimie qui tient la colonie ensemble</h2>
+      </div>
+      <p>Là où la danse informe, la phéromone gouverne : ces messages chimiques circulent en continu par contact et par trophallaxie, et règlent en silence la cohésion, le travail et l'alerte de toute la colonie.</p>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Phéromone</th><th>Origine</th><th>Effet</th></tr></thead>
+          <tbody>
+            <tr><td>Phéromone royale (mandibulaire)</td><td>reine</td><td>signale sa présence, inhibe le développement des ovaires des ouvrières, cimente la cohésion de la colonie</td></tr>
+            <tr><td>Phéromone de Nasonov</td><td>glande abdominale des ouvrières</td><td>« venez par ici » — guide un essaim ou des abeilles égarées vers la ruche ou la reine</td></tr>
+            <tr><td>Phéromone d'alarme</td><td>glande à venin (dard)</td><td>odeur de banane, signale un danger et recrute des gardiennes</td></tr>
+            <tr><td>Phéromone du couvain</td><td>larves</td><td>régule le nourrissage et stimule le butinage de pollen</td></tr>
+            <tr><td>Phéromone de trace</td><td>pattes des butineuses</td><td>marque une fleur déjà visitée, pour ne pas y revenir trop tôt</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>La phéromone de Nasonov est la plus spectaculaire à observer : une ouvrière expose l'extrémité de son abdomen, dévoilant une glande normalement cachée, et ventile activement pour disperser son parfum — on la voit alors immobile, abdomen relevé, ailes battant à toute vitesse, à l'entrée de la ruche ou autour d'un essaim qui vient de se poser.</p>
+
+      <div class="callout callout--alarm">
+        <span class="tag">Attention</span>
+        <p>La phéromone d'alarme explique pourquoi une piqûre en attire souvent d'autres au même endroit : l'odeur laissée par le dard arraché recrute activement les gardiennes voisines. La fumée de l'enfumoir masque justement cette odeur et calme la colonie — c'est tout l'intérêt de l'enfumoir en visite de ruche.</p>
+      </div>
+    </section>
+
+    <div class="divider" aria-hidden="true">
+      <svg width="260" height="24" viewBox="0 0 260 24"><g fill="none" stroke="var(--line)" stroke-width="1.2"><polygon points="12,1 22,7 22,17 12,23 2,17 2,7"/><polygon points="32,1 42,7 42,17 32,23 22,17 22,7"/><polygon points="52,1 62,7 62,17 52,23 42,17 42,7"/><polygon points="72,1 82,7 82,17 72,23 62,17 62,7"/><polygon points="92,1 102,7 102,17 92,23 82,17 82,7"/><polygon points="112,1 122,7 122,17 112,23 102,17 102,7"/></g></svg>
+    </div>
+
+    <!-- MODULE 07 — ORIENTATION -->
+    <section class="module" id="m07">
+      <p class="module-kicker">Module 07</p>
+      <div class="module-head">
+        <span class="module-num">07</span>
+        <h2>Orientation : comment elles retrouvent la ruche</h2>
+      </div>
+      <p>Une butineuse peut s'éloigner de 2 à 3 kilomètres de sa ruche et revenir en ligne quasi droite. Elle combine plusieurs boussoles, jamais une seule.</p>
+      <ul>
+        <li><strong>Le soleil, compensé par une horloge interne.</strong> L'abeille sait à quelle heure elle est sortie et corrige en continu la position attendue du soleil à mesure que le temps passe — c'est ce qui rend la danse fiable même plusieurs heures après le retour de la première butineuse.</li>
+        <li><strong>La lumière polarisée.</strong> Même sous un ciel partiellement couvert, ses yeux perçoivent un motif de polarisation invisible pour nous, qui trahit la position du soleil caché derrière les nuages.</li>
+        <li><strong>Les repères visuels appris.</strong> Les jeunes abeilles effectuent des « vols d'orientation » : de courtes boucles de plus en plus larges autour de l'entrée, pour mémoriser la silhouette de la ruche, des arbres et des objets environnants avant de partir butiner loin.</li>
+        <li><strong>L'odeur de la colonie.</strong> Chaque ruche a sa propre signature chimique, un mélange des phéromones de sa reine et de ses habitantes, qui permet aux gardiennes de reconnaître — ou de rejeter — une abeille qui se présente à l'entrée.</li>
+        <li><strong>Le champ magnétique terrestre</strong>, perçu de façon plus discrète, semble surtout intervenir dans l'orientation des rayons de cire à l'intérieur de la ruche et dans le choix d'un site par un essaim en recherche de nouveau logis.</li>
+      </ul>
+      <div class="callout">
+        <span class="tag">Bon à savoir</span>
+        <p>C'est cette mémoire de repères visuels qui rend risqué de déplacer une ruche de plus de quelques mètres en pleine saison : les butineuses en vol reviennent à l'ancien emplacement par réflexe et peuvent se perdre. La règle de métier veut qu'on déplace une ruche soit de moins d'un mètre par jour, soit de plus de trois kilomètres d'un coup.</p>
+      </div>
+    </section>
+
+    <div class="divider" aria-hidden="true">
+      <svg width="260" height="24" viewBox="0 0 260 24"><g fill="none" stroke="var(--line)" stroke-width="1.2"><polygon points="12,1 22,7 22,17 12,23 2,17 2,7"/><polygon points="32,1 42,7 42,17 32,23 22,17 22,7"/><polygon points="52,1 62,7 62,17 52,23 42,17 42,7"/><polygon points="72,1 82,7 82,17 72,23 62,17 62,7"/><polygon points="92,1 102,7 102,17 92,23 82,17 82,7"/><polygon points="112,1 122,7 122,17 112,23 102,17 102,7"/></g></svg>
+    </div>
+
+    <!-- MODULE 08 — DEFENSE -->
+    <section class="module" id="m08">
+      <p class="module-kicker">Module 08</p>
+      <div class="module-head">
+        <span class="module-num">08</span>
+        <h2>Défense : le dard n'est que la dernière ligne</h2>
+      </div>
+      <p>Avant d'en arriver à piquer, la colonie déploie plusieurs filtres.</p>
+      <ul>
+        <li><strong>Les gardiennes</strong>, postées à l'entrée entre 18 et 21 jours d'âge, contrôlent l'odeur de chaque abeille qui se présente et repoussent les intruses qui ne portent pas la signature chimique de la colonie.</li>
+        <li><strong>La propolis</strong> réduit et calfeutre l'entrée, limitant le nombre de fronts à défendre — et embaume les intrus trop volumineux pour être évacués.</li>
+        <li><strong>Le dard</strong>, en dernier recours. Chez l'ouvrière, il est barbelé : planté dans la peau épaisse d'un mammifère, il reste accroché avec le sac à venin, qui continue de pomper une fois l'abeille partie — et arraché, il tue l'ouvrière. Face à un autre insecte, à la cuticule plus fine, l'ouvrière peut en revanche piquer et retirer son dard sans dommage. Le dard de la reine, lui, est lisse : elle peut piquer plusieurs fois sans mourir, mais ne s'en sert quasiment jamais contre un intrus extérieur — seulement contre une rivale, reine vierge ou autre reine, en cas de duel pour la couronne de la colonie.</li>
+      </ul>
+      <div class="callout callout--alarm">
+        <span class="tag">Attention</span>
+        <p>Le dard arraché continue de libérer de la phéromone d'alarme : mieux vaut le retirer vite, en le grattant (avec un ongle ou une carte) plutôt qu'en le pinçant, ce qui presserait davantage de venin dans la peau — puis s'éloigner calmement de la zone plutôt que d'agiter les bras.</p>
+      </div>
+    </section>
+
+    <div class="divider" aria-hidden="true">
+      <svg width="260" height="24" viewBox="0 0 260 24"><g fill="none" stroke="var(--line)" stroke-width="1.2"><polygon points="12,1 22,7 22,17 12,23 2,17 2,7"/><polygon points="32,1 42,7 42,17 32,23 22,17 22,7"/><polygon points="52,1 62,7 62,17 52,23 42,17 42,7"/><polygon points="72,1 82,7 82,17 72,23 62,17 62,7"/><polygon points="92,1 102,7 102,17 92,23 82,17 82,7"/><polygon points="112,1 122,7 122,17 112,23 102,17 102,7"/></g></svg>
+    </div>
+
+    <!-- MODULE 09 — RYTHMES ET COMPORTEMENTS -->
+    <section class="module" id="m09">
+      <p class="module-kicker">Module 09</p>
+      <div class="module-head">
+        <span class="module-num">09</span>
+        <h2>Rythmes et comportements de la colonie</h2>
+      </div>
+
+      <h3>La carrière d'une ouvrière</h3>
+      <p>Le métier d'une ouvrière change avec son âge, un phénomène appelé polyéthisme d'âge :</p>
+      <ul>
+        <li><strong>Jours 1–3 :</strong> nettoyeuse, elle prépare les cellules vidées pour une nouvelle ponte ou un nouveau stockage.</li>
+        <li><strong>Jours 3–12 :</strong> nourrice, ses glandes hypopharyngiennes produisent la gelée royale qu'elle distribue au couvain.</li>
+        <li><strong>Jours 12–18 :</strong> cirière et bâtisseuse, ses glandes cirières entrent en fonction ; elle construit les rayons et manipule les réserves.</li>
+        <li><strong>Jours 18–21 :</strong> gardienne à l'entrée, elle filtre les allées et venues.</li>
+        <li><strong>Dès ~21 jours :</strong> butineuse, jusqu'à la fin de sa vie — la tâche la plus risquée et la plus usante, réservée aux abeilles déjà âgées.</li>
+      </ul>
+      <p>Cet ordre n'est pas rigide : en cas de besoin (perte massive de butineuses, par exemple), des ouvrières plus jeunes peuvent butiner plus tôt, et des ouvrières plus âgées peuvent redevenir nourrices si leurs glandes le permettent encore.</p>
+
+      <h3>L'essaimage</h3>
+      <p>C'est la reproduction de la colonie elle-même : au printemps, quand la ruche est à l'étroit et bien pourvue, les ouvrières élèvent plusieurs cellules royales. Avant leur éclosion, l'ancienne reine s'envole avec environ la moitié de la population — l'essaim — pour fonder ailleurs une nouvelle colonie, laissant la ruche d'origine à une jeune reine qui naîtra sous peu.</p>
+
+      <h3>La thermorégulation</h3>
+      <p>La colonie maintient le cœur du couvain à 34–35 °C toute l'année, été comme hiver. En cas de chaleur, les ouvrières ventilent en battant des ailes à l'entrée et déposent des gouttelettes d'eau qui refroidissent par évaporation. En hiver, elles se serrent en grappe autour de la reine et font vibrer leurs muscles de vol sans les faire battre, produisant de la chaleur par simple friction musculaire.</p>
+
+      <h3>La trophallaxie</h3>
+      <p>Cet échange bouche-à-bouche de nourriture entre deux abeilles ne nourrit pas seulement : il diffuse aussi les phéromones et l'information sur la qualité d'une source de nectar à travers toute la colonie, un peu comme une conversation permanente.</p>
+    </section>
+
+    <div class="divider" aria-hidden="true">
+      <svg width="260" height="24" viewBox="0 0 260 24"><g fill="none" stroke="var(--line)" stroke-width="1.2"><polygon points="12,1 22,7 22,17 12,23 2,17 2,7"/><polygon points="32,1 42,7 42,17 32,23 22,17 22,7"/><polygon points="52,1 62,7 62,17 52,23 42,17 42,7"/><polygon points="72,1 82,7 82,17 72,23 62,17 62,7"/><polygon points="92,1 102,7 102,17 92,23 82,17 82,7"/><polygon points="112,1 122,7 122,17 112,23 102,17 102,7"/></g></svg>
+    </div>
+
+    <!-- MODULE 10 — DEBUTER -->
+    <section class="module" id="m10">
+      <p class="module-kicker">Module 10</p>
+      <div class="module-head">
+        <span class="module-num">10</span>
+        <h2>Débuter en apiculture : obtenir et entretenir une ruche</h2>
+      </div>
+
+      <h3>Le matériel de base</h3>
+      <ul>
+        <li><strong>Une ruche</strong> — la Dadant est le modèle le plus répandu en France, avec un corps pour le couvain et des hausses amovibles pour le miel.</li>
+        <li><strong>Des cadres</strong> munis d'une feuille de cire gaufrée, qui guide les ouvrières pour bâtir des rayons bien droits et amovibles.</li>
+        <li><strong>Un enfumoir</strong>, pour masquer la phéromone d'alarme et apaiser la colonie pendant une visite.</li>
+        <li><strong>Un lève-cadre</strong>, pour décoller les cadres soudés à la propolis.</li>
+        <li><strong>Une vareuse et un voile</strong> (des gants, en option, surtout au début).</li>
+        <li><strong>Un emplacement</strong> ensoleillé le matin, abrité du vent dominant, légèrement surélevé pour l'écoulement de l'eau, avec un point d'eau à proximité et l'entrée orientée sud ou sud-est.</li>
+      </ul>
+
+      <h3>Comment obtenir une colonie</h3>
+      <ul>
+        <li><strong>Un essaim naturel</strong>, récupéré lors d'un essaimage (souvent via une association locale) — gratuit, mais de santé et de tempérament inconnus.</li>
+        <li><strong>Une colonie sur cadres</strong>, achetée chez un éleveur ou un apiculteur local : reine, couvain et réserves déjà en place, sur des cadres qui s'installent directement dans la ruche — l'option la plus sûre pour débuter.</li>
+        <li><strong>Une ruchette-piège</strong>, un petit nichoir appâté (vieux rayon de cire, quelques gouttes d'huile essentielle de citronnelle qui imitent l'odeur de la phéromone de Nasonov) posé en hauteur au printemps pour attirer un essaim en recherche de logis.</li>
+        <li><strong>Une division</strong>, si l'on possède déjà une ruche assez forte : on en prélève une partie du couvain, des ouvrières et des réserves pour former une seconde colonie.</li>
+      </ul>
+
+      <div class="callout callout--moss">
+        <span class="tag">Démarches, en France</span>
+        <p>Toute détention de ruches, même une seule, doit être déclarée chaque année sur le site TéléRuches, qui délivre un numéro d'apiculteur (NAPI). Se rapprocher d'un groupement de défense sanitaire apicole (GDSA) local est vivement conseillé pour le suivi sanitaire et le parrainage par des apiculteurs expérimentés ; les distances minimales à respecter vis-à-vis du voisinage et des voies publiques varient selon les communes.</p>
+      </div>
+
+      <h3>Le calendrier apicole</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Saison</th><th>Ce qu'il se passe</th><th>Ce que fait l'apiculteur·rice</th></tr></thead>
+          <tbody>
+            <tr><td>Hiver</td><td>grappe hivernale, ponte quasi nulle</td><td>surveillance discrète du poids des réserves, ruche fermée</td></tr>
+            <tr><td>Printemps</td><td>reprise de la ponte, premières sorties, risque d'essaimage</td><td>visites régulières, ajout de hausses, prévention de l'essaimage</td></tr>
+            <tr><td>Été</td><td>pleine miellée</td><td>récolte du miel, traitement anti-varroa après la dernière récolte</td></tr>
+            <tr><td>Automne</td><td>expulsion des mâles, constitution des réserves d'hiver</td><td>nourrissement au sirop si besoin, resserrement de la ruche, protection contre le froid et les prédateurs</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Les principales menaces à surveiller</h3>
+      <ul>
+        <li><strong>Varroa destructor</strong> — un acarien parasite qui affaiblit les colonies et transmet des virus ; c'est aujourd'hui la première cause de mortalité des colonies, à traiter chaque année.</li>
+        <li><strong>Le frelon asiatique</strong> (<em>Vespa velutina</em>) — un prédateur qui capture les butineuses en vol stationnaire devant la ruche ; le piégeage printanier des fondatrices limite sa pression.</li>
+        <li><strong>Les loques, américaine et européenne</strong> — des maladies bactériennes du couvain, à déclaration obligatoire en cas de suspicion.</li>
+        <li><strong>La fausse teigne</strong> — un papillon dont les larves rongent la cire des cadres stockés hors ruche s'ils ne sont pas protégés.</li>
+      </ul>
+
+      <div class="callout">
+        <span class="tag">Pour démarrer sereinement</span>
+        <p>Rejoindre une association apicole locale avant même d'installer sa première ruche reste le conseil le plus répété par les apiculteurs expérimentés : une visite accompagnée vaut toutes les lectures, surtout pour apprendre à repérer un couvain sain, une reine, ou les premiers signes de varroa.</p>
+      </div>
+    </section>
+
+    <div class="divider" aria-hidden="true">
+      <svg width="260" height="24" viewBox="0 0 260 24"><g fill="none" stroke="var(--line)" stroke-width="1.2"><polygon points="12,1 22,7 22,17 12,23 2,17 2,7"/><polygon points="32,1 42,7 42,17 32,23 22,17 22,7"/><polygon points="52,1 62,7 62,17 52,23 42,17 42,7"/><polygon points="72,1 82,7 82,17 72,23 62,17 62,7"/><polygon points="92,1 102,7 102,17 92,23 82,17 82,7"/><polygon points="112,1 122,7 122,17 112,23 102,17 102,7"/></g></svg>
+    </div>
+
+    <!-- GLOSSAIRE -->
+    <section class="module" id="glossaire">
+      <p class="module-kicker">Référence</p>
+      <div class="module-head">
+        <span class="module-num">—</span>
+        <h2>Glossaire de poche</h2>
+      </div>
+      <dl class="glossary">
+        <div><dt>Alvéole</dt><dd>cellule hexagonale du rayon de cire, unité de base du stockage et du couvain.</dd></div>
+        <div><dt>Butineuse</dt><dd>ouvrière chargée de récolter nectar, pollen, eau ou propolis à l'extérieur.</dd></div>
+        <div><dt>Cadre</dt><dd>châssis amovible sur lequel les abeilles bâtissent un rayon de cire, cœur de l'apiculture moderne.</dd></div>
+        <div><dt>Couvain</dt><dd>ensemble des œufs, larves et nymphes en développement dans la ruche.</dd></div>
+        <div><dt>Essaim</dt><dd>groupe d'abeilles, avec une reine, qui quitte la ruche pour fonder une colonie ailleurs.</dd></div>
+        <div><dt>Gaufre (cire gaufrée)</dt><dd>feuille de cire préimprimée du motif hexagonal, posée dans un cadre pour guider la construction.</dd></div>
+        <div><dt>Hausse</dt><dd>élément amovible posé au-dessus du corps de ruche, réservé au stockage du miel récolté.</dd></div>
+        <div><dt>Miellée</dt><dd>période où une floraison abondante permet une rentrée massive de nectar.</dd></div>
+        <div><dt>Nourrice</dt><dd>jeune ouvrière qui nourrit le couvain avec la gelée sécrétée par ses glandes.</dd></div>
+        <div><dt>Operculé(e)</dt><dd>alvéole scellée d'un fin opercule de cire, signe qu'une nymphe s'y développe ou qu'un miel y est mûr.</dd></div>
+        <div><dt>Pain d'abeille</dt><dd>pollen stocké et légèrement fermenté dans les alvéoles.</dd></div>
+        <div><dt>Ruchette</dt><dd>petite ruche de format réduit, utilisée pour un jeune essaim, un transport ou un piégeage.</dd></div>
+        <div><dt>Trophallaxie</dt><dd>échange de nourriture bouche-à-bouche entre deux abeilles, vecteur d'informations et de phéromones.</dd></div>
+        <div><dt>Varroa</dt><dd>acarien parasite (<em>Varroa destructor</em>) qui se fixe sur les abeilles et leur couvain, principale menace sanitaire actuelle.</dd></div>
+      </dl>
+    </section>
+
+  </main>
+</div>
+
+<footer class="colophon">
+  <p><strong>Alvéole</strong> — formation d'initiation à l'apiculture, dix modules pensés pour se lire dans l'ordre ou à la carte. Les durées, dosages et démarches administratives évoluent : vérifiez les points réglementaires auprès de votre GDSA ou de la chambre d'agriculture locale avant de vous installer.</p>
+</footer>
+
+<script>
+(function(){
+  try{
+    var links = Array.prototype.slice.call(document.querySelectorAll('nav.toc a'));
+    var sections = links.map(function(a){
+      return document.querySelector(a.getAttribute('href'));
+    });
+    if(!('IntersectionObserver' in window)) return;
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(entry){
+        var idx = sections.indexOf(entry.target);
+        if(idx === -1) return;
+        if(entry.isIntersecting){
+          links.forEach(function(l){l.classList.remove('active');});
+          links[idx].classList.add('active');
+        }
+      });
+    }, {rootMargin:'-20% 0px -70% 0px', threshold:0});
+    sections.forEach(function(s){ if(s) io.observe(s); });
+  }catch(e){}
+})();
+</script>
