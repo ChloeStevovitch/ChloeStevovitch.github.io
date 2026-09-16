@@ -51,6 +51,52 @@
     --shadow: 0 1px 2px rgba(0,0,0,.3), 0 10px 24px -10px rgba(0,0,0,.5);
   }
 
+  /* ---------- onglet Poème : thème « clairière », plus clair et léger ---------- */
+  #panel-poeme{
+    --paper:#f1f6ec;
+    --paper-raised:#f8fbf3;
+    --paper-raised-2:#e9f0df;
+    --ink:#2d3b28;
+    --ink-soft:#5f6f57;
+    --ink-faint:#8fa085;
+    --accent:#5c8a52;
+    --accent-ink:#3f6438;
+    --accent2:#8a3f56;
+    --line:#d3e0c7;
+    --line-strong:#aec49c;
+    --shadow: 0 1px 2px rgba(45,59,40,.06), 0 8px 20px -10px rgba(45,59,40,.16);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]) #panel-poeme{
+      --paper:#141c12;
+      --paper-raised:#1c2618;
+      --paper-raised-2:#182014;
+      --ink:#e3ecda;
+      --ink-soft:#aebfa0;
+      --ink-faint:#7c8d70;
+      --accent:#8fc47d;
+      --accent-ink:#a9d699;
+      --accent2:#cf6a86;
+      --line:#33422c;
+      --line-strong:#455a3a;
+      --shadow: 0 1px 2px rgba(0,0,0,.35), 0 10px 26px -12px rgba(0,0,0,.55);
+    }
+  }
+  :root[data-theme="dark"] #panel-poeme{
+    --paper:#141c12;
+    --paper-raised:#1c2618;
+    --paper-raised-2:#182014;
+    --ink:#e3ecda;
+    --ink-soft:#aebfa0;
+    --ink-faint:#7c8d70;
+    --accent:#8fc47d;
+    --accent-ink:#a9d699;
+    --accent2:#cf6a86;
+    --line:#33422c;
+    --line-strong:#455a3a;
+    --shadow: 0 1px 2px rgba(0,0,0,.35), 0 10px 26px -12px rgba(0,0,0,.55);
+  }
+
   *{box-sizing:border-box;}
   body{
     margin:0;
@@ -129,6 +175,17 @@
     color:var(--ink);
     font-weight:600;
     border-bottom-color:var(--accent2);
+  }
+  .tabbar [role="tab"][data-tab="poeme"][aria-selected="true"]{
+    border-bottom-color:#5c8a52;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]) .tabbar [role="tab"][data-tab="poeme"][aria-selected="true"]{
+      border-bottom-color:#8fc47d;
+    }
+  }
+  :root[data-theme="dark"] .tabbar [role="tab"][data-tab="poeme"][aria-selected="true"]{
+    border-bottom-color:#8fc47d;
   }
 
   .panel-intro{
@@ -495,6 +552,34 @@
     font-family:var(--font-mono);
   }
 
+  /* ---------- onglet Poème : silhouette plus légère ---------- */
+  #panel-poeme{
+    background:var(--paper);
+    border-radius:14px;
+    padding:1.75rem clamp(1rem,4vw,2.25rem) 2.25rem;
+    margin-top:.5rem;
+  }
+  #panel-poeme h2.section-title{
+    font-family:var(--font-body);
+    font-style:italic;
+    font-weight:400;
+  }
+  #panel-poeme .card{ border-radius:10px; }
+  #panel-poeme .manuscript-wrap{ border-radius:14px; }
+  #panel-poeme .tip{ border-radius:8px; }
+  #panel-poeme .btn-chaos,
+  #panel-poeme .btn-copy,
+  #panel-poeme .card-add-btn{ border-radius:999px; }
+  #panel-poeme .card-reroll{ border-radius:50%; }
+  .fern-divider{
+    display:block;
+    width:150px;
+    height:20px;
+    color:var(--accent);
+    opacity:.65;
+    margin:1.2rem 0 0;
+  }
+
   @media (prefers-reduced-motion: reduce){
     *, *::before, *::after{
       animation-duration:.001ms !important;
@@ -508,21 +593,22 @@
   <header class="hero">
     <p class="eyebrow">Générateur d’histoires · fiche pratique</p>
     <h1 class="title">Chaos Narratif</h1>
-    <p class="lede">Deux ateliers, un seul principe : les cartes décident, tu écris ce qui en sort. <strong>Enquête</strong> pour construire un roman, <strong>Poème</strong> pour un texte plus court, inspiré des grands. Ajoute tes propres cartes quand l’envie te prend — elles entrent dans le tirage comme les autres.</p>
+    <p class="lede">Trois ateliers, un seul principe : les cartes décident, tu écris — ou tu mènes — ce qui en sort. <strong>Roman</strong> pour construire une histoire longue, <strong>Enquête</strong> pour la trame d’une murder party, <strong>Poème</strong> pour un texte court, inspiré des grands. Ajoute tes propres cartes quand l’envie te prend — elles entrent dans le tirage comme les autres.</p>
   </header>
 
   <nav class="tabbar" role="tablist" aria-label="Ateliers d’écriture">
-    <button type="button" role="tab" id="tab-btn-enquete" aria-controls="panel-enquete" aria-selected="true" data-tab="enquete">Enquête</button>
+    <button type="button" role="tab" id="tab-btn-roman" aria-controls="panel-roman" aria-selected="true" data-tab="roman">Roman</button>
+    <button type="button" role="tab" id="tab-btn-enquete" aria-controls="panel-enquete" aria-selected="false" data-tab="enquete">Enquête</button>
     <button type="button" role="tab" id="tab-btn-poeme" aria-controls="panel-poeme" aria-selected="false" data-tab="poeme">Poème</button>
   </nav>
 
-  <!-- ============ ONGLET ENQUÊTE ============ -->
-  <section id="panel-enquete" role="tabpanel" aria-labelledby="tab-btn-enquete">
+  <!-- ============ ONGLET ROMAN ============ -->
+  <section id="panel-roman" role="tabpanel" aria-labelledby="tab-btn-roman">
 
     <div class="panel-intro">
       <p class="lede">Tu n’as pas d’idée ? Tant mieux. <strong>Cette page en a treize, à tirer au sort.</strong> Chaque carte est un dé sur les ingrédients d’un roman — genre, personnage, ennemi, rebondissements, fin. Lance-les un par un ou tous en même temps : le pitch en bas de page s’assemble tout seul à partir de ce qui tombe.</p>
       <div class="chaos-bar">
-        <button class="btn-chaos" id="rollAllEnquete" type="button">
+        <button class="btn-chaos" id="rollAllRoman" type="button">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8" cy="8" r="1.3" fill="currentColor" stroke="none"/><circle cx="16" cy="8" r="1.3" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.3" fill="currentColor" stroke="none"/><circle cx="8" cy="16" r="1.3" fill="currentColor" stroke="none"/><circle cx="16" cy="16" r="1.3" fill="currentColor" stroke="none"/></svg>
           Chaos total — tout relancer
         </button>
@@ -530,10 +616,10 @@
       </div>
     </div>
 
-    <section class="block" aria-labelledby="anatomie-title-enquete">
+    <section class="block" aria-labelledby="anatomie-title-roman">
       <div class="section-head">
         <span class="num">01</span>
-        <h2 class="section-title" id="anatomie-title-enquete">L’anatomie d’un roman, en bref</h2>
+        <h2 class="section-title" id="anatomie-title-roman">L’anatomie d’un roman, en bref</h2>
       </div>
       <p class="section-sub">Avant de tirer au sort : voici, très condensée, la mécanique commune à presque toutes les histoires qui fonctionnent. Le générateur plus bas remplit chacune de ces cases pour toi.</p>
 
@@ -571,30 +657,30 @@
       </div>
     </section>
 
-    <section class="block" aria-labelledby="tirage-title-enquete">
+    <section class="block" aria-labelledby="tirage-title-roman">
       <div class="section-head">
         <span class="num">02</span>
-        <h2 class="section-title" id="tirage-title-enquete">Le tirage : treize cartes, un roman</h2>
+        <h2 class="section-title" id="tirage-title-roman">Le tirage : treize cartes, un roman</h2>
       </div>
       <p class="section-sub">Chaque carte propose huit possibilités. Clique le dé pour en relancer une seule, ou déplie une carte pour piocher toi-même dans la liste. Tu peux aussi écrire tes propres idées tout en bas de chaque liste : ce sont tes cartes, elles entrent dans le tirage au même titre que les autres. Les associations bizarres sont le but du jeu.</p>
-      <div class="grid" id="grid-enquete"></div>
+      <div class="grid" id="grid-roman"></div>
     </section>
 
-    <section class="block" aria-labelledby="pitch-title-enquete">
+    <section class="block" aria-labelledby="pitch-title-roman">
       <div class="section-head">
         <span class="num">03</span>
-        <h2 class="section-title" id="pitch-title-enquete">Le pitch, assemblé</h2>
+        <h2 class="section-title" id="pitch-title-roman">Le pitch, assemblé</h2>
       </div>
       <p class="section-sub">Ce paragraphe se met à jour à chaque tirage. Il est volontairement brut de décoffrage.</p>
 
       <div class="manuscript-wrap">
-        <div id="pitch-enquete" class="pitch-text"></div>
+        <div id="pitch-roman" class="pitch-text"></div>
         <div class="manuscript-foot">
           <div class="foot-actions">
-            <button class="btn-copy" id="copyBtnEnquete" type="button">Copier le pitch</button>
-            <button class="btn-copy" id="shareBtnEnquete" type="button">Copier le lien de partage</button>
+            <button class="btn-copy" id="copyBtnRoman" type="button">Copier le pitch</button>
+            <button class="btn-copy" id="shareBtnRoman" type="button">Copier le lien de partage</button>
           </div>
-          <span class="copy-note" id="copyNoteEnquete">&nbsp;</span>
+          <span class="copy-note" id="copyNoteRoman">&nbsp;</span>
         </div>
       </div>
       <p class="grain-note">Les accords et les articulations seront à corriger à la main — c’est fait exprès. Le but n’est pas une phrase propre, c’est une étincelle : dès qu’une combinaison te fait dire « tiens, et si… », arrête de tirer et commence à écrire. Le lien de partage recrée ce tirage exact — cartes perso comprises — même chez quelqu’un qui n’a jamais ouvert cette page.</p>
@@ -607,11 +693,108 @@
     </section>
   </section>
 
+  <!-- ============ ONGLET ENQUÊTE (murder party) ============ -->
+  <section id="panel-enquete" role="tabpanel" aria-labelledby="tab-btn-enquete" hidden>
+
+    <div class="panel-intro">
+      <p class="lede">Pas un roman à écrire : une enquête à faire vivre autour d’une table. <strong>Neuf cartes</strong> pour construire la trame d’une murder party — victime, coupable, mobile, indices, fausses pistes. Tire au sort pour te lancer, ou prépare la mise en scène toi-même.</p>
+      <div class="chaos-bar">
+        <button class="btn-chaos" id="rollAllEnquete" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8" cy="8" r="1.3" fill="currentColor" stroke="none"/><circle cx="16" cy="8" r="1.3" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.3" fill="currentColor" stroke="none"/><circle cx="8" cy="16" r="1.3" fill="currentColor" stroke="none"/><circle cx="16" cy="16" r="1.3" fill="currentColor" stroke="none"/></svg>
+          Chaos total — tout relancer
+        </button>
+        <span class="hint-inline">ou déplie une carte pour choisir — ou ajoute la tienne tout en bas de la liste</span>
+      </div>
+    </div>
+
+    <section class="block" aria-labelledby="anatomie-title-enquete">
+      <div class="section-head">
+        <span class="num">01</span>
+        <h2 class="section-title" id="anatomie-title-enquete">Comment construire une enquête qui tient debout</h2>
+      </div>
+      <p class="section-sub">Une bonne murder party n’a pas besoin d’un scénario compliqué — juste d’indices bien dosés et d’un coupable crédible. Voici la mécanique, en cinq temps.</p>
+
+      <div class="timeline">
+        <div class="stage" data-n="1">
+          <h3>Le crime</h3>
+          <p>Ce que tout le monde constate : qui, où, comment. Doit être clair, et un peu spectaculaire.</p>
+        </div>
+        <div class="stage" data-n="2">
+          <h3>Les indices</h3>
+          <p>Une piste solide vers le ou la coupable, semée en deux ou trois endroits — jamais donnée d’un bloc.</p>
+        </div>
+        <div class="stage" data-n="3">
+          <h3>Les fausses pistes</h3>
+          <p>De quoi faire douter les joueurs, sans jamais transformer l’enquête en devinette impossible.</p>
+        </div>
+        <div class="stage" data-n="4">
+          <h3>Les interrogatoires</h3>
+          <p>Chaque suspect cache un secret — même celui ou celle qui n’a rien à voir avec le meurtre.</p>
+        </div>
+        <div class="stage" data-n="5">
+          <h3>La révélation</h3>
+          <p>Le mobile, l’arme et le coupable se rejoignent d’un coup, dans une scène qui referme tout.</p>
+        </div>
+      </div>
+
+      <div class="tips">
+        <div class="tip"><b>L’alibi doit presque tenir.</b> Assez solide pour retarder les joueurs, assez fragile pour céder à l’examen — sinon l’enquête ne se résout jamais.</div>
+        <div class="tip"><b>Chaque innocent cache un secret.</b> Ça entretient le doute sans jamais tricher sur la vraie solution.</div>
+        <div class="tip"><b>Une bonne fausse piste s’effondre proprement.</b> Une fois examinée, elle ne doit jamais ressembler à une erreur de conception.</div>
+      </div>
+    </section>
+
+    <section class="block" aria-labelledby="tirage-title-enquete">
+      <div class="section-head">
+        <span class="num">02</span>
+        <h2 class="section-title" id="tirage-title-enquete">Le tirage : neuf cartes, une enquête</h2>
+      </div>
+      <p class="section-sub">Victime, lieu, arme, coupable, mobile, indice, fausse piste, circonstance, rebondissement. Relance une carte, choisis dans la liste, ou ajoute tes propres suspects et indices tout en bas — ils entrent dans le tirage comme les autres.</p>
+      <div class="grid" id="grid-enquete"></div>
+    </section>
+
+    <section class="block" aria-labelledby="pitch-title-enquete">
+      <div class="section-head">
+        <span class="num">03</span>
+        <h2 class="section-title" id="pitch-title-enquete">La solution, assemblée</h2>
+      </div>
+      <p class="section-sub">La fiche du meneur ou de la meneuse de jeu — à garder pour toi, pas pour les joueurs.</p>
+
+      <div class="manuscript-wrap">
+        <div id="pitch-enquete" class="pitch-text"></div>
+        <div class="manuscript-foot">
+          <div class="foot-actions">
+            <button class="btn-copy" id="copyBtnEnquete" type="button">Copier la solution</button>
+            <button class="btn-copy" id="shareBtnEnquete" type="button">Copier le lien de partage</button>
+          </div>
+          <span class="copy-note" id="copyNoteEnquete">&nbsp;</span>
+        </div>
+      </div>
+      <p class="grain-note">C’est un squelette pour le meneur de jeu, pas un texte à lire aux joueurs. Distille les indices petit à petit — ne les donne jamais tous d’un coup. Le lien de partage recrée ce tirage exact — cartes perso comprises.</p>
+
+      <div class="next-steps">
+        <span>→ écris la scène d’ouverture : la découverte du corps</span>
+        <span>→ prépare une fiche par suspect, avec un secret chacun</span>
+        <span>→ décide dans quel ordre distiller les indices</span>
+      </div>
+    </section>
+  </section>
+
   <!-- ============ ONGLET POÈME ============ -->
   <section id="panel-poeme" role="tabpanel" aria-labelledby="tab-btn-poeme" hidden>
 
     <div class="panel-intro">
       <p class="lede">Même principe, trame allégée : pas d’ennemi ni de plan en trois actes, juste une image qui accroche, une scène qui tourne, un petit basculement, et une chute — comme chez <strong>Prévert</strong> ou <strong>La Fontaine</strong>. Sept cartes suffisent pour un poème.</p>
+      <svg class="fern-divider" viewBox="0 0 240 28" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path d="M4 14 H236" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+        <path d="M60 14 C54 8, 46 8, 42 14" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+        <path d="M60 14 C54 20, 46 20, 42 14" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+        <path d="M120 14 C114 6, 104 6, 98 14" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+        <path d="M120 14 C114 22, 104 22, 98 14" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+        <path d="M180 14 C174 8, 166 8, 162 14" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+        <path d="M180 14 C174 20, 166 20, 162 14" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+        <circle cx="120" cy="4" r="1.6" fill="currentColor"/>
+      </svg>
       <div class="chaos-bar">
         <button class="btn-chaos" id="rollAllPoeme" type="button">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8" cy="8" r="1.3" fill="currentColor" stroke="none"/><circle cx="16" cy="8" r="1.3" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.3" fill="currentColor" stroke="none"/><circle cx="8" cy="16" r="1.3" fill="currentColor" stroke="none"/><circle cx="16" cy="16" r="1.3" fill="currentColor" stroke="none"/></svg>
@@ -690,7 +873,7 @@
     </section>
   </section>
 
-  <footer>Tes tirages (et tes cartes perso) restent dans ce navigateur, pour les deux ateliers — recharge la page, tu retrouveras tout.</footer>
+  <footer>Tes tirages (et tes cartes perso) restent dans ce navigateur, pour les trois ateliers — recharge la page, tu retrouveras tout.</footer>
 </div>
 
 <script>
@@ -701,8 +884,8 @@
 
   var diceIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8" cy="8" r="1.2" fill="currentColor" stroke="none"/><circle cx="16" cy="8" r="1.2" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.2" fill="currentColor" stroke="none"/><circle cx="8" cy="16" r="1.2" fill="currentColor" stroke="none"/><circle cx="16" cy="16" r="1.2" fill="currentColor" stroke="none"/></svg>';
 
-  /* ================= DONNÉES — ENQUÊTE (roman) ================= */
-  var categoriesEnquete = [
+  /* ================= DONNÉES — ROMAN ================= */
+  var categoriesRoman = [
     { id:"genre", num:"01", label:"Genre", options:[
       "Fantasy épique",
       "Anticipation, dystopie",
@@ -835,7 +1018,7 @@
     ]}
   ];
 
-  function buildPitchEnquete(getText){
+  function buildPitchRoman(getText){
     return (
       "Genre : " + getText("genre") + ".\n\n" +
       "Dans " + getText("decor") + ", on suit " + getText("protagoniste") + " — iel " + getText("faille") + ". " +
@@ -844,6 +1027,113 @@
       "Heureusement, il y a " + getText("allie") + ". Mais à mi-parcours, " + getText("milieu") + " — et juste avant la fin, " + getText("twist") + ".\n\n" +
       "Cette histoire pose une question : « " + getText("theme") + " »\n" +
       "Et à la fin ? " + getText("fin") + "."
+    );
+  }
+
+  /* ================= DONNÉES — ENQUÊTE (murder party) ================= */
+  var categoriesEnquete = [
+    { id:"victime", num:"01", label:"Victime", options:[
+      "le patriarche richissime, détesté par toute sa famille",
+      "l’actrice sur le retour, entourée de rivaux jaloux",
+      "le notaire qui gardait tous les secrets du village",
+      "l’héritière fraîchement remariée",
+      "le chef cuisinier étoilé, tyran en cuisine",
+      "le maire sortant, à la veille d’un scandale",
+      "la collectionneuse d’art, entourée de faussaires",
+      "le capitaine du bateau, seul à connaître la route"
+    ]},
+    { id:"lieu", num:"02", label:"Lieu du crime", options:[
+      "la bibliothèque, entre deux rayonnages fermés à clé",
+      "le fumoir, portes closes de l’intérieur",
+      "le pont du bateau, pendant l’orage",
+      "la cave à vin, verrouillée depuis des années",
+      "la serre, au milieu des orchidées",
+      "un compartiment de train de nuit",
+      "la cuisine, en pleine préparation du dîner",
+      "le belvédère, au bout du jardin"
+    ]},
+    { id:"arme", num:"03", label:"Arme du crime", options:[
+      "un coupe-papier en argent, appartenant à la victime elle-même",
+      "un poison rare, versé dans le digestif",
+      "une statuette précieuse, arme de circonstance",
+      "une corde à piano, empruntée au salon de musique",
+      "un tisonnier resté près de la cheminée",
+      "une seringue, disparue de la trousse du médecin de famille",
+      "un simple oreiller — personne n’a rien entendu",
+      "l’arme n’a jamais été retrouvée"
+    ]},
+    { id:"coupable", num:"04", label:"Coupable", options:[
+      "le majordome, qui sait tout et ne dit jamais rien",
+      "le fils cadet, écarté de l’héritage la semaine précédente",
+      "l’associé en affaires, ruiné en secret",
+      "l’ex-époux ou ex-épouse, revenu sans prévenir",
+      "l’infirmière particulière, engagée depuis peu",
+      "le meilleur ami, qui connaît tous les codes de la maison",
+      "la nouvelle recrue, dont personne ne connaît vraiment le passé",
+      "la personne que tout le monde pensait la moins capable de ça"
+    ]},
+    { id:"mobile", num:"05", label:"Mobile", options:[
+      "un héritage colossal, réparti différemment la veille du crime",
+      "un chantage qui devait cesser, coûte que coûte",
+      "une trahison amoureuse, vieille de plusieurs années",
+      "un secret de famille sur le point d’éclater",
+      "une dette de jeu impossible à rembourser autrement",
+      "une vengeance mûrie depuis longtemps",
+      "une preuve compromettante que la victime refusait de détruire",
+      "un accident qu’on a maquillé, en fuyant les questions"
+    ]},
+    { id:"indice", num:"06", label:"Indice clé", options:[
+      "une manche de vêtement légèrement brûlée par une bougie renversée",
+      "un emploi du temps qui ne colle pas, de dix minutes",
+      "un parfum reconnu par un témoin distrait",
+      "une lettre à moitié brûlée dans la cheminée",
+      "des traces de terre sur des chaussures censées être restées à l’intérieur",
+      "un objet personnel oublié sur la scène, par précipitation",
+      "un mensonge répété deux fois, avec deux versions différentes",
+      "une clé qui n’aurait jamais dû se trouver dans cette poche"
+    ]},
+    { id:"faussepiste", num:"07", label:"Fausse piste", options:[
+      "un autre invité qui cachait une liaison sans rapport avec le crime",
+      "une dispute violente, entendue de tous, mais bien antérieure au meurtre",
+      "un vol d’objet de valeur commis la même nuit, par quelqu’un d’autre",
+      "une vieille rumeur de malédiction familiale, relancée opportunément",
+      "un témoin qui ment, mais seulement pour protéger son propre secret",
+      "une trace suspecte laissée exprès par le vrai coupable",
+      "un message anonyme qui accuse la mauvaise personne",
+      "un alibi trop parfait, qui cache autre chose de gênant"
+    ]},
+    { id:"circonstance", num:"08", label:"Heure et circonstance", options:[
+      "entre le dessert et le digestif, pendant que les lumières vacillaient",
+      "juste après minuit, quand tout le monde était censé dormir",
+      "pendant la coupure de courant de dix minutes",
+      "au moment exact où l’orage a couvert tous les bruits",
+      "pendant que les invités cherchaient un objet perdu, tous ensemble",
+      "durant le seul moment où la victime s’est retrouvée seule de la soirée",
+      "juste avant l’arrivée d’invités surprises",
+      "au petit matin, avant que la maison ne se réveille"
+    ]},
+    { id:"rebondissement", num:"09", label:"Rebondissement final", options:[
+      "le ou la coupable avait un complice parmi les invités, resté silencieux",
+      "la victime elle-même avait manigancé quelque chose ce soir-là",
+      "deux personnes ont agi la même nuit, sans se concerter",
+      "le mobile apparent cachait un mobile bien plus ancien",
+      "un témoin a menti pour couvrir quelqu’un d’autre, pas le coupable",
+      "l’arme retrouvée n’est pas la vraie arme du crime",
+      "le coupable a failli s’en tirer grâce à un hasard extraordinaire",
+      "la personne qui a mené l’enquête savait depuis le début"
+    ]}
+  ];
+
+  function buildPitchEnquete(getText){
+    return (
+      "La victime : " + getText("victime") + ".\n\n" +
+      "Le crime a eu lieu dans " + getText("lieu") + ", " + getText("circonstance") + ".\n" +
+      "L’arme : " + getText("arme") + ".\n\n" +
+      "Le ou la coupable : " + getText("coupable") + ".\n" +
+      "Le mobile : " + getText("mobile") + ".\n\n" +
+      "L’indice qui trahit tout : " + getText("indice") + ".\n" +
+      "La fausse piste à distiller aux joueurs : " + getText("faussepiste") + ".\n\n" +
+      "Le rebondissement final : " + getText("rebondissement") + "."
     );
   }
 
@@ -1215,6 +1505,18 @@
 
   var decks = {};
 
+  decks.roman = createDeck({
+    key: "roman",
+    categories: categoriesRoman,
+    gridEl: document.getElementById("grid-roman"),
+    pitchEl: document.getElementById("pitch-roman"),
+    buildText: buildPitchRoman,
+    rollAllBtn: document.getElementById("rollAllRoman"),
+    copyBtn: document.getElementById("copyBtnRoman"),
+    shareBtn: document.getElementById("shareBtnRoman"),
+    copyNote: document.getElementById("copyNoteRoman")
+  });
+
   decks.enquete = createDeck({
     key: "enquete",
     categories: categoriesEnquete,
@@ -1242,12 +1544,14 @@
   /* ================= ONGLETS & LIENS DE PARTAGE ================= */
   var tabButtons = document.querySelectorAll('.tabbar [role="tab"]');
   var panels = {
+    roman: document.getElementById("panel-roman"),
     enquete: document.getElementById("panel-enquete"),
     poeme: document.getElementById("panel-poeme")
   };
+  var validTabs = ["roman", "enquete", "poeme"];
 
   function activateTab(name){
-    if (!panels[name]) name = "enquete";
+    if (!panels[name]) name = "roman";
     tabButtons.forEach(function(b){
       b.setAttribute("aria-selected", b.dataset.tab === name ? "true" : "false");
     });
@@ -1258,13 +1562,14 @@
   function currentSavedTab(){
     try {
       var t = localStorage.getItem("cn-active-tab-v1");
-      if (t === "enquete" || t === "poeme") return t;
+      if (validTabs.indexOf(t) !== -1) return t;
     } catch (e) {}
-    return "enquete";
+    return "roman";
   }
 
-  // Le hash a la forme #enquete ou #poeme?d=<tirage encodé> — chaque onglet a
-  // ainsi son propre segment d’URL, et ce segment peut porter une sélection.
+  // Le hash a la forme #roman, #enquete ou #poeme, avec en option ?d=<tirage
+  // encodé> — chaque onglet a ainsi son propre segment d’URL, et ce segment
+  // peut porter une sélection précise à partager.
   function parseHash(){
     var h = location.hash || "";
     if (h.charAt(0) === "#") h = h.slice(1);
@@ -1280,7 +1585,7 @@
       } catch (e) { data = null; }
     }
     return {
-      tab: (tabPart === "enquete" || tabPart === "poeme") ? tabPart : null,
+      tab: validTabs.indexOf(tabPart) !== -1 ? tabPart : null,
       data: Array.isArray(data) ? data : null
     };
   }
