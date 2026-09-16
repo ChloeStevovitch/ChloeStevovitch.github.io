@@ -1,3 +1,8 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Chaos Narratif</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -630,7 +635,41 @@
       transition-duration:.001ms !important;
     }
   }
+
+  /* ---------- mobile ---------- */
+  @media (max-width: 640px){
+    .page{ padding:2.25rem 1rem 3.5rem; }
+    .hero p.lede{ font-size:1rem; }
+    .tabbar{
+      overflow-x:auto;
+      -webkit-overflow-scrolling:touch;
+      scrollbar-width:none;
+    }
+    .tabbar::-webkit-scrollbar{ display:none; }
+    .tabbar [role="tab"]{
+      padding:.7rem .8rem;
+      font-size:.78rem;
+      flex-shrink:0;
+    }
+    section.block{ margin-top:2.25rem; }
+    .timeline{ padding-left:2.35rem; }
+    .timeline::before{ left:.85rem; }
+    .stage::before{
+      left:-2.35rem;
+      width:1.8rem;
+      height:1.8rem;
+      font-size:.7rem;
+    }
+    .manuscript-wrap{ padding:1.4rem 1.1rem 1.4rem 2.35rem; }
+    .manuscript-wrap::before{ left:1.3rem; }
+    .manuscript-foot{ flex-direction:column; align-items:stretch; }
+    .foot-actions{ flex-direction:column; }
+    .foot-actions .btn-copy{ text-align:center; }
+    .card-num{ display:none; }
+  }
 </style>
+</head>
+<body>
 
 <div class="page">
 
@@ -1653,3 +1692,5 @@
 
 })();
 </script>
+</body>
+</html>
