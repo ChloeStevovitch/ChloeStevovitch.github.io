@@ -1,0 +1,712 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Créateur de pochoir 3D</title>
+<style>
+  :root{
+    --ink:#20201c; --ground:#f5f3ee; --surface:#ffffff; --surface-2:#eceae2;
+    --line:rgba(32,32,28,0.14); --accent:#b9550f; --accent-strong:#8a3f0a;
+    --ok:#3f7d3a; --warn:#b9550f; --font:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --ink:#f0eee6; --ground:#1a1a17; --surface:#242420; --surface-2:#2c2c27;
+      --line:rgba(240,238,230,0.14); --accent:#e08a3f; --accent-strong:#f0a55f; --ok:#7fbf78; --warn:#e08a3f; }
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--font);line-height:1.5;}
+  header{padding:1.2rem 1.5rem 0.4rem;}
+  header h1{margin:0 0 .25rem;font-size:1.4rem;}
+  header p{margin:0;color:var(--ink);opacity:.75;font-size:.92rem;max-width:60ch;}
+  .ad-slot{margin:1rem 1.5rem 0;padding:.6rem 1rem;border:1px dashed var(--line);border-radius:6px;
+    font-size:.78rem;opacity:.55;text-align:center;}
+  main.layout{display:flex;flex-wrap:wrap;gap:1rem;padding:1rem 1.5rem 2rem;align-items:flex-start;}
+  .panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:1rem 1.1rem;}
+  .controls{flex:0 0 300px;}
+  .editor,.preview3d{flex:1 1 340px;min-width:300px;}
+  h2{font-size:.95rem;margin:1rem 0 .5rem;opacity:.85;}
+  h2:first-child{margin-top:0;}
+  label{display:block;font-size:.85rem;margin:.5rem 0 .25rem;}
+  input[type=number], input[type=file]{width:100%;padding:.4rem .5rem;border:1px solid var(--line);
+    border-radius:6px;background:var(--surface-2);color:var(--ink);font:inherit;}
+  input[type=range]{width:100%;}
+  details{margin-top:.6rem;font-size:.85rem;}
+  summary{cursor:pointer;opacity:.8;}
+  button{font:inherit;padding:.5rem .8rem;border-radius:6px;border:1px solid var(--line);
+    background:var(--surface-2);color:var(--ink);cursor:pointer;}
+  button.active,button:hover{border-color:var(--accent);}
+  button:disabled{opacity:.45;cursor:not-allowed;}
+  button.primary{background:var(--accent);border-color:var(--accent-strong);color:#fff;}
+  .tools{display:flex;flex-wrap:wrap;gap:.4rem;align-items:center;margin-bottom:.4rem;}
+  .row{display:flex;gap:.5rem;}
+  .status{font-size:.85rem;padding:.5rem .6rem;border-radius:6px;background:var(--surface-2);margin-top:.6rem;}
+  .status.ok{color:var(--ok);}
+  .status.warn{color:var(--warn);}
+  #editCanvas{width:100%;height:auto;image-rendering:pixelated;border:1px solid var(--line);
+    border-radius:6px;touch-action:none;cursor:crosshair;background:#fff;}
+  #three-container{width:100%;height:360px;border:1px solid var(--line);border-radius:6px;overflow:hidden;}
+  footer{padding:0 1.5rem 2rem;font-size:.8rem;opacity:.65;max-width:70ch;}
+  .stack{display:flex;flex-direction:column;gap:.5rem;margin-top:.6rem;}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Créateur de pochoir 3D</h1>
+  <p>Envoyez un dessin vectoriel (SVG), réglez la taille et la marge, corrigez les jointures nécessaires
+  au crayon, puis téléchargez le fichier STL prêt à imprimer. Tout le traitement se fait dans votre navigateur :
+  le dessin n'est jamais envoyé à un serveur.</p>
+</header>
+
+<div class="ad-slot"><!-- Emplacement publicitaire : collez ici votre script AdSense (ou autre régie) +
+  gérez le bandeau de consentement cookies (RGPD) avant de charger le script publicitaire. --></div>
+
+<main class="layout">
+
+  <section class="panel controls">
+    <h2>1. Dessin</h2>
+    <label>Fichier SVG
+      <input type="file" id="svgFile" accept=".svg,image/svg+xml">
+    </label>
+
+    <h2>2. Dimensions</h2>
+    <label>Largeur du dessin (mm)
+      <input type="number" id="widthMM" value="100" min="5" step="1">
+    </label>
+    <label>Épaisseur (mm)
+      <input type="number" id="thicknessMM" value="1.5" min="0.4" step="0.1">
+    </label>
+    <label>Marge (mm)
+      <input type="number" id="marginMM" value="10" min="0" step="1">
+    </label>
+
+    <details>
+      <summary>Réglages avancés</summary>
+      <label>Finesse de la grille (mm/cellule)
+        <input type="number" id="cellMM" value="0.4" min="0.1" step="0.1">
+      </label>
+      <label>Seuil de détection du trait (<span id="thresholdVal">200</span>/255)
+        <input type="range" id="threshold" min="0" max="255" value="200">
+      </label>
+      <label><input type="checkbox" id="invert" style="width:auto;"> Inverser (le dessin devient la matière, le fond devient la découpe)</label>
+
+      <p style="margin:.9rem 0 .2rem;font-size:.8rem;opacity:.7;">Marges par côté (mm) — vide = utiliser la marge ci-dessus</p>
+      <div class="row">
+        <label style="flex:1;">Gauche <input type="number" id="marginLeftMM" placeholder="= marge" min="0" step="1"></label>
+        <label style="flex:1;">Droite <input type="number" id="marginRightMM" placeholder="= marge" min="0" step="1"></label>
+      </div>
+      <div class="row">
+        <label style="flex:1;">Haut <input type="number" id="marginTopMM" placeholder="= marge" min="0" step="1"></label>
+        <label style="flex:1;">Bas <input type="number" id="marginBottomMM" placeholder="= marge" min="0" step="1"></label>
+      </div>
+
+      <label style="margin-top:.9rem;"><input type="checkbox" id="autoBridge" checked style="width:auto;"> Jointures automatiques des îlots détachés</label>
+      <label>Épaisseur des jointures automatiques (<span id="autoBridgeVal">2</span> cellules)
+        <input type="range" id="autoBridgeSize" min="1" max="8" value="2">
+      </label>
+    </details>
+
+    <button id="regenBtn" style="margin-top:.7rem;width:100%;">Régénérer la grille</button>
+
+    <h2>3. Retouche (jointures)</h2>
+    <p style="font-size:.8rem;opacity:.7;margin:.2rem 0 .5rem;">Un pochoir doit tenir en une seule pièce :
+      des jointures fines sont ajoutées automatiquement. Chaque trait est une ligne droite : cliquez-glissez
+      du point de départ au point d'arrivée. Avec la gomme, cliquez sur un trait ou un îlot isolé pour le
+      supprimer entièrement d'un coup.</p>
+    <div class="tools">
+      <button id="toolPencil" class="active">✏️ Crayon</button>
+      <button id="toolEraser">🧽 Gomme</button>
+    </div>
+    <label>Taille du pinceau (<span id="brushVal">2</span> cellules)
+      <input type="range" id="brushSize" min="1" max="8" value="2">
+    </label>
+    <button id="resetBtn" style="width:100%;margin-top:.4rem;">Réinitialiser le dessin</button>
+
+    <p id="status" class="status">Chargez un fichier SVG pour commencer.</p>
+
+    <h2>4. Export</h2>
+    <div class="stack">
+      <button id="previewBtn">Aperçu 3D</button>
+      <button id="downloadBtn" class="primary" disabled>Télécharger le fichier STL</button>
+    </div>
+  </section>
+
+  <section class="panel editor">
+    <h2>Aperçu 2D éditable</h2>
+    <canvas id="editCanvas" width="10" height="10"></canvas>
+  </section>
+
+  <section class="panel preview3d">
+    <h2>Aperçu 3D</h2>
+    <div id="three-container"></div>
+  </section>
+
+</main>
+
+<footer>
+  Outil autonome, sans dépendance serveur : le fichier SVG et le résultat restent sur votre machine.
+  Fonctionne hors-ligne une fois la page chargée (sauf le rendu 3D, qui charge Three.js depuis un CDN).
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+"use strict";
+
+// ---------- state ----------
+let cols = 0, rows = 0;         // full grid size (art + margin), in cells
+let cellMM = 0.4;                // physical size of one cell
+let baseGrid = null;             // Uint8Array, 1 = solid material, 0 = hole (as rasterized)
+let workingGrid = null;          // Uint8Array, edited copy
+let islandLabels = null, mainLabel = -1; // connectivity check results
+let cellStrokeId = null, baseCellStrokeId = null; // which trait (pencil stroke or auto-bridge) owns each cell, -1 = none
+let nextStrokeId = 1;
+let tool = "pencil";
+let currentMesh = null;
+let lastTriangles = null;        // for STL export
+
+const el = id => document.getElementById(id);
+const editCanvas = el("editCanvas");
+const ctx2d = editCanvas.getContext("2d");
+
+// ---------- SVG rasterization ----------
+function readSVGGeometry(svgText){
+  const doc = new DOMParser().parseFromString(svgText, "image/svg+xml");
+  const svg = doc.documentElement;
+  let vb = svg.getAttribute("viewBox");
+  let w, h;
+  if (vb) {
+    const parts = vb.trim().split(/[\s,]+/).map(Number);
+    w = parts[2]; h = parts[3];
+  } else {
+    w = parseFloat(svg.getAttribute("width")) || 300;
+    h = parseFloat(svg.getAttribute("height")) || 150;
+    svg.setAttribute("viewBox", `0 0 ${w} ${h}`);
+  }
+  if (!svg.getAttribute("xmlns")) svg.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+  return { svg, aspect: h / w };
+}
+
+function rasterizeSVG(svg, targetCols, targetRows){
+  return new Promise((resolve, reject) => {
+    svg.setAttribute("width", targetCols);
+    svg.setAttribute("height", targetRows);
+    const xml = new XMLSerializer().serializeToString(svg);
+    const blob = new Blob([xml], { type: "image/svg+xml;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const img = new Image();
+    img.onload = () => {
+      const off = document.createElement("canvas");
+      off.width = targetCols; off.height = targetRows;
+      const c = off.getContext("2d");
+      c.fillStyle = "#fff";
+      c.fillRect(0, 0, targetCols, targetRows);
+      c.drawImage(img, 0, 0, targetCols, targetRows);
+      URL.revokeObjectURL(url);
+      resolve(c.getImageData(0, 0, targetCols, targetRows));
+    };
+    img.onerror = reject;
+    img.src = url;
+  });
+}
+
+let loadedSVG = null;
+
+el("svgFile").addEventListener("change", async e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const text = await file.text();
+  loadedSVG = readSVGGeometry(text);
+  await regenerateGrid();
+});
+
+["widthMM","marginMM","cellMM","threshold","invert",
+ "marginLeftMM","marginRightMM","marginTopMM","marginBottomMM",
+ "autoBridge","autoBridgeSize"].forEach(id => {
+  el(id).addEventListener("change", () => { if (loadedSVG) regenerateGrid(); });
+});
+el("regenBtn").addEventListener("click", () => loadedSVG && regenerateGrid());
+el("threshold").addEventListener("input", () => el("thresholdVal").textContent = el("threshold").value);
+el("brushSize").addEventListener("input", () => el("brushVal").textContent = el("brushSize").value);
+el("autoBridgeSize").addEventListener("input", () => el("autoBridgeVal").textContent = el("autoBridgeSize").value);
+
+function sideMM(id, fallback){
+  const v = el(id).value;
+  return v === "" ? fallback : Math.max(0, parseFloat(v) || 0);
+}
+
+const MAX_CELLS = 400000;
+
+async function regenerateGrid(){
+  setStatus("Génération de la grille…", "");
+  const widthMM = parseFloat(el("widthMM").value) || 100;
+  const marginMM = Math.max(0, parseFloat(el("marginMM").value) || 0);
+  cellMM = Math.max(0.1, parseFloat(el("cellMM").value) || 0.4);
+  const threshold = parseInt(el("threshold").value, 10);
+  const invert = el("invert").checked;
+  const autoBridgeOn = el("autoBridge").checked;
+  const autoBridgeRadius = Math.max(0, parseInt(el("autoBridgeSize").value, 10) - 1);
+
+  const marginLeftMM = sideMM("marginLeftMM", marginMM);
+  const marginRightMM = sideMM("marginRightMM", marginMM);
+  const marginTopMM = sideMM("marginTopMM", marginMM);
+  const marginBottomMM = sideMM("marginBottomMM", marginMM);
+
+  let artCols = Math.max(1, Math.round(widthMM / cellMM));
+  let artRows = Math.max(1, Math.round(artCols * loadedSVG.aspect));
+  let mL = Math.round(marginLeftMM / cellMM), mR = Math.round(marginRightMM / cellMM);
+  let mT = Math.round(marginTopMM / cellMM), mB = Math.round(marginBottomMM / cellMM);
+
+  let totalCols = artCols + mL + mR;
+  let totalRows = artRows + mT + mB;
+  if (totalCols * totalRows > MAX_CELLS) {
+    const scale = Math.sqrt((totalCols * totalRows) / MAX_CELLS);
+    cellMM *= scale;
+    artCols = Math.max(1, Math.round(widthMM / cellMM));
+    artRows = Math.max(1, Math.round(artCols * loadedSVG.aspect));
+    mL = Math.round(marginLeftMM / cellMM); mR = Math.round(marginRightMM / cellMM);
+    mT = Math.round(marginTopMM / cellMM); mB = Math.round(marginBottomMM / cellMM);
+    totalCols = artCols + mL + mR;
+    totalRows = artRows + mT + mB;
+  }
+
+  const svgClone = loadedSVG.svg.cloneNode(true);
+  const imgData = await rasterizeSVG(svgClone, artCols, artRows);
+
+  cols = totalCols; rows = totalRows;
+  baseGrid = new Uint8Array(cols * rows).fill(1); // margin defaults to solid
+  const px = imgData.data;
+  for (let r = 0; r < artRows; r++) {
+    for (let c = 0; c < artCols; c++) {
+      const i = (r * artCols + c) * 4;
+      const lum = 0.299 * px[i] + 0.587 * px[i+1] + 0.114 * px[i+2];
+      const isInk = px[i+3] > 10 && lum < threshold;
+      const solid = invert ? isInk : !isInk;
+      baseGrid[(r + mT) * cols + (c + mL)] = solid ? 1 : 0;
+    }
+  }
+
+  cellStrokeId = new Int32Array(cols * rows).fill(-1);
+  if (autoBridgeOn) computeAutoBridges(autoBridgeRadius);
+  baseCellStrokeId = cellStrokeId.slice();
+
+  workingGrid = baseGrid.slice();
+  fitCanvasToGrid();
+  gridInfoText = `Grille ${cols}×${rows} cellules (résolution ${cellMM.toFixed(2)} mm/cellule). `;
+  checkAndDraw();
+}
+
+// find every disconnected island in `grid` and bridge each to the main piece
+// with a thin straight line (shortest grid-distance approach point).
+function computeAutoBridges(radiusCells){
+  const { labels, count, main } = labelComponents(baseGrid);
+  if (count <= 1) return;
+
+  const N = cols * rows;
+  const dist = new Int32Array(N).fill(-1);
+  const originIdx = new Int32Array(N).fill(-1);
+  const queue = new Int32Array(N);
+  let qHead = 0, qTail = 0;
+  for (let i = 0; i < N; i++) {
+    if (labels[i] === main) { dist[i] = 0; originIdx[i] = i; queue[qTail++] = i; }
+  }
+  while (qHead < qTail) {
+    const idx = queue[qHead++];
+    const r = (idx / cols) | 0, c = idx % cols;
+    const neighbors = [[r-1,c],[r+1,c],[r,c-1],[r,c+1]];
+    for (const [nr, nc] of neighbors) {
+      if (nr < 0 || nr >= rows || nc < 0 || nc >= cols) continue;
+      const nidx = nr * cols + nc;
+      if (dist[nidx] === -1) {
+        dist[nidx] = dist[idx] + 1;
+        originIdx[nidx] = originIdx[idx];
+        queue[qTail++] = nidx;
+      }
+    }
+  }
+
+  // for each island, bridge from its closest cell to the main piece's nearest approach point
+  const islandBest = new Map();
+  for (let i = 0; i < N; i++) {
+    const lab = labels[i];
+    if (lab === main) continue;
+    const d = dist[i];
+    const cur = islandBest.get(lab);
+    if (!cur || d < cur.d) islandBest.set(lab, { idx: i, d });
+  }
+
+  for (const { idx } of islandBest.values()) {
+    const r = (idx / cols) | 0, c = idx % cols;
+    const oIdx = originIdx[idx];
+    const or_ = (oIdx / cols) | 0, oc = oIdx % cols;
+    const before = baseGrid.slice();
+    for (const [x, y] of lineCells(c, r, oc, or_)) paintGeneric(baseGrid, x, y, 1, radiusCells);
+    const id = nextStrokeId++;
+    for (let i = 0; i < baseGrid.length; i++) if (before[i] !== baseGrid[i]) cellStrokeId[i] = id;
+  }
+}
+
+// ---------- 2D editable canvas ----------
+function fitCanvasToGrid(){
+  editCanvas.width = cols;
+  editCanvas.height = rows;
+}
+
+function drawGrid(){
+  const imgData = ctx2d.createImageData(cols, rows);
+  const d = imgData.data;
+  for (let i = 0; i < cols * rows; i++) {
+    const solid = workingGrid[i] === 1;
+    const isIsland = solid && islandLabels && islandLabels[i] !== mainLabel;
+    let r, g, b;
+    if (isIsland) { r = 220; g = 60; b = 50; }
+    else if (solid) { r = 45; g = 45; b = 40; }
+    else { r = 255; g = 255; b = 255; }
+    const o = i * 4;
+    d[o] = r; d[o+1] = g; d[o+2] = b; d[o+3] = 255;
+  }
+  ctx2d.putImageData(imgData, 0, 0);
+}
+
+function eventToCell(e){
+  const rect = editCanvas.getBoundingClientRect();
+  const x = Math.floor((e.clientX - rect.left) / rect.width * editCanvas.width);
+  const y = Math.floor((e.clientY - rect.top) / rect.height * editCanvas.height);
+  return [x, y];
+}
+
+function paintGeneric(grid, cx, cy, value, radiusCells){
+  const r2 = radiusCells * radiusCells;
+  for (let dy = -radiusCells; dy <= radiusCells; dy++) {
+    for (let dx = -radiusCells; dx <= radiusCells; dx++) {
+      if (dx*dx + dy*dy > r2) continue;
+      const x = cx + dx, y = cy + dy;
+      if (x < 0 || y < 0 || x >= cols || y >= rows) continue;
+      grid[y * cols + x] = value;
+    }
+  }
+}
+function paint(cx, cy, value, radiusCells){ paintGeneric(workingGrid, cx, cy, value, radiusCells); }
+
+// each stroke is forced to a straight line from where the pointer went down
+// to its current position, so bridges stay straight and deliberate.
+// a plain Bresenham line can take diagonal steps, so two consecutive cells
+// only touch at a corner (not an edge). Since every connectivity check in this
+// file (islands, mesh walls) uses 4-neighbor adjacency, that made thin lines
+// look like a string of disconnected fragments instead of one solid trait.
+// This "staircase" variant always moves one axis at a time, so the line stays
+// 4-connected even at 1-cell width.
+function lineCells(x0, y0, x1, y1){
+  const pts = [[x0, y0]];
+  const dx = Math.abs(x1 - x0), dy = Math.abs(y1 - y0);
+  const sx = x1 > x0 ? 1 : -1, sy = y1 > y0 ? 1 : -1;
+  let x = x0, y = y0, ix = 0, iy = 0;
+  while (ix < dx || iy < dy) {
+    if ((1 + 2*ix) * dy < (1 + 2*iy) * dx) { x += sx; ix++; }
+    else { y += sy; iy++; }
+    pts.push([x, y]);
+  }
+  return pts;
+}
+
+let painting = false;
+let strokeStart = null, strokeBaseGrid = null;
+
+function applyStrokeLine(end){
+  workingGrid.set(strokeBaseGrid);
+  const radius = parseInt(el("brushSize").value, 10) - 1;
+  const value = tool === "pencil" ? 1 : 0;
+  for (const [x, y] of lineCells(strokeStart[0], strokeStart[1], end[0], end[1])) {
+    paint(x, y, value, radius);
+  }
+  drawGrid();
+}
+
+// clicking the eraser on a detached island removes that whole island at once;
+// clicking it on a traced trait (a pencil stroke or an auto-bridge) removes that
+// whole trait at once; anything else falls back to the straight-line eraser/pencil.
+function eraseIslandAt(idx){
+  if (!islandLabels) return false;
+  const label = islandLabels[idx];
+  if (label < 0 || label === mainLabel) return false;
+  for (let i = 0; i < workingGrid.length; i++) {
+    if (islandLabels[i] === label) { workingGrid[i] = 0; if (cellStrokeId) cellStrokeId[i] = -1; }
+  }
+  return true;
+}
+
+function eraseStrokeAt(idx){
+  if (!cellStrokeId) return false;
+  const id = cellStrokeId[idx];
+  if (id < 0) return false;
+  for (let i = 0; i < workingGrid.length; i++) {
+    if (cellStrokeId[i] === id) { workingGrid[i] = 0; cellStrokeId[i] = -1; }
+  }
+  return true;
+}
+
+editCanvas.addEventListener("pointerdown", e => {
+  if (!workingGrid) return;
+  editCanvas.setPointerCapture(e.pointerId);
+  const start = eventToCell(e);
+  const [sx, sy] = start;
+  const inBounds = sx >= 0 && sy >= 0 && sx < cols && sy < rows;
+  if (tool === "eraser" && inBounds) {
+    const idx = sy * cols + sx;
+    if (workingGrid[idx] === 1 && (eraseIslandAt(idx) || eraseStrokeAt(idx))) {
+      drawGrid();
+      checkAndDraw();
+      painting = false;
+      return;
+    }
+  }
+  painting = true;
+  strokeStart = start;
+  strokeBaseGrid = workingGrid.slice();
+  applyStrokeLine(strokeStart);
+});
+editCanvas.addEventListener("pointermove", e => {
+  if (!painting) return;
+  applyStrokeLine(eventToCell(e));
+});
+window.addEventListener("pointerup", () => {
+  if (!painting) return;
+  painting = false;
+  if (tool === "pencil" && strokeBaseGrid) {
+    const id = nextStrokeId++;
+    for (let i = 0; i < workingGrid.length; i++) {
+      if (workingGrid[i] === 1 && strokeBaseGrid[i] !== 1) cellStrokeId[i] = id;
+    }
+  }
+  strokeStart = null; strokeBaseGrid = null;
+  checkAndDraw();
+});
+
+el("toolPencil").addEventListener("click", () => setTool("pencil"));
+el("toolEraser").addEventListener("click", () => setTool("eraser"));
+function setTool(t){
+  tool = t;
+  el("toolPencil").classList.toggle("active", t === "pencil");
+  el("toolEraser").classList.toggle("active", t === "eraser");
+}
+
+el("resetBtn").addEventListener("click", () => {
+  if (!baseGrid) return;
+  workingGrid = baseGrid.slice();
+  cellStrokeId = baseCellStrokeId.slice();
+  checkAndDraw();
+});
+
+// ---------- connectivity check (detect islands that would fall out) ----------
+function labelComponents(grid){
+  const labels = new Int32Array(cols * rows).fill(-1);
+  const sizes = [];
+  let current = 0;
+  const stack = [];
+  for (let start = 0; start < cols * rows; start++) {
+    if (grid[start] !== 1 || labels[start] !== -1) continue;
+    stack.length = 0;
+    stack.push(start);
+    labels[start] = current;
+    let size = 0;
+    while (stack.length) {
+      const idx = stack.pop();
+      size++;
+      const r = (idx / cols) | 0, c = idx % cols;
+      const neighbors = [[r-1,c],[r+1,c],[r,c-1],[r,c+1]];
+      for (const [nr, nc] of neighbors) {
+        if (nr < 0 || nr >= rows || nc < 0 || nc >= cols) continue;
+        const nidx = nr * cols + nc;
+        if (grid[nidx] === 1 && labels[nidx] === -1) {
+          labels[nidx] = current;
+          stack.push(nidx);
+        }
+      }
+    }
+    sizes.push(size);
+    current++;
+  }
+  let main = 0;
+  for (let i = 1; i < sizes.length; i++) if (sizes[i] > sizes[main]) main = i;
+  return { labels, count: sizes.length, main };
+}
+function findIslands(){ return labelComponents(workingGrid); }
+
+let gridInfoText = "";
+
+function checkAndDraw(){
+  if (!workingGrid) return;
+  const res = findIslands();
+  islandLabels = res.labels;
+  mainLabel = res.main;
+  drawGrid();
+  const strayCount = res.count - (res.count > 0 ? 1 : 0);
+  if (res.count <= 1) {
+    setStatus(gridInfoText + "✓ Pochoir en une seule pièce, prêt à exporter.", "ok");
+  } else {
+    setStatus(gridInfoText + `⚠ ${strayCount} îlot(s) détaché(s) en rouge — reliez-les avec le crayon avant d'exporter.`, "warn");
+  }
+}
+
+function setStatus(msg, cls){
+  const s = el("status");
+  s.textContent = msg;
+  s.className = "status" + (cls ? " " + cls : "");
+}
+
+// ---------- mesh building ----------
+function addTri(positions, normals, a, b, c, nx, ny, nz){
+  const ux=b[0]-a[0], uy=b[1]-a[1], uz=b[2]-a[2];
+  const vx=c[0]-a[0], vy=c[1]-a[1], vz=c[2]-a[2];
+  const cx=uy*vz-uz*vy, cy=uz*vx-ux*vz, cz=ux*vy-uy*vx;
+  const dot = cx*nx + cy*ny + cz*nz;
+  const tri = dot < 0 ? [a, c, b] : [a, b, c];
+  for (const v of tri) positions.push(v[0], v[1], v[2]);
+  normals.push(nx, ny, nz);
+}
+
+function pushQuad(positions, normals, p0, p1, p2, p3, nx, ny, nz){
+  addTri(positions, normals, p0, p1, p2, nx, ny, nz);
+  addTri(positions, normals, p0, p2, p3, nx, ny, nz);
+}
+
+function buildMesh(){
+  const thickness = Math.max(0.4, parseFloat(el("thicknessMM").value) || 1.5);
+  const positions = [], normals = [];
+  const g = workingGrid, C = cellMM;
+
+  // top & bottom: merge each row into horizontal runs
+  for (let r = 0; r < rows; r++) {
+    let c = 0;
+    while (c < cols) {
+      if (!g[r*cols+c]) { c++; continue; }
+      const c0 = c;
+      while (c < cols && g[r*cols+c]) c++;
+      const x0=c0*C, x1=c*C, y0=r*C, y1=(r+1)*C;
+      pushQuad(positions, normals, [x0,y0,thickness],[x1,y0,thickness],[x1,y1,thickness],[x0,y1,thickness], 0,0,1);
+      pushQuad(positions, normals, [x0,y0,0],[x1,y0,0],[x1,y1,0],[x0,y1,0], 0,0,-1);
+    }
+  }
+
+  // side walls: only at solid/hole boundaries
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      if (!g[r*cols+c]) continue;
+      const x0=c*C, x1=(c+1)*C, y0=r*C, y1=(r+1)*C;
+      if (c+1 >= cols || !g[r*cols+c+1])
+        pushQuad(positions, normals, [x1,y0,0],[x1,y1,0],[x1,y1,thickness],[x1,y0,thickness], 1,0,0);
+      if (c-1 < 0 || !g[r*cols+c-1])
+        pushQuad(positions, normals, [x0,y0,0],[x0,y1,0],[x0,y1,thickness],[x0,y0,thickness], -1,0,0);
+      if (r+1 >= rows || !g[(r+1)*cols+c])
+        pushQuad(positions, normals, [x0,y1,0],[x1,y1,0],[x1,y1,thickness],[x0,y1,thickness], 0,1,0);
+      if (r-1 < 0 || !g[(r-1)*cols+c])
+        pushQuad(positions, normals, [x0,y0,0],[x1,y0,0],[x1,y0,thickness],[x0,y0,thickness], 0,-1,0);
+    }
+  }
+
+  return { positions: new Float32Array(positions), normals: new Float32Array(normals), triCount: normals.length / 3 };
+}
+
+// ---------- STL export ----------
+function meshToSTLBuffer(mesh){
+  const n = mesh.triCount;
+  const buffer = new ArrayBuffer(84 + 50 * n);
+  const view = new DataView(buffer);
+  view.setUint32(80, n, true);
+  let o = 84;
+  for (let t = 0; t < n; t++) {
+    view.setFloat32(o, mesh.normals[t*3], true); o+=4;
+    view.setFloat32(o, mesh.normals[t*3+1], true); o+=4;
+    view.setFloat32(o, mesh.normals[t*3+2], true); o+=4;
+    for (let v = 0; v < 3; v++) {
+      const base = (t*3+v)*3;
+      view.setFloat32(o, mesh.positions[base], true); o+=4;
+      view.setFloat32(o, mesh.positions[base+1], true); o+=4;
+      view.setFloat32(o, mesh.positions[base+2], true); o+=4;
+    }
+    view.setUint16(o, 0, true); o+=2;
+  }
+  return buffer;
+}
+
+// ---------- Three.js preview ----------
+const container = el("three-container");
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(window.devicePixelRatio || 1);
+container.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0xe8e6df);
+const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 5000);
+const controls = new THREE.OrbitControls(camera, renderer.domElement);
+scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+dirLight.position.set(1, 1, 2);
+scene.add(dirLight);
+
+function resizeRenderer(){
+  const w = container.clientWidth, h = container.clientHeight;
+  renderer.setSize(w, h, false);
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+}
+window.addEventListener("resize", resizeRenderer);
+resizeRenderer();
+
+function animate(){ requestAnimationFrame(animate); controls.update(); renderer.render(scene, camera); }
+animate();
+
+function fitCameraToMesh(mesh){
+  const box = new THREE.Box3().setFromObject(mesh);
+  const size = box.getSize(new THREE.Vector3());
+  const center = box.getCenter(new THREE.Vector3());
+  const maxDim = Math.max(size.x, size.y, size.z) || 1;
+  camera.position.set(center.x, center.y - maxDim * 1.6, center.z + maxDim * 1.4);
+  camera.up.set(0, 0, 1);
+  controls.target.copy(center);
+  controls.update();
+}
+
+el("previewBtn").addEventListener("click", () => {
+  if (!workingGrid) { setStatus("Chargez d'abord un dessin SVG.", "warn"); return; }
+  const mesh = buildMesh();
+  if (mesh.triCount === 0) { setStatus("Rien à afficher : toute la grille est vide.", "warn"); return; }
+  lastTriangles = mesh;
+
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute("position", new THREE.BufferAttribute(mesh.positions, 3));
+  const expandedNormals = new Float32Array(mesh.positions.length);
+  for (let t = 0; t < mesh.triCount; t++) {
+    for (let v = 0; v < 3; v++) {
+      expandedNormals[(t*3+v)*3] = mesh.normals[t*3];
+      expandedNormals[(t*3+v)*3+1] = mesh.normals[t*3+1];
+      expandedNormals[(t*3+v)*3+2] = mesh.normals[t*3+2];
+    }
+  }
+  geometry.setAttribute("normal", new THREE.BufferAttribute(expandedNormals, 3));
+
+  if (currentMesh) { scene.remove(currentMesh); currentMesh.geometry.dispose(); }
+  const material = new THREE.MeshStandardMaterial({ color: 0x9a958a, side: THREE.DoubleSide });
+  currentMesh = new THREE.Mesh(geometry, material);
+  scene.add(currentMesh);
+  fitCameraToMesh(currentMesh);
+
+  el("downloadBtn").disabled = false;
+  setStatus(`Aperçu généré : ${mesh.triCount.toLocaleString("fr-FR")} triangles.`, "ok");
+});
+
+el("downloadBtn").addEventListener("click", () => {
+  if (!lastTriangles) return;
+  const buffer = meshToSTLBuffer(lastTriangles);
+  const blob = new Blob([buffer], { type: "model/stl" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "pochoir.stl";
+  a.click();
+  URL.revokeObjectURL(url);
+});
+</script>
+</body>
+</html>
