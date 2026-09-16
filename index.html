@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Boîte à outils</title>
+<meta name="description" content="Petits outils web faits maison — écriture, enquête, fabrication.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧰</text></svg>">
+<style>
+  :root{
+    --ink:#241a10;
+    --ink-soft:#5b4a37;
+    --ink-faint:#8a7a63;
+    --ground:#f3e7cd;
+    --surface:#fffaf0;
+    --surface-2:#eaddbd;
+    --line: rgba(36,26,16,0.14);
+    --accent:#b9740f;
+    --accent-strong:#8a5710;
+    --shadow: 0 1px 2px rgba(36,26,16,.06), 0 10px 24px -12px rgba(36,26,16,.22);
+    --font-display:'Georgia','Times New Roman',serif;
+    --font-body:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --ink:#ece3d2;
+      --ink-soft:#c9bca4;
+      --ink-faint:#8a7f6b;
+      --ground:#1c1610;
+      --surface:#262019;
+      --surface-2:#2e271d;
+      --line: rgba(236,227,210,0.12);
+      --accent:#dba64a;
+      --accent-strong:#f0c169;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 12px 28px -12px rgba(0,0,0,.55);
+    }
+  }
+  :root[data-theme="dark"]{
+    --ink:#ece3d2;
+    --ink-soft:#c9bca4;
+    --ink-faint:#8a7f6b;
+    --ground:#1c1610;
+    --surface:#262019;
+    --surface-2:#2e271d;
+    --line: rgba(236,227,210,0.12);
+    --accent:#dba64a;
+    --accent-strong:#f0c169;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 12px 28px -12px rgba(0,0,0,.55);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--ground);
+    color:var(--ink);
+    font-family:var(--font-body);
+    min-height:100vh;
+  }
+  .wrap{
+    max-width:880px;
+    margin:0 auto;
+    padding:64px 20px 80px;
+  }
+  header{
+    margin-bottom:48px;
+  }
+  h1{
+    font-family:var(--font-display);
+    font-weight:700;
+    font-size:clamp(2rem, 5vw, 2.8rem);
+    margin:0 0 10px;
+    letter-spacing:-0.01em;
+  }
+  header p{
+    margin:0;
+    color:var(--ink-soft);
+    font-size:1.05rem;
+    max-width:52ch;
+    line-height:1.5;
+  }
+  .grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(240px, 1fr));
+    gap:18px;
+  }
+  a.card{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:24px;
+    text-decoration:none;
+    color:inherit;
+    box-shadow:var(--shadow);
+    transition:transform .15s ease, border-color .15s ease;
+  }
+  a.card:hover, a.card:focus-visible{
+    transform:translateY(-2px);
+    border-color:var(--accent);
+    outline:none;
+  }
+  .card-icon{
+    font-size:1.8rem;
+    line-height:1;
+  }
+  .card h2{
+    font-family:var(--font-display);
+    font-size:1.25rem;
+    margin:0;
+    color:var(--ink);
+  }
+  .card p{
+    margin:0;
+    color:var(--ink-soft);
+    font-size:.92rem;
+    line-height:1.5;
+    flex:1;
+  }
+  .card .go{
+    font-size:.82rem;
+    color:var(--accent-strong);
+    font-weight:600;
+  }
+  footer{
+    margin-top:56px;
+    color:var(--ink-faint);
+    font-size:.85rem;
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Boîte à outils</h1>
+      <p>Une collection de petits ateliers en ligne, à utiliser directement dans le navigateur — pas d'installation, pas de compte.</p>
+    </header>
+
+    <div class="grid">
+      <a class="card" href="chaos-narratif/">
+        <span class="card-icon">🃏</span>
+        <h2>Chaos Narratif</h2>
+        <p>Un tirage de cartes pour construire, pièce par pièce, le pitch d'un roman ou d'un poème.</p>
+        <span class="go">Ouvrir →</span>
+      </a>
+
+      <a class="card" href="piece-a-conviction/">
+        <span class="card-icon">🔍</span>
+        <h2>Pièce à Conviction</h2>
+        <p>Un atelier de construction d'enquête à démêler — on clique plutôt que d'écrire au clavier.</p>
+        <span class="go">Ouvrir →</span>
+      </a>
+
+      <a class="card" href="pochoir3d/">
+        <span class="card-icon">✂️</span>
+        <h2>Créateur de pochoir 3D</h2>
+        <p>Dessinez un motif, réglez ses dimensions, et exportez-le prêt pour l'impression 3D.</p>
+        <span class="go">Ouvrir →</span>
+      </a>
+    </div>
+
+    <footer>chloestevovitch.github.io</footer>
+  </div>
+</body>
+</html>
