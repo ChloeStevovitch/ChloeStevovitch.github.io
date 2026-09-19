@@ -79,6 +79,7 @@
     .btn:hover:not(:disabled):not(.is-off)  { color: var(--neu-accent-dark); }
     .btn:active:not(:disabled):not(.is-off) { box-shadow: var(--neu-in-sm); }
     .btn:disabled, .btn.is-off { @apply cursor-not-allowed opacity-40; box-shadow: none; }
+    .btn[data-busy="1"] { @apply animate-pulse opacity-70; box-shadow: var(--neu-in-sm); }
     .btn-primary { background: var(--neu-grad); color: var(--neu-on-accent); }
     .btn-primary:hover:not(:disabled):not(.is-off) { background: var(--neu-accent-dark); color: var(--neu-on-accent); }
 
@@ -381,6 +382,20 @@
 <script>
 const $ = id => document.getElementById(id);
 
+// fetch avec délai maximal (un serveur injoignable ne doit pas bloquer la page)
+async function fetchT(url, opts = {}, ms = 20000) {
+  const ctl = new AbortController();
+  const t = setTimeout(() => ctl.abort(), ms);
+  try {
+    return await fetch(url, { ...opts, signal: ctl.signal });
+  } catch (e) {
+    if (e.name === 'AbortError') throw new Error('délai dépassé (' + Math.round(ms / 1000) + ' s)');
+    throw e;
+  } finally {
+    clearTimeout(t);
+  }
+}
+
 // ---------- Thème clair / sombre ----------
 function isDark() {
   const t = document.documentElement.dataset.theme;
@@ -452,6 +467,7 @@ function gate(id, ok, why, whyId, isBusy) {
   const b = $(id);
   const off = !ok && !isBusy;
   b.disabled = !!isBusy;
+  b.dataset.busy = isBusy ? '1' : '';
   b.classList.toggle('is-off', off);
   b.dataset.off = off ? '1' : '';
   b.dataset.why = why || '';
@@ -491,7 +507,10 @@ function updateUI() {
   $('origBtn').disabled = !s.hasImage;
 
   gate('sendBtn', s.connected && s.hasRecipe, !s.connected ? 'Connexion manquante (étape 1).' : noRecipe, 'sendWhy', busy.send);
-  $('sendBtn').textContent = editing ? 'Mettre à jour dans Tandoor' : 'Envoyer à Tandoor';
+  $('sendBtn').textContent = busy.send ? 'Envoi en cours…' : editing ? 'Mettre à jour dans Tandoor' : 'Envoyer à Tandoor';
+  $('analyzeBtn').textContent = busy.analyze ? 'Analyse…' : 'Analyser';
+  $('modBtn').textContent = busy.mod ? 'Application…' : 'Appliquer';
+  $('nutriBtn').textContent = busy.nutri ? 'Calcul…' : 'Recalculer';
 
   // progression : 1 connexion, 2 recette, 3 ajuster (facultatif), 4 image, 5 envoi
   const done = { 1: s.connected, 2: s.hasRecipe, 3: s.fresh || undoStack.length > 0, 4: s.hasImage, 5: s.sentThis };
@@ -1345,7 +1364,7 @@ async function nextCandidate() {
 // Distingue « serveur injoignable » de « bloqué par CORS ».
 async function netHint(url) {
   try {
-    await fetch(url + '/api/', { mode: 'no-cors' });
+    await fetchT(url + '/api/', { mode: 'no-cors' }, 6000);
     return ' — le serveur répond, donc la requête est bloquée par CORS : autorise ' + location.origin + ' côté Tandoor / reverse proxy (Access-Control-Allow-Origin, Allow-Headers: authorization, et réponse aux requêtes OPTIONS).';
   } catch (e) {
     return ' — ' + url + ' est injoignable depuis ce navigateur (hors de ton réseau local ? port 443 non redirigé, certificat invalide, ou URL http bloquée depuis une page https).';
@@ -1353,7 +1372,7 @@ async function netHint(url) {
 }
 
 async function apiGet(url, token, path) {
-  const r = await fetch(url + path, { headers: { 'Authorization': 'Bearer ' + token } });
+  const r = await fetchT(url + path, { headers: { 'Authorization': 'Bearer ' + token } }, 15000);
   const d = await r.json().catch(() => ({}));
   if (!r.ok) throw new Error('erreur ' + r.status);
   return d;
@@ -1374,7 +1393,7 @@ async function testConnection() {
   if (!url || !token) { info.textContent = 'Enregistre d\'abord l\'adresse et le token.'; return; }
   info.textContent = 'Test en cours…';
   try {
-    const r = await fetch(url + '/api/recipe/?page_size=1', { headers: { 'Authorization': 'Bearer ' + token } });
+    const r = await fetchT(url + '/api/recipe/?page_size=1', { headers: { 'Authorization': 'Bearer ' + token } }, 10000);
     if (r.ok) {
       const d = await r.json().catch(() => ({}));
       info.textContent = 'Connexion OK' + (d.count != null ? ' (' + d.count + ' recettes).' : '.');
@@ -1613,7 +1632,7 @@ async function deleteRecent(x) {
   if (!url || !token || x.url !== url) return;
   if (!confirm('Supprimer « ' + x.name + ' » de Tandoor ?\nCette action est définitive.')) return;
   try {
-    const res = await fetch(url + '/api/recipe/' + x.id + '/', { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + token } });
+    const res = await fetchT(url + '/api/recipe/' + x.id + '/', { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + token } }, 15000);
     if (res.ok || res.status === 404) {
       try { localStorage.setItem(HIST_KEY, JSON.stringify(getHistory().filter(h => !(h.id === x.id && h.url === x.url)))); } catch (e) {}
       if (editing && editing.id === x.id) editing = null;
@@ -1686,17 +1705,19 @@ async function importRecipe() {
     }
   }
 
+  $('importLog').textContent = '';
+  log('importLog', 'Envoi en cours…');
   busy.send = true; updateUI();
   try {
     let id;
     if (retryImage) {
       id = sent.id;
     } else {
-      const res = await fetch(url + '/api/recipe/' + (editing ? editing.id + '/' : ''), {
+      const res = await fetchT(url + '/api/recipe/' + (editing ? editing.id + '/' : ''), {
         method: editing ? 'PATCH' : 'POST',
         headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json; charset=utf-8' },
         body: JSON.stringify(payload)
-      });
+      }, 20000);
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         log('importLog', 'Erreur ' + res.status + ' — ' + JSON.stringify(data).slice(0, 300) + '\nLa recette reste gardée sur cet appareil.', 'err');
@@ -1720,6 +1741,8 @@ async function importRecipe() {
   } catch (e) {
     log('importLog', 'Échec réseau : ' + e.message + await netHint(url) + '\nLa recette reste gardée sur cet appareil.', 'err');
   } finally {
+    const wait = $('importLog').lastElementChild;
+    if (wait && wait.textContent === 'Envoi en cours…') wait.remove();
     busy.send = false; updateUI();
   }
 }
@@ -1731,11 +1754,11 @@ async function uploadImage(id, logEl = 'importLog') {
   const form = new FormData();
   form.append('image', blob, 'recette.jpg');
   try {
-    const res = await fetch(url + '/api/recipe/' + id + '/image/', {
+    const res = await fetchT(url + '/api/recipe/' + id + '/image/', {
       method: 'PUT',
       headers: { 'Authorization': 'Bearer ' + token },
       body: form
-    });
+    }, 60000);
     if (res.ok) { log(logEl, 'Image envoyée.', 'ok'); return true; }
     log(logEl, 'Erreur image ' + res.status + ' — ' + (await res.text()).slice(0, 200), 'err');
   } catch (e) {
