@@ -123,8 +123,11 @@
     <button class="secondary" onclick="nextCandidate()">Autre proposition</button>
     <label>Ou ton propre fichier (prioritaire)</label>
     <input type="file" id="imageFile" accept="image/*">
-    <label>ID de la recette (optionnel)</label>
-    <input type="text" id="recipeId" placeholder="vide = dernière recette créée">
+    <label>Recette (optionnel)</label>
+    <button class="secondary" onclick="loadRecipes()" style="margin-top:0">Choisir dans mes recettes</button>
+    <select id="recipePick" hidden onchange="document.getElementById('recipeId').value = this.value" style="width:100%;margin-top:8px;padding:10px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text)"></select>
+    <label>ou ID de la recette</label>
+    <input type="text" id="recipeId" placeholder="vide = recette du JSON, sinon la plus récente">
     <label class="check"><input type="checkbox" id="autoSend" checked> Envoyer l'image automatiquement après l'import</label>
     <button onclick="uploadImage()">Envoyer l'image</button>
     <div class="log" id="imageLog"></div>
@@ -437,6 +440,53 @@ async function nextCandidate() {
   return false;
 }
 
+// Distingue « serveur injoignable » de « bloqué par CORS ».
+async function netHint(url) {
+  try {
+    await fetch(url + '/api/', { mode: 'no-cors' });
+    return ' — le serveur répond, donc la requête est bloquée par CORS : autorise ' + location.origin + ' côté Tandoor / reverse proxy (Access-Control-Allow-Origin, Allow-Headers: authorization, et réponse aux requêtes OPTIONS).';
+  } catch (e) {
+    return ' — ' + url + ' est injoignable depuis ce navigateur (hors de ton réseau local ? port 443 non redirigé, certificat invalide, ou URL http bloquée depuis une page https).';
+  }
+}
+
+async function apiGet(url, token, path) {
+  const r = await fetch(url + path, { headers: { 'Authorization': 'Bearer ' + token } });
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error('erreur ' + r.status);
+  return d;
+}
+
+// Recette du JSON (par nom exact), sinon la plus récente.
+async function findRecipe(url, token) {
+  let name = '';
+  try { name = JSON.parse(document.getElementById('recipeJson').value).name || ''; } catch (e) {}
+  if (name) {
+    const d = await apiGet(url, token, '/api/recipe/?page_size=20&query=' + encodeURIComponent(name));
+    const hits = (d.results || []).filter(r => r.name === name).sort((a, b) => b.id - a.id);
+    if (hits.length) return hits[0];
+  }
+  const d = await apiGet(url, token, '/api/recipe/?page_size=50&sort_order=-created_at');
+  const all = (d.results || []).sort((a, b) => b.id - a.id);
+  if (!all.length) throw new Error('aucune recette trouvée');
+  return all[0];
+}
+
+async function loadRecipes() {
+  const { url, token } = getAuth();
+  if (!url || !token) { alert('Connecte-toi d\'abord.'); return; }
+  try {
+    const d = await apiGet(url, token, '/api/recipe/?page_size=50&sort_order=-created_at');
+    const sel = document.getElementById('recipePick');
+    sel.textContent = '';
+    sel.append(new Option('— choisir une recette —', ''));
+    (d.results || []).sort((a, b) => b.id - a.id).forEach(r => sel.append(new Option(r.name + ' (#' + r.id + ')', r.id)));
+    sel.hidden = false;
+  } catch (e) {
+    log('imageLog', '✗ Chargement des recettes impossible : ' + e.message + await netHint(url), 'err');
+  }
+}
+
 async function importRecipe() {
   const { url, token } = getAuth();
   if (!url || !token) { alert('Connecte-toi d\'abord.'); return; }
@@ -466,7 +516,7 @@ async function importRecipe() {
       log('importLog', '✗ Erreur ' + res.status + ' — ' + JSON.stringify(data), 'err');
     }
   } catch (e) {
-    log('importLog', '✗ Échec réseau : ' + e.message + ' (vérifie CORS/CSRF_TRUSTED_ORIGINS côté Tandoor)', 'err');
+    log('importLog', '✗ Échec réseau : ' + e.message + await netHint(url), 'err');
   }
 }
 
@@ -479,19 +529,14 @@ async function uploadImage(knownId) {
   if (!url || !token) { alert('Connecte-toi d\'abord.'); return; }
   if (!blob) { alert('Aucune image : lance l\'analyse des photos ou choisis un fichier.'); return; }
   if (!id) {
-    // Pas d'ID saisi : on prend la recette la plus récemment créée.
+    // Pas d'ID : on cherche la recette par le nom du JSON, sinon la plus récente.
     try {
-      const r = await fetch(url + '/api/recipe/?page_size=1&sort_order=-created_at', {
-        headers: { 'Authorization': 'Bearer ' + token }
-      });
-      const d = await r.json();
-      const last = d.results && d.results[0];
-      if (!r.ok || !last) throw new Error('aucune recette trouvée');
-      id = String(last.id);
+      const r = await findRecipe(url, token);
+      id = String(r.id);
       document.getElementById('recipeId').value = id;
-      log('imageLog', 'ID non renseigné → dernière recette : ' + last.name + ' (ID ' + id + ')');
+      log('imageLog', 'ID non renseigné → recette trouvée : ' + r.name + ' (ID ' + id + ')');
     } catch (e) {
-      log('imageLog', '✗ Impossible de trouver la dernière recette : ' + e.message, 'err');
+      log('imageLog', '✗ Impossible de trouver la recette : ' + e.message + await netHint(url), 'err');
       return;
     }
   }
@@ -510,7 +555,7 @@ async function uploadImage(knownId) {
       log('imageLog', '✗ Erreur ' + res.status + ' — ' + t.slice(0, 200), 'err');
     }
   } catch (e) {
-    log('imageLog', '✗ Échec réseau : ' + e.message, 'err');
+    log('imageLog', '✗ Échec réseau : ' + e.message + await netHint(url), 'err');
   }
 }
 
