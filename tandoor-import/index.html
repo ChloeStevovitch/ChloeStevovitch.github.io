@@ -66,12 +66,20 @@
   input[type=file] { width:100%; margin-top:4px; }
   .row { display:flex; gap:10px; }
   .row > * { flex:1; }
+  .thumbs { display:grid; grid-template-columns:repeat(auto-fill, minmax(84px, 1fr)); gap:8px; margin-top:10px; }
+  .thumb { position:relative; }
+  .thumb img { width:100%; aspect-ratio:1; object-fit:cover; border-radius:8px; border:1px solid var(--border); display:block; }
+  .thumb .n { position:absolute; left:4px; top:4px; background:rgba(0,0,0,.65); color:#fff; font-size:.7rem; padding:1px 6px; border-radius:99px; }
+  .thumb .x { position:absolute; right:4px; top:4px; width:22px; height:22px; margin:0; padding:0; border-radius:50%; background:rgba(0,0,0,.65); font-size:.8rem; line-height:22px; }
+  #candImg { width:100%; max-height:320px; object-fit:contain; border-radius:10px; border:1px solid var(--border); margin-top:10px; background:var(--bg); }
+  .check { display:flex; align-items:center; gap:8px; color:var(--text); font-size:.88rem; margin-top:12px; }
+  .check input { width:auto; }
 </style>
 </head>
 <body>
 <div class="wrap">
   <h1>🍲 Import Tandoor</h1>
-  <p class="sub">Interface autonome — tourne entièrement dans ce navigateur, aucune donnée ne transite ailleurs.</p>
+  <p class="sub">Interface autonome — tourne dans ce navigateur. Les photos ne sont envoyées qu'à l'API Claude (analyse) et, sans photo du plat, une recherche d'image est faite sur Wikimedia / Pollinations.</p>
 
   <div class="card">
     <h2><span id="statusDot" class="status-dot"></span> Connexion</h2>
@@ -79,8 +87,24 @@
     <input type="text" id="tandoorUrl" placeholder="https://cook.cabanologues.com">
     <label>Token API</label>
     <input type="password" id="tandoorToken" placeholder="tda_xxxxxxxx">
+    <label>Clé API Anthropic (pour analyser les photos — optionnelle)</label>
+    <input type="password" id="anthropicKey" placeholder="sk-ant-...">
+    <label>Modèle Claude</label>
+    <input type="text" id="claudeModel" placeholder="claude-sonnet-5">
     <button onclick="saveAuth()">Enregistrer et rester connecté</button>
     <p class="muted" id="authInfo"></p>
+  </div>
+
+  <div class="card">
+    <h2>📷 Photos de la recette</h2>
+    <p class="muted">Ajoute une ou plusieurs photos (pages de livre, notes, photo du plat…). Claude extrait le texte, le traduit en français et remplit le JSON ci-dessous pour que tu le relises.</p>
+    <input type="file" id="photoFiles" accept="image/*" multiple onchange="addPhotos(this)">
+    <div class="thumbs" id="thumbs"></div>
+    <div class="row">
+      <button onclick="analyzePhotos()" id="analyzeBtn">Analyser avec Claude</button>
+      <button class="secondary" onclick="clearPhotos()">Tout effacer</button>
+    </div>
+    <div class="log" id="photoLog"></div>
   </div>
 
   <div class="card">
@@ -92,17 +116,21 @@
   </div>
 
   <div class="card">
-    <h2>🖼️ Photo</h2>
-    <p class="muted">Choisis une photo (celle du livre par exemple) et envoie-la. Sans ID, elle est associée à la dernière recette créée.</p>
+    <h2>🖼️ Image de la recette</h2>
+    <p class="muted">Après l'analyse, une image est proposée : la photo du plat si tu en as fournie une, sinon une photo libre trouvée sur Wikimedia Commons, sinon une image générée. Tu peux aussi choisir ton propre fichier.</p>
+    <img id="candImg" alt="" hidden>
+    <p class="muted" id="candLabel"></p>
+    <button class="secondary" onclick="nextCandidate()">Autre proposition</button>
+    <label>Ou ton propre fichier (prioritaire)</label>
+    <input type="file" id="imageFile" accept="image/*">
     <label>ID de la recette (optionnel)</label>
     <input type="text" id="recipeId" placeholder="vide = dernière recette créée">
-    <label>Fichier image</label>
-    <input type="file" id="imageFile" accept="image/*">
+    <label class="check"><input type="checkbox" id="autoSend" checked> Envoyer l'image automatiquement après l'import</label>
     <button onclick="uploadImage()">Envoyer l'image</button>
     <div class="log" id="imageLog"></div>
   </div>
 
-  <p class="muted" style="text-align:center">Le token est stocké uniquement dans ce navigateur (localStorage), jamais envoyé ailleurs qu'à ton propre serveur Tandoor.</p>
+  <p class="muted" style="text-align:center">Le token Tandoor et la clé API sont stockés uniquement dans ce navigateur (localStorage). Le token n'est envoyé qu'à ton serveur Tandoor, la clé qu'à api.anthropic.com.</p>
 </div>
 
 <script>
@@ -130,6 +158,8 @@ function refreshStatus() {
     info.textContent = 'Connecté à ' + url;
     document.getElementById('tandoorUrl').value = url;
     document.getElementById('tandoorToken').value = token;
+    document.getElementById('anthropicKey').value = localStorage.getItem('anthropic_key') || '';
+    document.getElementById('claudeModel').value = localStorage.getItem('claude_model') || '';
   } else {
     dot.classList.remove('on');
     info.textContent = 'Non connecté';
@@ -142,7 +172,269 @@ function saveAuth() {
   if (!url || !token) { alert('URL et token requis.'); return; }
   localStorage.setItem('tandoor_url', url);
   localStorage.setItem('tandoor_token', token);
+  localStorage.setItem('anthropic_key', document.getElementById('anthropicKey').value.trim());
+  localStorage.setItem('claude_model', document.getElementById('claudeModel').value.trim());
   refreshStatus();
+}
+
+// ---------- Photos → recette (API Claude) ----------
+const DEFAULT_MODEL = 'claude-sonnet-5';
+let photos = [];      // { name, blob, b64 }
+let current = null;   // image candidate: { blob, label }
+let queue = [];       // remaining candidates
+let currentUrl = null;
+
+function resizeToJpeg(file, maxSide = 2000) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const src = URL.createObjectURL(file);
+    img.onload = () => {
+      const k = Math.min(1, maxSide / Math.max(img.width, img.height));
+      const c = document.createElement('canvas');
+      c.width = Math.round(img.width * k);
+      c.height = Math.round(img.height * k);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(src);
+      c.toBlob(b => b ? resolve(b) : reject(new Error('conversion impossible')), 'image/jpeg', 0.85);
+    };
+    img.onerror = () => { URL.revokeObjectURL(src); reject(new Error('image illisible (' + file.name + ')')); };
+    img.src = src;
+  });
+}
+
+function blobToBase64(blob) {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(String(r.result).split(',')[1]);
+    r.onerror = () => reject(r.error);
+    r.readAsDataURL(blob);
+  });
+}
+
+async function addPhotos(input) {
+  for (const f of input.files) {
+    try {
+      const blob = await resizeToJpeg(f);
+      photos.push({ name: f.name, blob, b64: await blobToBase64(blob) });
+    } catch (e) {
+      log('photoLog', '✗ ' + e.message, 'err');
+    }
+  }
+  input.value = '';
+  renderThumbs();
+}
+
+function renderThumbs() {
+  const box = document.getElementById('thumbs');
+  box.textContent = '';
+  photos.forEach((p, i) => {
+    const d = document.createElement('div');
+    d.className = 'thumb';
+    const img = document.createElement('img');
+    img.src = URL.createObjectURL(p.blob);
+    const n = document.createElement('span');
+    n.className = 'n'; n.textContent = i + 1;
+    const x = document.createElement('button');
+    x.className = 'x'; x.textContent = '✕';
+    x.onclick = () => { photos.splice(i, 1); renderThumbs(); };
+    d.append(img, n, x);
+    box.append(d);
+  });
+}
+
+function clearPhotos() { photos = []; renderThumbs(); }
+
+const RECIPE_TOOL = {
+  name: 'submit_recipe',
+  description: 'Renvoie la recette extraite des photos, en français.',
+  input_schema: {
+    type: 'object',
+    required: ['name', 'steps', 'image_search_query', 'image_prompt'],
+    properties: {
+      name: { type: 'string' },
+      description: { type: 'string', description: 'Une phrase de présentation.' },
+      servings: { type: 'number' },
+      servings_text: { type: 'string', description: 'ex. « portions », « personnes ».' },
+      working_time: { type: 'integer', description: 'minutes' },
+      waiting_time: { type: 'integer', description: 'minutes' },
+      steps: {
+        type: 'array',
+        items: {
+          type: 'object',
+          required: ['instruction', 'ingredients'],
+          properties: {
+            name: { type: 'string' },
+            instruction: { type: 'string' },
+            ingredients: {
+              type: 'array',
+              items: {
+                type: 'object',
+                required: ['food'],
+                properties: {
+                  amount: { type: ['number', 'null'] },
+                  unit: { type: ['string', 'null'], description: 'ex. g, ml, c. à soupe, c. à café ; null si sans unité.' },
+                  food: { type: 'string', description: 'Nom de l\'aliment, au singulier/naturel, sans quantité.' },
+                  note: { type: 'string', description: 'ex. « émincé », « en conserve, égoutté ».' }
+                }
+              }
+            }
+          }
+        }
+      },
+      keywords: { type: 'array', items: { type: 'string' } },
+      dish_photo_index: { type: ['integer', 'null'], description: 'Numéro (à partir de 0) de la photo qui montre le plat fini. null s\'il n\'y en a pas. Ne jamais désigner une page de texte.' },
+      image_search_query: { type: 'string', description: 'Requête courte EN ANGLAIS pour trouver une photo du plat sur Wikimedia Commons (ex. « white bean rosti »).' },
+      image_prompt: { type: 'string', description: 'Prompt EN ANGLAIS pour générer une photo culinaire réaliste du plat.' },
+      notes: { type: 'string', description: 'Remarques pour l\'utilisateur : passages illisibles, valeurs incertaines, ou recette reconstituée faute de texte.' }
+    }
+  }
+};
+
+const SYSTEM_PROMPT = `Tu analyses des photos liées à une recette de cuisine : pages de livre, captures d'écran, notes manuscrites, et/ou photo du plat fini. Chaque image est précédée de son numéro (Photo 0, Photo 1…).
+1. Extrais fidèlement tout le texte de la recette présent sur les photos, dans l'ordre de lecture (les recettes peuvent s'étendre sur plusieurs photos).
+2. Traduis en français si le texte est dans une autre langue. Ne convertis pas les quantités ni les unités : traduis seulement leur nom (cups → tasses, tbsp → c. à soupe, tsp → c. à café). Utilise les abréviations courantes : g, kg, ml, l, c. à soupe, c. à café.
+3. Structure en étapes ; regroupe les ingrédients dans l'étape où ils sont utilisés. Mots-clés : quelques étiquettes courtes en minuscules (régime, type de plat…).
+4. N'invente aucun ingrédient, quantité ou étape absents des photos ; signale ce qui est illisible ou incertain dans « notes ».
+5. Si aucune photo ne contient de texte de recette (uniquement le plat), propose une recette plausible et courante pour ce plat, et dis-le clairement dans « notes ».
+Réponds uniquement via l'outil submit_recipe.`;
+
+function toTandoorPayload(r) {
+  return {
+    name: r.name,
+    description: r.description || '',
+    servings: r.servings || 1,
+    servings_text: r.servings_text || 'portion',
+    working_time: r.working_time || 0,
+    waiting_time: r.waiting_time || 0,
+    steps: (r.steps || []).map(s => ({
+      name: s.name || '',
+      instruction: s.instruction || '',
+      ingredients: (s.ingredients || []).map((i, k) => ({
+        amount: typeof i.amount === 'number' ? i.amount : 0,
+        note: i.note || '',
+        unit: i.unit ? { name: i.unit } : null,
+        food: { name: i.food },
+        order: k + 1
+      }))
+    })),
+    keywords: (r.keywords || []).map(name => ({ name }))
+  };
+}
+
+async function analyzePhotos() {
+  const key = localStorage.getItem('anthropic_key') || '';
+  if (!key) { alert('Renseigne ta clé API Anthropic dans « Connexion » puis enregistre.'); return; }
+  if (!photos.length) { alert('Ajoute au moins une photo.'); return; }
+  const btn = document.getElementById('analyzeBtn');
+  btn.disabled = true;
+  log('photoLog', '⏳ Analyse de ' + photos.length + ' photo(s) par Claude…');
+  const content = [];
+  photos.forEach((p, i) => {
+    content.push({ type: 'text', text: 'Photo ' + i + ' :' });
+    content.push({ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: p.b64 } });
+  });
+  content.push({ type: 'text', text: 'Extrais et traduis la recette.' });
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'x-api-key': key,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
+        'content-type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: localStorage.getItem('claude_model') || DEFAULT_MODEL,
+        max_tokens: 8000,
+        system: SYSTEM_PROMPT,
+        tools: [RECIPE_TOOL],
+        tool_choice: { type: 'tool', name: 'submit_recipe' },
+        messages: [{ role: 'user', content }]
+      })
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      log('photoLog', '✗ Erreur API ' + res.status + ' — ' + ((data.error && data.error.message) || JSON.stringify(data)), 'err');
+      return;
+    }
+    const tool = (data.content || []).find(b => b.type === 'tool_use');
+    if (!tool) { log('photoLog', '✗ Réponse inattendue de Claude.', 'err'); return; }
+    const r = tool.input;
+    document.getElementById('recipeJson').value = JSON.stringify(toTandoorPayload(r), null, 2);
+    log('photoLog', '✓ Recette « ' + r.name + ' » extraite — relis le JSON ci-dessous avant d\'importer.', 'ok');
+    if (r.notes) log('photoLog', 'ℹ️ ' + r.notes);
+    await prepareImageQueue(r);
+    await nextCandidate();
+  } catch (e) {
+    log('photoLog', '✗ Échec : ' + e.message, 'err');
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// ---------- Image de la recette ----------
+async function wikimediaCandidates(q) {
+  const u = 'https://commons.wikimedia.org/w/api.php?action=query&format=json&origin=*&generator=search&gsrnamespace=6&gsrlimit=8'
+    + '&gsrsearch=' + encodeURIComponent(q + ' filetype:bitmap')
+    + '&prop=imageinfo&iiprop=url|mime&iiurlwidth=1200';
+  const d = await (await fetch(u)).json();
+  const pages = Object.values((d.query && d.query.pages) || {}).sort((a, b) => a.index - b.index);
+  return pages
+    .filter(p => p.imageinfo && p.imageinfo[0].mime === 'image/jpeg')
+    .map(p => ({
+      kind: 'wikimedia',
+      url: p.imageinfo[0].thumburl || p.imageinfo[0].url,
+      label: 'Wikimedia Commons — ' + p.title.replace(/^File:/, '') + ' (vérifie la licence : ' + p.imageinfo[0].descriptionurl + ')'
+    }));
+}
+
+async function prepareImageQueue(r) {
+  queue = [];
+  const i = r.dish_photo_index;
+  if (Number.isInteger(i) && photos[i]) {
+    queue.push({ kind: 'photo', blob: photos[i].blob, label: 'Ta photo n°' + (i + 1) + ' (plat fini)' });
+  }
+  try {
+    (await wikimediaCandidates(r.image_search_query || r.name)).forEach(c => queue.push(c));
+  } catch (e) {
+    log('imageLog', 'Recherche Wikimedia impossible : ' + e.message, 'err');
+  }
+  queue.push({ kind: 'ai', prompt: r.image_prompt || ('appetizing photo of ' + r.name), seed: 1 });
+}
+
+async function loadCandidate(c) {
+  if (c.blob) return c.blob;
+  const src = c.kind === 'ai'
+    ? 'https://image.pollinations.ai/prompt/' + encodeURIComponent(c.prompt) + '?width=1024&height=768&nologo=true&seed=' + c.seed
+    : c.url;
+  const res = await fetch(src);
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  const blob = await res.blob();
+  if (!blob.type.startsWith('image/')) throw new Error('réponse non image');
+  return blob;
+}
+
+async function nextCandidate() {
+  while (queue.length) {
+    const c = queue.shift();
+    if (c.kind === 'ai') log('imageLog', '⏳ Génération d\'une image…');
+    try {
+      const blob = await loadCandidate(c);
+      current = { blob, label: c.kind === 'ai' ? 'Image générée par IA (Pollinations) — variante ' + c.seed : c.label };
+      if (c.kind === 'ai') queue.push({ ...c, seed: c.seed + 1 });
+      if (currentUrl) URL.revokeObjectURL(currentUrl);
+      currentUrl = URL.createObjectURL(blob);
+      const img = document.getElementById('candImg');
+      img.src = currentUrl;
+      img.hidden = false;
+      document.getElementById('candLabel').textContent = current.label;
+      return true;
+    } catch (e) {
+      log('imageLog', '✗ Proposition ignorée (' + c.kind + ') : ' + e.message, 'err');
+    }
+  }
+  log('imageLog', 'Plus de proposition disponible. Choisis ton propre fichier.', 'err');
+  return false;
 }
 
 async function importRecipe() {
@@ -168,6 +460,8 @@ async function importRecipe() {
     if (res.ok) {
       log('importLog', '✓ Recette créée — ID ' + data.id + ' (' + (data.name || '') + ')', 'ok');
       document.getElementById('recipeId').value = data.id;
+      const hasImage = document.getElementById('imageFile').files[0] || current;
+      if (hasImage && document.getElementById('autoSend').checked) await uploadImage(data.id);
     } else {
       log('importLog', '✗ Erreur ' + res.status + ' — ' + JSON.stringify(data), 'err');
     }
@@ -176,12 +470,14 @@ async function importRecipe() {
   }
 }
 
-async function uploadImage() {
+async function uploadImage(knownId) {
   const { url, token } = getAuth();
-  let id = document.getElementById('recipeId').value.trim();
+  let id = knownId ? String(knownId) : document.getElementById('recipeId').value.trim();
   const file = document.getElementById('imageFile').files[0];
+  const blob = file || (current && current.blob);
+  const fname = file ? file.name : 'recette.jpg';
   if (!url || !token) { alert('Connecte-toi d\'abord.'); return; }
-  if (!file) { alert('Choisis une image.'); return; }
+  if (!blob) { alert('Aucune image : lance l\'analyse des photos ou choisis un fichier.'); return; }
   if (!id) {
     // Pas d'ID saisi : on prend la recette la plus récemment créée.
     try {
@@ -200,7 +496,7 @@ async function uploadImage() {
     }
   }
   const form = new FormData();
-  form.append('image', file, file.name);
+  form.append('image', blob, fname);
   try {
     const res = await fetch(url + '/api/recipe/' + id + '/image/', {
       method: 'PUT',
