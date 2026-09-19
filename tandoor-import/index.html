@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Import Tandoor</title>
+<style>
+  :root {
+    --bg: #faf8f5;
+    --card: #ffffff;
+    --text: #2b2620;
+    --muted: #7a7268;
+    --accent: #a3763f;
+    --accent-dark: #7d5a30;
+    --border: #e6ddd0;
+    --ok: #3f7d4f;
+    --err: #b3462c;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #1c1a17;
+      --card: #262320;
+      --text: #f0ebe3;
+      --muted: #b0a89c;
+      --accent: #d3a15f;
+      --accent-dark: #e6ba81;
+      --border: #3a352e;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .wrap { max-width: 640px; margin: 0 auto; padding: 24px 16px 60px; }
+  h1 { font-size: 1.4rem; margin: 8px 0 4px; }
+  p.sub { color: var(--muted); margin: 0 0 24px; font-size: 0.92rem; }
+  .card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 14px; padding: 18px; margin-bottom: 18px;
+  }
+  .card h2 { font-size: 1.02rem; margin: 0 0 12px; display:flex; align-items:center; gap:8px; }
+  label { display:block; font-size: 0.85rem; color: var(--muted); margin: 10px 0 4px; }
+  input[type=text], input[type=password], textarea {
+    width: 100%; padding: 10px 12px; border-radius: 8px;
+    border: 1px solid var(--border); background: var(--bg); color: var(--text);
+    font-size: 0.95rem; font-family: inherit;
+  }
+  textarea { min-height: 220px; font-family: ui-monospace, Menlo, monospace; font-size: 0.8rem; resize: vertical; }
+  button {
+    margin-top: 14px; width: 100%; padding: 12px; border: none; border-radius: 10px;
+    background: var(--accent); color: #fff; font-size: 0.95rem; font-weight: 600;
+    cursor: pointer;
+  }
+  button:active { background: var(--accent-dark); }
+  button.secondary { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
+  button:disabled { opacity: 0.5; }
+  .status-dot { width: 9px; height: 9px; border-radius: 50%; display:inline-block; background:#999; }
+  .status-dot.on { background: var(--ok); }
+  .log { margin-top: 12px; font-size: 0.82rem; white-space: pre-wrap; word-break: break-word; }
+  .log .ok { color: var(--ok); }
+  .log .err { color: var(--err); }
+  .muted { color: var(--muted); font-size: 0.8rem; }
+  input[type=file] { width:100%; margin-top:4px; }
+  .row { display:flex; gap:10px; }
+  .row > * { flex:1; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🍲 Import Tandoor</h1>
+  <p class="sub">Interface autonome — tourne entièrement dans ce navigateur, aucune donnée ne transite ailleurs.</p>
+
+  <div class="card">
+    <h2><span id="statusDot" class="status-dot"></span> Connexion</h2>
+    <label>URL de ton instance Tandoor</label>
+    <input type="text" id="tandoorUrl" placeholder="https://cook.cabanologues.com">
+    <label>Token API</label>
+    <input type="password" id="tandoorToken" placeholder="tda_xxxxxxxx">
+    <button onclick="saveAuth()">Enregistrer et rester connecté</button>
+    <p class="muted" id="authInfo"></p>
+  </div>
+
+  <div class="card">
+    <h2>📋 JSON de la recette</h2>
+    <p class="muted">Pré-rempli avec la dernière recette. Modifie librement avant d'importer.</p>
+    <textarea id="recipeJson"></textarea>
+    <button onclick="importRecipe()">Importer la recette</button>
+    <div class="log" id="importLog"></div>
+  </div>
+
+  <div class="card">
+    <h2>🖼️ Photo</h2>
+    <p class="muted">Une fois la recette importée, choisis une photo (celle du livre par exemple) et envoie-la.</p>
+    <label>ID de la recette</label>
+    <input type="text" id="recipeId" placeholder="rempli automatiquement après import">
+    <label>Fichier image</label>
+    <input type="file" id="imageFile" accept="image/*">
+    <button onclick="uploadImage()">Envoyer l'image</button>
+    <div class="log" id="imageLog"></div>
+  </div>
+
+  <p class="muted" style="text-align:center">Le token est stocké uniquement dans ce navigateur (localStorage), jamais envoyé ailleurs qu'à ton propre serveur Tandoor.</p>
+</div>
+
+<script>
+function log(el, msg, cls) {
+  const d = document.getElementById(el);
+  const line = document.createElement('div');
+  if (cls) line.className = cls;
+  line.textContent = msg;
+  d.prepend(line);
+}
+
+function getAuth() {
+  return {
+    url: (localStorage.getItem('tandoor_url') || '').replace(/\/$/, ''),
+    token: localStorage.getItem('tandoor_token') || ''
+  };
+}
+
+function refreshStatus() {
+  const { url, token } = getAuth();
+  const dot = document.getElementById('statusDot');
+  const info = document.getElementById('authInfo');
+  if (url && token) {
+    dot.classList.add('on');
+    info.textContent = 'Connecté à ' + url;
+    document.getElementById('tandoorUrl').value = url;
+    document.getElementById('tandoorToken').value = token;
+  } else {
+    dot.classList.remove('on');
+    info.textContent = 'Non connecté';
+  }
+}
+
+function saveAuth() {
+  const url = document.getElementById('tandoorUrl').value.trim();
+  const token = document.getElementById('tandoorToken').value.trim();
+  if (!url || !token) { alert('URL et token requis.'); return; }
+  localStorage.setItem('tandoor_url', url);
+  localStorage.setItem('tandoor_token', token);
+  refreshStatus();
+}
+
+async function importRecipe() {
+  const { url, token } = getAuth();
+  if (!url || !token) { alert('Connecte-toi d\'abord.'); return; }
+  let payload;
+  try {
+    payload = JSON.parse(document.getElementById('recipeJson').value);
+  } catch (e) {
+    log('importLog', 'JSON invalide : ' + e.message, 'err');
+    return;
+  }
+  try {
+    const res = await fetch(url + '/api/recipe/', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + token,
+        'Content-Type': 'application/json; charset=utf-8'
+      },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json().catch(() => ({}));
+    if (res.ok) {
+      log('importLog', '✓ Recette créée — ID ' + data.id + ' (' + (data.name || '') + ')', 'ok');
+      document.getElementById('recipeId').value = data.id;
+    } else {
+      log('importLog', '✗ Erreur ' + res.status + ' — ' + JSON.stringify(data), 'err');
+    }
+  } catch (e) {
+    log('importLog', '✗ Échec réseau : ' + e.message + ' (vérifie CORS/CSRF_TRUSTED_ORIGINS côté Tandoor)', 'err');
+  }
+}
+
+async function uploadImage() {
+  const { url, token } = getAuth();
+  const id = document.getElementById('recipeId').value.trim();
+  const file = document.getElementById('imageFile').files[0];
+  if (!url || !token) { alert('Connecte-toi d\'abord.'); return; }
+  if (!id) { alert('ID de recette manquant.'); return; }
+  if (!file) { alert('Choisis une image.'); return; }
+  const form = new FormData();
+  form.append('image', file, file.name);
+  try {
+    const res = await fetch(url + '/api/recipe/' + id + '/image/', {
+      method: 'PUT',
+      headers: { 'Authorization': 'Bearer ' + token },
+      body: form
+    });
+    if (res.ok) {
+      log('imageLog', '✓ Image envoyée pour la recette ' + id, 'ok');
+    } else {
+      const t = await res.text();
+      log('imageLog', '✗ Erreur ' + res.status + ' — ' + t.slice(0, 200), 'err');
+    }
+  } catch (e) {
+    log('imageLog', '✗ Échec réseau : ' + e.message, 'err');
+  }
+}
+
+document.getElementById('recipeJson').value = JSON.stringify({
+  "name": "Rösti de haricots blancs au « cottage cheese »",
+  "description": "Un repas salé et rassasiant, parfait après l'entraînement.",
+  "servings": 1,
+  "servings_text": "portion",
+  "working_time": 30,
+  "waiting_time": 0,
+  "steps": [
+    {
+      "name": "Rösti",
+      "instruction": "D'abord, préparez le rösti. Dans un saladier, mélangez les haricots cannellini, les graines de lin moulues, l'ail en poudre, le poivre noir, le sel et la levure nutritionnelle. Écrasez avec un presse-purée jusqu'à obtenir un mélange homogène qui forme une boule bien compacte. Faites chauffer 1 c. à café d'huile d'olive dans une petite poêle antiadhésive à feu moyen, placez-y la boule et aplatissez-la à la fourchette sur environ 1 cm d'épaisseur. Faites cuire 5 minutes, posez une petite assiette dessus et retournez la poêle pour faire tomber le rösti sur l'assiette. Ajoutez le reste d'huile dans la poêle, faites glisser le rösti dedans et cuisez 5 minutes de l'autre côté. Faites-le glisser à nouveau sur une assiette.",
+      "ingredients": [
+        {"amount":400,"note":"en conserve, égouttés et rincés","unit":{"name":"g"},"food":{"name":"haricots cannellini"},"order":1},
+        {"amount":1,"note":"","unit":{"name":"c. à soupe"},"food":{"name":"graines de lin moulues"},"order":2},
+        {"amount":0.5,"note":"","unit":{"name":"c. à café"},"food":{"name":"ail en poudre"},"order":3},
+        {"amount":0.25,"note":"plus pour servir","unit":{"name":"c. à café"},"food":{"name":"poivre noir"},"order":4},
+        {"amount":0.5,"note":"","unit":{"name":"c. à café"},"food":{"name":"sel de mer"},"order":5},
+        {"amount":1,"note":"","unit":{"name":"c. à soupe"},"food":{"name":"levure nutritionnelle"},"order":6},
+        {"amount":2,"note":"","unit":{"name":"c. à café"},"food":{"name":"huile d'olive extra vierge"},"order":7}
+      ]
+    },
+    {
+      "name": "« Cottage cheese »",
+      "instruction": "Mixez le tofu soyeux, la levure nutritionnelle et la pâte de miso au blender. Assaisonnez selon le goût, puis émiettez le tofu extra-ferme en petits morceaux et incorporez-les. Le résultat doit ressembler à du cottage cheese.",
+      "ingredients": [
+        {"amount":150,"note":"","unit":{"name":"g"},"food":{"name":"tofu soyeux"},"order":1},
+        {"amount":2,"note":"","unit":{"name":"c. à soupe"},"food":{"name":"levure nutritionnelle"},"order":2},
+        {"amount":1,"note":"","unit":{"name":"c. à soupe"},"food":{"name":"pâte de miso blanc"},"order":3},
+        {"amount":100,"note":"","unit":{"name":"g"},"food":{"name":"tofu extra-ferme"},"order":4}
+      ]
+    },
+    {
+      "name": "Oignon mariné rapide",
+      "instruction": "Mettez l'oignon rouge émincé dans un petit bol avec une bonne pincée de sel et le jus de citron vert. Pincez avec les doigts puis réservez.",
+      "ingredients": [
+        {"amount":0.5,"note":"","unit":null,"food":{"name":"oignon rouge"},"order":1},
+        {"amount":0.5,"note":"jus","unit":null,"food":{"name":"citron vert"},"order":2}
+      ]
+    },
+    {
+      "name": "Pour servir",
+      "instruction": "Déposez le « cottage cheese » sur le rösti, puis garnissez avec l'oignon mariné, la coriandre fraîche, les flocons de piment et l'avocat tranché.",
+      "ingredients": [
+        {"amount":0.5,"note":"pelé, dénoyauté et tranché","unit":null,"food":{"name":"avocat mûr"},"order":1}
+      ]
+    }
+  ],
+  "keywords": [{"name":"post-entraînement"},{"name":"végane"},{"name":"riche en protéines"}]
+}, null, 2);
+
+refreshStatus();
+</script>
+</body>
+</html>
