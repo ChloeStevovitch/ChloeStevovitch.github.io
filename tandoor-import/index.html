@@ -1,0 +1,427 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Import Tandoor</title>
+<meta name="description" content="Créez des recettes directement dans votre instance Tandoor depuis le navigateur, sans script à installer.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🍲</text></svg>">
+<style>
+  :root{
+    --ink:#241a10; --ink-soft:#5b4a37; --ink-faint:#8a7a63;
+    --ground:#f3e7cd; --surface:#fffaf0; --surface-2:#eaddbd;
+    --line: rgba(36,26,16,0.14);
+    --accent:#b9740f; --accent-strong:#8a5710;
+    --ok:#3f7d3a; --warn:#b9550f; --err:#b3261e;
+    --shadow: 0 1px 2px rgba(36,26,16,.06), 0 10px 24px -12px rgba(36,26,16,.22);
+    --font-display:'Georgia','Times New Roman',serif;
+    --font-body:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --ink:#ece3d2; --ink-soft:#c9bca4; --ink-faint:#8a7f6b;
+      --ground:#1c1610; --surface:#262019; --surface-2:#2e271d;
+      --line: rgba(236,227,210,0.12);
+      --accent:#dba64a; --accent-strong:#f0c169;
+      --ok:#7fbf78; --warn:#e08a3f; --err:#e5766d;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 12px 28px -12px rgba(0,0,0,.55);
+    }
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--font-body);line-height:1.5;}
+  a{color:var(--accent-strong);}
+  .wrap{max-width:920px;margin:0 auto;padding:32px 20px 80px;}
+  .back{display:inline-block;margin-bottom:18px;color:var(--ink-soft);text-decoration:none;font-size:.9rem;}
+  .back:hover{color:var(--accent-strong);}
+  header h1{font-family:var(--font-display);font-size:clamp(1.7rem,4vw,2.2rem);margin:0 0 8px;}
+  header p{margin:0 0 4px;color:var(--ink-soft);max-width:68ch;font-size:.98rem;}
+  h2{font-family:var(--font-display);font-size:1.2rem;margin:0 0 .8rem;}
+  h3{font-size:.95rem;margin:1rem 0 .5rem;opacity:.85;}
+  .panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:1.1rem 1.2rem;box-shadow:var(--shadow);margin-top:1.2rem;}
+  label{display:block;font-size:.85rem;margin:.5rem 0 .3rem;color:var(--ink-soft);}
+  input[type=text], input[type=url], input[type=password], input[type=number], input[type=file], textarea{
+    width:100%;padding:.5rem .6rem;border:1px solid var(--line);border-radius:6px;
+    background:var(--surface-2);color:var(--ink);font:inherit;font-size:.92rem;
+  }
+  textarea{resize:vertical;}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:.7rem;}
+  .row4{display:grid;grid-template-columns:repeat(4,1fr);gap:.7rem;}
+  @media (max-width:640px){ .row2,.row4{grid-template-columns:1fr 1fr;} }
+  .inline{display:flex;align-items:center;gap:.4rem;font-size:.85rem;color:var(--ink-soft);}
+  .inline input{width:auto;}
+  button{font:inherit;font-size:.88rem;padding:.55rem .9rem;border-radius:6px;border:1px solid var(--line);
+    background:var(--surface-2);color:var(--ink);cursor:pointer;}
+  button:hover{border-color:var(--accent);}
+  button.primary{background:var(--accent);border-color:var(--accent-strong);color:#fff;}
+  button.primary.big{width:100%;padding:.8rem;font-size:1rem;font-weight:600;}
+  button.ghost{background:transparent;}
+  button.small{padding:.3rem .55rem;font-size:.78rem;}
+  .conn-actions{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.6rem;}
+  .hint{font-size:.8rem;color:var(--ink-faint);margin:.5rem 0 0;}
+  .hint.warn{color:var(--warn);}
+  .status{font-size:.85rem;margin-top:.6rem;min-height:1.2em;}
+  .status.ok{color:var(--ok);}
+  .status.err{color:var(--err);}
+  details{margin-top:.6rem;font-size:.85rem;}
+  details > summary{cursor:pointer;color:var(--accent-strong);font-weight:600;}
+  details pre{background:var(--surface-2);border:1px solid var(--line);border-radius:6px;padding:.6rem;overflow:auto;font-size:.78rem;}
+  #jsonPaste{margin-top:.5rem;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.8rem;}
+
+  .recipe-card{border:1px solid var(--line);}
+  .recipe-card-head{display:flex;gap:.6rem;align-items:center;margin-bottom:.3rem;}
+  .recipe-card-head .f-name{font-family:var(--font-display);font-size:1.1rem;font-weight:700;flex:1;}
+  .step-block{border:1px dashed var(--line);border-radius:8px;padding:.7rem .8rem;margin:.6rem 0;background:var(--ground);}
+  .step-head{display:flex;gap:.6rem;align-items:center;}
+  .step-head .f-stepname{flex:1;}
+  .ingredient-row{display:grid;grid-template-columns:.7fr .9fr 1.3fr 1fr auto;gap:.4rem;margin-top:.4rem;align-items:center;}
+  @media (max-width:640px){ .ingredient-row{grid-template-columns:1fr 1fr;} }
+  .recipe-status{font-size:.82rem;margin-top:.6rem;min-height:1.2em;}
+  .recipe-status.ok{color:var(--ok);}
+  .recipe-status.err{color:var(--err);}
+  #recipes{display:flex;flex-direction:column;gap:1rem;margin-top:1rem;}
+  #log{margin-top:.8rem;font-size:.85rem;}
+  footer{margin-top:40px;color:var(--ink-faint);font-size:.85rem;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../">← Boîte à outils</a>
+
+  <header>
+    <h1>Import Tandoor</h1>
+    <p>Remplissez vos recettes ci-dessous, puis envoyez-les directement dans votre instance Tandoor.
+    Tout part de votre navigateur : rien n'est stocké ni relayé par un serveur intermédiaire, et aucun
+    identifiant n'est écrit dans le code de cette page.</p>
+    <p>Cet outil ne lit pas de photos automatiquement. Si vous partez de photos de recettes, demandez
+    d'abord à Claude (dans une conversation classique) de les convertir au format JSON décrit plus bas,
+    puis collez le résultat ici.</p>
+  </header>
+
+  <section class="panel" id="connexion">
+    <h2>1. Connexion à Tandoor</h2>
+    <label for="tandoorUrl">URL de votre instance</label>
+    <input type="url" id="tandoorUrl" placeholder="https://cook.cabanologues.com">
+
+    <label for="tandoorToken">Jeton d'authentification (API Token)</label>
+    <input type="password" id="tandoorToken" placeholder="tda_...">
+    <span class="inline" style="margin-top:.3rem;">
+      <input type="checkbox" id="showToken"> <label for="showToken" style="margin:0;">afficher le jeton</label>
+    </span>
+
+    <div class="conn-actions">
+      <button id="saveConn">Enregistrer dans ce navigateur</button>
+      <button id="testConn" class="ghost">Tester la connexion</button>
+      <button id="clearConn" class="ghost">Oublier</button>
+    </div>
+
+    <p class="hint">Le jeton est stocké uniquement dans le stockage local de <em>votre</em> navigateur
+      (<code>localStorage</code>) — il n'en sort que pour être envoyé à l'URL Tandoor indiquée ci-dessus.
+      Utilisez de préférence un jeton dédié à cet usage.</p>
+    <p class="hint warn">Si les requêtes échouent avec une erreur réseau, votre serveur Tandoor doit
+      autoriser les requêtes envoyées depuis <code id="originHint"></code>
+      (réglage <code>CORS_ALLOWED_ORIGINS</code> côté Tandoor).</p>
+
+    <div id="connStatus" class="status"></div>
+  </section>
+
+  <section class="panel">
+    <h2>2. Recettes</h2>
+
+    <details>
+      <summary>Coller un JSON de recettes (optionnel)</summary>
+      <p class="hint">Format attendu — un tableau d'objets :</p>
+      <pre>[
+  {
+    "name": "Pudding de chia aux fruits rouges",
+    "description": "Petit-déjeuner rapide.",
+    "servings": 2,
+    "servings_text": "portions",
+    "working_time": 10,
+    "waiting_time": 240,
+    "keywords": ["petit-déjeuner", "végétalien"],
+    "image_url": "https://exemple.com/photo.jpg",
+    "steps": [
+      {
+        "name": "",
+        "instruction": "Mélanger les graines de chia et le lait, réfrigérer 4h.",
+        "ingredients": [
+          {"amount": 1, "unit": "tasse", "food": "lait d'amande", "note": ""},
+          {"amount": 3, "unit": "c. à soupe", "food": "graines de chia", "note": ""}
+        ]
+      }
+    ]
+  }
+]</pre>
+      <textarea id="jsonPaste" rows="6" placeholder="Collez votre JSON ici"></textarea>
+      <button id="loadJson">Charger dans le formulaire</button>
+    </details>
+
+    <div id="recipes"></div>
+    <button id="addRecipe" class="primary" style="margin-top:1rem;">+ Ajouter une recette</button>
+  </section>
+
+  <section class="panel">
+    <h2>3. Import</h2>
+    <button id="importAll" class="primary big">Importer toutes les recettes dans Tandoor</button>
+    <div id="log"></div>
+  </section>
+
+  <footer>chloestevovitch.github.io</footer>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  function esc(s){
+    return String(s ?? "").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+  function unitName(u){ if(!u) return ""; return typeof u === "object" ? (u.name||"") : String(u); }
+  function foodName(f){ if(!f) return ""; return typeof f === "object" ? (f.name||"") : String(f); }
+  function setStatus(id, msg, cls){
+    const el = document.getElementById(id);
+    el.textContent = msg;
+    el.className = "status" + (cls ? " "+cls : "");
+  }
+
+  // ---- Connexion ----
+  const urlInput = document.getElementById("tandoorUrl");
+  const tokenInput = document.getElementById("tandoorToken");
+  document.getElementById("originHint").textContent = location.origin;
+
+  function loadConn(){
+    try{
+      const u = localStorage.getItem("tandoor_url");
+      const t = localStorage.getItem("tandoor_token");
+      if(u) urlInput.value = u;
+      if(t) tokenInput.value = t;
+    }catch(e){}
+  }
+  function getConn(){
+    return { url: urlInput.value.trim().replace(/\/$/, ""), token: tokenInput.value.trim() };
+  }
+  document.getElementById("showToken").addEventListener("change", e=>{
+    tokenInput.type = e.target.checked ? "text" : "password";
+  });
+  document.getElementById("saveConn").addEventListener("click", ()=>{
+    try{
+      localStorage.setItem("tandoor_url", urlInput.value.trim());
+      localStorage.setItem("tandoor_token", tokenInput.value.trim());
+      setStatus("connStatus", "Enregistré dans ce navigateur.", "ok");
+    }catch(e){
+      setStatus("connStatus", "Impossible d'enregistrer (stockage bloqué par le navigateur).", "err");
+    }
+  });
+  document.getElementById("clearConn").addEventListener("click", ()=>{
+    try{ localStorage.removeItem("tandoor_url"); localStorage.removeItem("tandoor_token"); }catch(e){}
+    urlInput.value = ""; tokenInput.value = "";
+    setStatus("connStatus", "Identifiants oubliés.", "ok");
+  });
+  document.getElementById("testConn").addEventListener("click", async ()=>{
+    const {url, token} = getConn();
+    if(!url || !token){ setStatus("connStatus", "Renseignez l'URL et le jeton.", "err"); return; }
+    setStatus("connStatus", "Test en cours…", "");
+    try{
+      const res = await fetch(url + "/api/recipe/?page_size=1", { headers:{ "Authorization":"Bearer "+token } });
+      if(res.ok) setStatus("connStatus", "✓ Connexion réussie.", "ok");
+      else setStatus("connStatus", `✗ HTTP ${res.status} — vérifiez l'URL et le jeton.`, "err");
+    }catch(err){
+      setStatus("connStatus", `✗ Requête bloquée (réseau ou CORS) : ${err.message}`, "err");
+    }
+  });
+  loadConn();
+
+  // ---- Constructeur de recettes ----
+  const recipesEl = document.getElementById("recipes");
+
+  function ingredientRowHTML(ing){
+    ing = ing || {};
+    return `<div class="ingredient-row">
+      <input type="number" step="0.01" class="f-amount" placeholder="Qté" value="${ing.amount ?? ""}">
+      <input type="text" class="f-unit" placeholder="Unité" value="${esc(unitName(ing.unit))}">
+      <input type="text" class="f-food" placeholder="Ingrédient" value="${esc(foodName(ing.food))}">
+      <input type="text" class="f-note" placeholder="Note" value="${esc(ing.note||"")}">
+      <button type="button" class="ghost small remove-ingredient" title="Retirer">✕</button>
+    </div>`;
+  }
+  function stepBlockHTML(s){
+    s = s || {};
+    return `<div class="step-block">
+      <div class="step-head">
+        <input type="text" class="f-stepname" placeholder="Nom de l'étape (optionnel)" value="${esc(s.name||"")}">
+        <button type="button" class="ghost small remove-step" title="Retirer l'étape">✕ étape</button>
+      </div>
+      <label>Instructions</label>
+      <textarea class="f-instruction" rows="2">${esc(s.instruction||"")}</textarea>
+      <div class="ingredients"></div>
+      <button type="button" class="ghost small add-ingredient" style="margin-top:.4rem;">+ Ingrédient</button>
+    </div>`;
+  }
+  function recipeCardHTML(r){
+    r = r || {};
+    return `<article class="recipe-card panel">
+      <div class="recipe-card-head">
+        <input type="text" class="f-name" placeholder="Nom de la recette" value="${esc(r.name||"")}">
+        <button type="button" class="ghost small remove-recipe" title="Supprimer la recette">✕ recette</button>
+      </div>
+      <label>Description</label>
+      <input type="text" class="f-description" value="${esc(r.description||"")}">
+      <div class="row4">
+        <label>Portions<input type="number" class="f-servings" min="1" value="${r.servings ?? 4}"></label>
+        <label>Unité portions<input type="text" class="f-servings_text" value="${esc(r.servings_text||"portions")}"></label>
+        <label>Temps actif (min)<input type="number" class="f-working" min="0" value="${r.working_time ?? 0}"></label>
+        <label>Temps d'attente (min)<input type="number" class="f-waiting" min="0" value="${r.waiting_time ?? 0}"></label>
+      </div>
+      <label>Mots-clés (séparés par des virgules)</label>
+      <input type="text" class="f-keywords" value="${esc((r.keywords||[]).map(k=>k && k.name ? k.name : k).join(", "))}">
+      <div class="row2">
+        <label>Image — fichier<input type="file" class="f-imagefile" accept="image/*"></label>
+        <label>ou Image — URL<input type="url" class="f-imageurl" placeholder="https://..." value="${esc(r.image_url||"")}"></label>
+      </div>
+      <h3>Étapes</h3>
+      <div class="steps"></div>
+      <button type="button" class="ghost small add-step">+ Étape</button>
+      <div class="recipe-status"></div>
+    </article>`;
+  }
+
+  function addIngredientRow(stepEl, ing){
+    stepEl.querySelector(".ingredients").insertAdjacentHTML("beforeend", ingredientRowHTML(ing));
+  }
+  function addStepBlock(card, step){
+    card.querySelector(".steps").insertAdjacentHTML("beforeend", stepBlockHTML(step));
+    const stepEl = card.querySelector(".steps").lastElementChild;
+    const ings = (step && step.ingredients && step.ingredients.length) ? step.ingredients : [{}];
+    ings.forEach(i => addIngredientRow(stepEl, i));
+  }
+  function addRecipeCard(recipe){
+    recipesEl.insertAdjacentHTML("beforeend", recipeCardHTML(recipe));
+    const card = recipesEl.lastElementChild;
+    const steps = (recipe && recipe.steps && recipe.steps.length) ? recipe.steps : [{}];
+    steps.forEach(s => addStepBlock(card, s));
+    card.scrollIntoView({behavior:"smooth", block:"nearest"});
+  }
+
+  document.getElementById("addRecipe").addEventListener("click", () => addRecipeCard());
+  recipesEl.addEventListener("click", (e) => {
+    const t = e.target;
+    if(t.classList.contains("remove-recipe")) t.closest(".recipe-card").remove();
+    else if(t.classList.contains("add-step")) addStepBlock(t.closest(".recipe-card"), {});
+    else if(t.classList.contains("remove-step")) t.closest(".step-block").remove();
+    else if(t.classList.contains("add-ingredient")) addIngredientRow(t.closest(".step-block"), {});
+    else if(t.classList.contains("remove-ingredient")) t.closest(".ingredient-row").remove();
+  });
+
+  document.getElementById("loadJson").addEventListener("click", () => {
+    let arr;
+    try{
+      arr = JSON.parse(document.getElementById("jsonPaste").value);
+      if(!Array.isArray(arr)) throw new Error("le JSON doit être un tableau de recettes");
+    }catch(err){
+      alert("JSON invalide : " + err.message);
+      return;
+    }
+    arr.forEach(r => addRecipeCard(r));
+  });
+
+  // Une recette vide par défaut pour démarrer
+  addRecipeCard();
+
+  // ---- Sérialisation ----
+  function serializeRecipe(card){
+    const name = card.querySelector(".f-name").value.trim();
+    const description = card.querySelector(".f-description").value.trim();
+    const servings = parseInt(card.querySelector(".f-servings").value, 10) || 1;
+    const servings_text = card.querySelector(".f-servings_text").value.trim();
+    const working_time = parseInt(card.querySelector(".f-working").value, 10) || 0;
+    const waiting_time = parseInt(card.querySelector(".f-waiting").value, 10) || 0;
+    const keywords = card.querySelector(".f-keywords").value.split(",")
+      .map(k => k.trim()).filter(Boolean).map(name => ({name}));
+
+    const steps = [...card.querySelectorAll(".step-block")].map(stepEl => {
+      const ingredients = [...stepEl.querySelectorAll(".ingredient-row")].map((row, idx) => {
+        const food = row.querySelector(".f-food").value.trim();
+        if(!food) return null;
+        const amount = parseFloat(row.querySelector(".f-amount").value) || 0;
+        const unit = row.querySelector(".f-unit").value.trim();
+        const note = row.querySelector(".f-note").value.trim();
+        return { amount, note, unit: unit ? {name: unit} : null, food: {name: food}, order: idx+1 };
+      }).filter(Boolean);
+      return {
+        name: stepEl.querySelector(".f-stepname").value.trim(),
+        instruction: stepEl.querySelector(".f-instruction").value.trim(),
+        ingredients
+      };
+    });
+
+    const imageFile = card.querySelector(".f-imagefile").files[0] || null;
+    const imageUrl = card.querySelector(".f-imageurl").value.trim() || null;
+
+    return { recipe: {name, description, servings, servings_text, working_time, waiting_time, keywords, steps}, imageFile, imageUrl };
+  }
+
+  // ---- Import ----
+  document.getElementById("importAll").addEventListener("click", async () => {
+    const {url, token} = getConn();
+    if(!url || !token){
+      alert("Renseignez d'abord l'URL Tandoor et le jeton, puis testez la connexion.");
+      return;
+    }
+    const cards = [...recipesEl.querySelectorAll(".recipe-card")];
+    if(!cards.length){ alert("Aucune recette à importer."); return; }
+
+    for(const card of cards){
+      const statusEl = card.querySelector(".recipe-status");
+      const {recipe, imageFile, imageUrl} = serializeRecipe(card);
+      if(!recipe.name){
+        statusEl.textContent = "✗ nom manquant, ignorée";
+        statusEl.className = "recipe-status err";
+        continue;
+      }
+      statusEl.textContent = "Envoi…";
+      statusEl.className = "recipe-status";
+      try{
+        const res = await fetch(url + "/api/recipe/", {
+          method: "POST",
+          headers: { "Authorization": "Bearer "+token, "Content-Type": "application/json" },
+          body: JSON.stringify(recipe)
+        });
+        if(!res.ok){
+          const t = await res.text();
+          throw new Error(`HTTP ${res.status} — ${t.slice(0,200)}`);
+        }
+        const created = await res.json();
+        statusEl.textContent = `✓ créée (ID ${created.id})`;
+        statusEl.className = "recipe-status ok";
+
+        if(imageFile || imageUrl){
+          try{
+            let blob = imageFile;
+            if(!blob && imageUrl){
+              const imgRes = await fetch(imageUrl);
+              if(!imgRes.ok) throw new Error("HTTP "+imgRes.status);
+              blob = await imgRes.blob();
+            }
+            const fd = new FormData();
+            fd.append("image", blob, blob.name || "recipe.jpg");
+            const upRes = await fetch(`${url}/api/recipe/${created.id}/image/`, {
+              method: "PUT",
+              headers: { "Authorization": "Bearer "+token },
+              body: fd
+            });
+            if(!upRes.ok) throw new Error("HTTP "+upRes.status);
+            statusEl.textContent += " · image ✓";
+          }catch(imgErr){
+            statusEl.textContent += ` · image ✗ (${imgErr.message})`;
+          }
+        }
+      }catch(err){
+        statusEl.textContent = "✗ " + err.message;
+        statusEl.className = "recipe-status err";
+      }
+    }
+  });
+})();
+</script>
+</body>
+</html>
