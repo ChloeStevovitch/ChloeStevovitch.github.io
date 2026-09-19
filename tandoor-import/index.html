@@ -34,7 +34,37 @@
     padding-top: env(safe-area-inset-top, 0px);
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
-  .wrap { max-width: 640px; margin: 0 auto; padding: 24px 16px 60px; }
+  .wrap { max-width: 1240px; margin: 0 auto; padding: 24px 16px 60px; }
+  .layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; }
+  @media (min-width: 960px) {
+    .layout { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; }
+    .layout > .col + .col { align-self: stretch; }
+    .preview { position: sticky; top: 16px; max-height: calc(100vh - 32px); }
+  }
+  .preview { display: flex; flex-direction: column; padding: 0; overflow: hidden; }
+  .pv-scroll { overflow: auto; padding: 18px; flex: 1; }
+  .pv-bar { padding: 4px 18px 16px; border-top: 1px solid var(--border); background: var(--card); }
+  .pv-bar .muted { margin-top: 12px; }
+  #pvImg { width: 100%; max-height: 300px; object-fit: cover; border-radius: 10px; display: block; }
+  .pv-empty { border: 1px dashed var(--border); border-radius: 10px; padding: 28px; text-align: center; color: var(--muted); font-size: .85rem; }
+  .pv-title { font-size: 1.25rem; margin: 12px 0 6px; }
+  .chip { display: inline-block; padding: 2px 10px; border-radius: 99px; background: var(--bg); border: 1px solid var(--border); font-size: .75rem; margin: 2px 4px 2px 0; }
+  .pv-step h3 { font-size: .95rem; margin: 18px 0 6px; color: var(--accent-dark); }
+  .pv-step ul { margin: 0 0 8px; padding-left: 20px; font-size: .88rem; }
+  .pv-step p { margin: 0; font-size: .88rem; line-height: 1.5; white-space: pre-wrap; }
+  .modal { position: fixed; inset: 0; background: rgba(0,0,0,.65); display: flex; align-items: center; justify-content: center; z-index: 50; padding: 16px; }
+  .modal[hidden] { display: none; }
+  .modal-box { background: var(--card); border-radius: 14px; padding: 16px; width: min(100%, 760px); max-height: 100%; overflow: auto; }
+  .crop-stage { position: relative; width: fit-content; margin: 0 auto; touch-action: none; user-select: none; overflow: hidden; background: #000; }
+  .crop-stage img { display: block; max-width: min(85vw, 700px); max-height: 55vh; }
+  #cropRect { position: absolute; border: 2px solid #fff; box-shadow: 0 0 0 9999px rgba(0,0,0,.55); cursor: move; touch-action: none; }
+  #cropRect i { position: absolute; width: 26px; height: 26px; background: #fff; border: 2px solid var(--accent); border-radius: 50%; touch-action: none; }
+  #cropRect i[data-h=nw] { left: -13px; top: -13px; cursor: nwse-resize; }
+  #cropRect i[data-h=ne] { right: -13px; top: -13px; cursor: nesw-resize; }
+  #cropRect i[data-h=sw] { left: -13px; bottom: -13px; cursor: nesw-resize; }
+  #cropRect i[data-h=se] { right: -13px; bottom: -13px; cursor: nwse-resize; }
+  .ratios button.on { background: var(--accent); color: #fff; }
+  .thumb .c { position: absolute; right: 4px; bottom: 4px; width: 24px; height: 24px; margin: 0; padding: 0; border-radius: 50%; background: rgba(0,0,0,.65); font-size: .8rem; line-height: 24px; }
   h1 { font-size: 1.4rem; margin: 8px 0 4px; }
   p.sub { color: var(--muted); margin: 0 0 24px; font-size: 0.92rem; }
   .card {
@@ -71,7 +101,6 @@
   .thumb img { width:100%; aspect-ratio:1; object-fit:cover; border-radius:8px; border:1px solid var(--border); display:block; }
   .thumb .n { position:absolute; left:4px; top:4px; background:rgba(0,0,0,.65); color:#fff; font-size:.7rem; padding:1px 6px; border-radius:99px; }
   .thumb .x { position:absolute; right:4px; top:4px; width:22px; height:22px; margin:0; padding:0; border-radius:50%; background:rgba(0,0,0,.65); font-size:.8rem; line-height:22px; }
-  #candImg { width:100%; max-height:320px; object-fit:contain; border-radius:10px; border:1px solid var(--border); margin-top:10px; background:var(--bg); }
   .check { display:flex; align-items:center; gap:8px; color:var(--text); font-size:.88rem; margin-top:12px; }
   .check input { width:auto; }
   .nt { width:100%; border-collapse:collapse; font-size:.8rem; margin-top:10px; }
@@ -85,6 +114,8 @@
   <h1>🍲 Import Tandoor</h1>
   <p class="sub">Interface autonome — tourne dans ce navigateur. Les photos ne sont envoyées qu'à l'API Claude (analyse) et, sans photo du plat, une recherche d'image est faite sur Wikimedia / Pollinations.</p>
 
+  <div class="layout">
+  <div class="col">
   <div class="card">
     <h2><span id="statusDot" class="status-dot"></span> Connexion</h2>
     <label>URL de ton instance Tandoor</label>
@@ -124,10 +155,8 @@
 
   <div class="card">
     <h2>📋 JSON de la recette</h2>
-    <p class="muted">Pré-rempli avec la dernière recette. Modifie librement avant d'importer.</p>
-    <textarea id="recipeJson"></textarea>
-    <button onclick="importRecipe()">Importer la recette</button>
-    <div class="log" id="importLog"></div>
+    <p class="muted">Pré-rempli avec la dernière recette. Modifie librement : l'aperçu à droite se met à jour.</p>
+    <textarea id="recipeJson" oninput="renderPreview()"></textarea>
   </div>
 
   <div class="card">
@@ -141,23 +170,68 @@
 
   <div class="card">
     <h2>🖼️ Image de la recette</h2>
-    <p class="muted">Après l'analyse, une image est proposée : la photo du plat si tu en as fournie une, sinon une photo libre trouvée sur Wikimedia Commons, sinon une image générée. Tu peux aussi choisir ton propre fichier.</p>
-    <img id="candImg" alt="" hidden>
-    <p class="muted" id="candLabel"></p>
-    <button class="secondary" onclick="nextCandidate()">Autre proposition</button>
-    <label>Ou ton propre fichier (prioritaire)</label>
-    <input type="file" id="imageFile" accept="image/*">
-    <label>Recette (optionnel)</label>
+    <p class="muted">Après l'analyse, une image est proposée dans l'aperçu : la photo du plat si tu en as fournie une, sinon une photo libre trouvée sur Wikimedia Commons, sinon une image générée.</p>
+    <div class="row">
+      <button class="secondary" onclick="nextCandidate()">Autre proposition</button>
+      <button class="secondary" onclick="cropCurrent()">✂️ Recadrer</button>
+      <button class="secondary" onclick="restoreOriginal()">Image d'origine</button>
+    </div>
+    <label>Ou ton propre fichier</label>
+    <input type="file" id="imageFile" accept="image/*" onchange="pickOwnImage(this)">
+    <div class="log" id="imageLog"></div>
+  </div>
+
+  <div class="card">
+    <h2>📎 Ajouter l'image à une recette existante</h2>
+    <p class="muted">Facultatif : envoie seulement l'image courante à une recette déjà présente dans Tandoor (« Tout envoyer » crée, lui, une nouvelle recette avec son image).</p>
     <button class="secondary" onclick="loadRecipes()" style="margin-top:0">Choisir dans mes recettes</button>
     <select id="recipePick" hidden onchange="document.getElementById('recipeId').value = this.value" style="width:100%;margin-top:8px;padding:10px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text)"></select>
     <label>ou ID de la recette</label>
     <input type="text" id="recipeId" placeholder="vide = recette du JSON, sinon la plus récente">
-    <label class="check"><input type="checkbox" id="autoSend" checked> Envoyer l'image automatiquement après l'import</label>
-    <button onclick="uploadImage()">Envoyer l'image</button>
-    <div class="log" id="imageLog"></div>
+    <button onclick="uploadImage()">Envoyer l'image seule</button>
+    <div class="log" id="existLog"></div>
   </div>
 
   <p class="muted" style="text-align:center">Le token Tandoor et la clé API sont stockés uniquement dans ce navigateur (localStorage). Le token n'est envoyé qu'à ton serveur Tandoor, la clé qu'à api.anthropic.com.</p>
+  </div><!-- /col gauche -->
+
+  <div class="col">
+    <div class="card preview">
+      <div class="pv-scroll">
+        <h2>👁️ Aperçu de la recette</h2>
+        <img id="pvImg" alt="" hidden>
+        <div class="pv-empty" id="pvNoImg">Aucune image pour l'instant</div>
+        <p class="muted" id="candLabel"></p>
+        <div id="pvBody"></div>
+      </div>
+      <div class="pv-bar">
+        <div class="muted" id="pvChecklist"></div>
+        <button onclick="importRecipe()" id="sendBtn">🚀 Tout envoyer à Tandoor</button>
+        <div class="log" id="importLog"></div>
+      </div>
+    </div>
+  </div><!-- /col droite -->
+  </div><!-- /layout -->
+</div>
+
+<div class="modal" id="cropModal" hidden>
+  <div class="modal-box">
+    <h2>✂️ Recadrer</h2>
+    <div class="crop-stage" id="cropStage">
+      <img id="cropImg" alt="">
+      <div id="cropRect"><i data-h="nw"></i><i data-h="ne"></i><i data-h="sw"></i><i data-h="se"></i></div>
+    </div>
+    <div class="row ratios" id="cropRatios">
+      <button class="secondary on" data-r="free" onclick="setRatio('free')">Libre</button>
+      <button class="secondary" data-r="1" onclick="setRatio('1')">1:1</button>
+      <button class="secondary" data-r="1.3333" onclick="setRatio('1.3333')">4:3</button>
+      <button class="secondary" data-r="1.7778" onclick="setRatio('1.7778')">16:9</button>
+    </div>
+    <div class="row">
+      <button onclick="applyCrop()">Valider</button>
+      <button class="secondary" onclick="closeCrop()">Annuler</button>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -264,7 +338,10 @@ function renderThumbs() {
     const x = document.createElement('button');
     x.className = 'x'; x.textContent = '✕';
     x.onclick = () => { photos.splice(i, 1); renderThumbs(); };
-    d.append(img, n, x);
+    const c = document.createElement('button');
+    c.className = 'c'; c.textContent = '✂'; c.title = 'Recadrer';
+    c.onclick = () => openCrop(p.blob, async nb => { p.blob = nb; p.b64 = await blobToBase64(nb); renderThumbs(); });
+    d.append(img, n, x, c);
     box.append(d);
   });
 }
@@ -363,7 +440,7 @@ async function analyzePhotos() {
   content.push({ type: 'text', text: 'Extrais et traduis la recette.' });
   try {
     const r = await callClaude(SYSTEM_PROMPT, content, RECIPE_TOOL);
-    document.getElementById('recipeJson').value = JSON.stringify(toTandoorPayload(r), null, 2);
+    setRecipe(JSON.stringify(toTandoorPayload(r), null, 2));
     log('photoLog', '✓ Recette « ' + r.name + ' » extraite — relis le JSON ci-dessous avant d\'importer.', 'ok');
     if (r.notes) log('photoLog', 'ℹ️ ' + r.notes);
     await prepareImageQueue(r);
@@ -448,7 +525,7 @@ async function modifyRecipe() {
       text: 'Recette actuelle (JSON) :\n' + JSON.stringify(fromTandoorPayload(p)) + '\n\nModification demandée : ' + req
     }], RECIPE_TOOL);
     undoStack.push(box.value);
-    box.value = JSON.stringify(toTandoorPayload(r), null, 2);
+    setRecipe(JSON.stringify(toTandoorPayload(r), null, 2));
     log('modLog', '✓ Recette modifiée — relis le JSON avant d\'importer.', 'ok');
     if (r.notes) log('modLog', 'ℹ️ ' + r.notes);
     document.getElementById('modText').value = '';
@@ -462,10 +539,10 @@ async function modifyRecipe() {
 
 function undoModify() {
   if (!undoStack.length) { log('modLog', 'Rien à annuler.'); return; }
-  document.getElementById('recipeJson').value = undoStack.pop();
-  log('modLog', '↩ Dernière modification annulée. Recalcule les apports si besoin.');
   nutri = null; nutriFor = '';
   document.getElementById('nutriBox').textContent = '';
+  setRecipe(undoStack.pop());
+  log('modLog', '↩ Dernière modification annulée. Recalcule les apports si besoin.');
 }
 
 // ---------- Apports nutritionnels ----------
@@ -545,6 +622,7 @@ async function calcNutrition() {
 function renderNutrition() {
   const box = document.getElementById('nutriBox');
   box.textContent = '';
+  renderPreview();
   if (!nutri) return;
   const t = document.createElement('table');
   t.className = 'nt';
@@ -565,6 +643,216 @@ function renderNutrition() {
   extra.textContent = 'Par portion — dont sucres ' + pp.sugars + ' g · fibres ' + pp.fibers + ' g · graisses saturées ' + pp.saturated_fats + ' g.'
     + (nutri.assumptions ? ' Hypothèses : ' + nutri.assumptions : '');
   box.append(extra);
+}
+
+// ---------- Aperçu ----------
+let sent = null;  // { id, json } dernière recette envoyée (anti-doublon)
+
+function el(tag, cls, text) {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text != null) e.textContent = text;
+  return e;
+}
+
+function setRecipe(text) {
+  document.getElementById('recipeJson').value = text;
+  renderPreview();
+}
+
+function fmtAmount(a) {
+  const n = Number(a);
+  return n ? String(Math.round(n * 100) / 100).replace('.', ',') : '';
+}
+
+function renderPreview() {
+  const body = document.getElementById('pvBody');
+  const chk = document.getElementById('pvChecklist');
+  const src = document.getElementById('recipeJson').value;
+  body.textContent = '';
+  let p;
+  try { p = JSON.parse(src); } catch (e) {
+    body.append(el('p', 'log err', 'JSON invalide : ' + e.message));
+    chk.textContent = '⚠️ JSON invalide — corrige-le pour pouvoir envoyer.';
+    return;
+  }
+  body.append(el('h3', 'pv-title', p.name || '(sans nom)'));
+  if (p.description) body.append(el('p', 'muted', p.description));
+  const meta = [];
+  if (p.servings) meta.push('🍽 ' + p.servings + ' ' + (p.servings_text || 'portion(s)'));
+  if (p.working_time) meta.push('⏱ préparation ' + p.working_time + ' min');
+  if (p.waiting_time) meta.push('⏳ attente ' + p.waiting_time + ' min');
+  if (meta.length) body.append(el('p', 'muted', meta.join(' · ')));
+  const kw = el('div');
+  (p.keywords || []).forEach(k => kw.append(el('span', 'chip', k.name || k)));
+  body.append(kw);
+
+  const nutriFresh = nutri && nutriFor === src;
+  if (nutri) {
+    const pp = nutri.perPortion;
+    body.append(el('p', 'muted', nutriFresh
+      ? '🥗 Par portion : ' + pp.calories + ' kcal · ' + pp.proteins + ' g prot. · ' + pp.carbohydrates + ' g gluc. · ' + pp.fats + ' g lip.'
+      : '🥗 Apports à recalculer (la recette a changé).'));
+  }
+
+  let nIng = 0;
+  (p.steps || []).forEach((s, i) => {
+    const d = el('div', 'pv-step');
+    d.append(el('h3', '', s.name || 'Étape ' + (i + 1)));
+    const ul = el('ul');
+    (s.ingredients || []).forEach(g => {
+      nIng++;
+      const txt = [fmtAmount(g.amount), g.unit && g.unit.name, g.food && g.food.name].filter(Boolean).join(' ')
+        + (g.note ? ' — ' + g.note : '');
+      ul.append(el('li', '', txt));
+    });
+    if (ul.children.length) d.append(ul);
+    d.append(el('p', '', s.instruction || ''));
+    body.append(d);
+  });
+
+  const parts = ['✓ Recette (' + (p.steps || []).length + ' étapes, ' + nIng + ' ingrédients)'];
+  parts.push(current ? '✓ Image' : '✗ Pas d\'image');
+  parts.push(nutriFresh && document.getElementById('nutriSave').checked ? '✓ Apports' : '– Apports non inclus');
+  chk.textContent = 'Sera envoyé : ' + parts.join(' · ');
+}
+
+function setCurrent(blob, label, orig) {
+  current = { blob, label, orig: orig || blob };
+  if (currentUrl) URL.revokeObjectURL(currentUrl);
+  currentUrl = URL.createObjectURL(blob);
+  const img = document.getElementById('pvImg');
+  img.src = currentUrl;
+  img.hidden = false;
+  document.getElementById('pvNoImg').hidden = true;
+  document.getElementById('candLabel').textContent = label;
+  renderPreview();
+}
+
+async function pickOwnImage(input) {
+  const f = input.files[0];
+  if (!f) return;
+  try {
+    setCurrent(await resizeToJpeg(f), 'Ton fichier : ' + f.name);
+  } catch (e) {
+    log('imageLog', '✗ ' + e.message, 'err');
+  }
+  input.value = '';
+}
+
+const baseLabel = l => l.replace(/ \(recadrée\)$/, '');
+
+function cropCurrent() {
+  if (!current) { alert('Aucune image à recadrer.'); return; }
+  const orig = current.orig, label = baseLabel(current.label) + ' (recadrée)';
+  openCrop(orig, b => setCurrent(b, label, orig));
+}
+
+function restoreOriginal() {
+  if (!current) return;
+  setCurrent(current.orig, baseLabel(current.label), current.orig);
+}
+
+// ---------- Recadrage ----------
+let cropState = null;
+const $ = id => document.getElementById(id);
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const CROP_MIN = 30;
+
+function openCrop(blob, onDone) {
+  const img = $('cropImg');
+  cropState = { url: URL.createObjectURL(blob), onDone, ratio: null, r: null, W: 0, H: 0, drag: null };
+  $('cropModal').hidden = false;
+  img.onload = () => {
+    cropState.W = img.clientWidth;
+    cropState.H = img.clientHeight;
+    setRatio('free', true);
+  };
+  img.src = cropState.url;
+}
+
+function closeCrop() {
+  if (cropState) URL.revokeObjectURL(cropState.url);
+  cropState = null;
+  $('cropModal').hidden = true;
+}
+
+function setRatio(key, init) {
+  const s = cropState;
+  if (!s) return;
+  s.ratio = key === 'free' ? null : Number(key);
+  document.querySelectorAll('#cropRatios button').forEach(b => b.classList.toggle('on', b.dataset.r === key));
+  if (key === 'free' && !init && s.r) { drawCrop(); return; }
+  let w = s.W * 0.9, h = s.H * 0.9;
+  if (s.ratio) { if (w / h > s.ratio) w = h * s.ratio; else h = w / s.ratio; }
+  s.r = { x: (s.W - w) / 2, y: (s.H - h) / 2, w, h };
+  drawCrop();
+}
+
+function drawCrop() {
+  const r = cropState.r, e = $('cropRect');
+  e.style.left = r.x + 'px'; e.style.top = r.y + 'px';
+  e.style.width = r.w + 'px'; e.style.height = r.h + 'px';
+}
+
+$('cropRect').addEventListener('pointerdown', e => {
+  const s = cropState;
+  if (!s) return;
+  s.drag = { mode: e.target.dataset.h || 'move', sx: e.clientX, sy: e.clientY, r0: { ...s.r } };
+  e.currentTarget.setPointerCapture(e.pointerId);
+  e.preventDefault();
+});
+
+$('cropRect').addEventListener('pointermove', e => {
+  const s = cropState;
+  if (!s || !s.drag) return;
+  const d = s.drag, r0 = d.r0;
+  if (d.mode === 'move') {
+    s.r.x = clamp(r0.x + e.clientX - d.sx, 0, s.W - r0.w);
+    s.r.y = clamp(r0.y + e.clientY - d.sy, 0, s.H - r0.h);
+  } else {
+    const st = $('cropStage').getBoundingClientRect();
+    const px = clamp(e.clientX - st.left, 0, s.W), py = clamp(e.clientY - st.top, 0, s.H);
+    const left = d.mode.includes('w'), top = d.mode.includes('n');
+    const fx = left ? r0.x + r0.w : r0.x, fy = top ? r0.y + r0.h : r0.y;
+    const maxW = left ? fx : s.W - fx, maxH = top ? fy : s.H - fy;
+    let w = clamp(left ? fx - px : px - fx, CROP_MIN, maxW);
+    let h = clamp(top ? fy - py : py - fy, CROP_MIN, maxH);
+    if (s.ratio) {
+      if (w / h > s.ratio) w = h * s.ratio; else h = w / s.ratio;
+      if (w > maxW) { w = maxW; h = w / s.ratio; }
+      if (h > maxH) { h = maxH; w = h * s.ratio; }
+    }
+    s.r = { x: left ? fx - w : fx, y: top ? fy - h : fy, w, h };
+  }
+  drawCrop();
+});
+
+['pointerup', 'pointercancel'].forEach(ev => $('cropRect').addEventListener(ev, () => { if (cropState) cropState.drag = null; }));
+
+window.addEventListener('resize', () => {
+  const s = cropState, img = $('cropImg');
+  if (!s || $('cropModal').hidden || !s.W || !img.clientWidth) return;
+  const k = img.clientWidth / s.W;
+  s.r = { x: s.r.x * k, y: s.r.y * k, w: s.r.w * k, h: s.r.h * k };
+  s.W = img.clientWidth; s.H = img.clientHeight;
+  drawCrop();
+});
+
+function applyCrop() {
+  const s = cropState, img = $('cropImg');
+  if (!s) return;
+  const k = img.naturalWidth / s.W;
+  const sx = s.r.x * k, sy = s.r.y * k, sw = s.r.w * k, sh = s.r.h * k;
+  const scale = Math.min(1, 2000 / Math.max(sw, sh));
+  const c = document.createElement('canvas');
+  c.width = Math.round(sw * scale); c.height = Math.round(sh * scale);
+  c.getContext('2d').drawImage(img, sx, sy, sw, sh, 0, 0, c.width, c.height);
+  const onDone = s.onDone;
+  c.toBlob(b => {
+    closeCrop();
+    if (b) onDone(b); else alert('Recadrage impossible.');
+  }, 'image/jpeg', 0.9);
 }
 
 // ---------- Image de la recette ----------
@@ -615,14 +903,8 @@ async function nextCandidate() {
     if (c.kind === 'ai') log('imageLog', '⏳ Génération d\'une image…');
     try {
       const blob = await loadCandidate(c);
-      current = { blob, label: c.kind === 'ai' ? 'Image générée par IA (Pollinations) — variante ' + c.seed : c.label };
       if (c.kind === 'ai') queue.push({ ...c, seed: c.seed + 1 });
-      if (currentUrl) URL.revokeObjectURL(currentUrl);
-      currentUrl = URL.createObjectURL(blob);
-      const img = document.getElementById('candImg');
-      img.src = currentUrl;
-      img.hidden = false;
-      document.getElementById('candLabel').textContent = current.label;
+      setCurrent(blob, c.kind === 'ai' ? 'Image générée par IA (Pollinations) — variante ' + c.seed : c.label);
       return true;
     } catch (e) {
       log('imageLog', '✗ Proposition ignorée (' + c.kind + ') : ' + e.message, 'err');
@@ -675,7 +957,7 @@ async function loadRecipes() {
     (d.results || []).sort((a, b) => b.id - a.id).forEach(r => sel.append(new Option(r.name + ' (#' + r.id + ')', r.id)));
     sel.hidden = false;
   } catch (e) {
-    log('imageLog', '✗ Chargement des recettes impossible : ' + e.message + await netHint(url), 'err');
+    log('existLog', '✗ Chargement des recettes impossible : ' + e.message + await netHint(url), 'err');
   }
 }
 
@@ -689,6 +971,8 @@ async function importRecipe() {
     log('importLog', 'JSON invalide : ' + e.message, 'err');
     return;
   }
+  if (sent && sent.json === document.getElementById('recipeJson').value
+      && !confirm('Cette recette a déjà été envoyée (ID ' + sent.id + '). Envoyer à nouveau créera un doublon. Continuer ?')) return;
   if (nutri && document.getElementById('nutriSave').checked) {
     if (nutriFor === document.getElementById('recipeJson').value) {
       const p = nutri.perPortion;
@@ -713,8 +997,9 @@ async function importRecipe() {
     if (res.ok) {
       log('importLog', '✓ Recette créée — ID ' + data.id + ' (' + (data.name || '') + ')', 'ok');
       document.getElementById('recipeId').value = data.id;
-      const hasImage = document.getElementById('imageFile').files[0] || current;
-      if (hasImage && document.getElementById('autoSend').checked) await uploadImage(data.id);
+      sent = { id: data.id, json: document.getElementById('recipeJson').value };
+      if (current) await uploadImage(data.id, 'importLog');
+      else log('importLog', 'ℹ️ Pas d\'image envoyée (aucune image choisie).');
     } else {
       log('importLog', '✗ Erreur ' + res.status + ' — ' + JSON.stringify(data), 'err');
     }
@@ -723,28 +1008,26 @@ async function importRecipe() {
   }
 }
 
-async function uploadImage(knownId) {
+async function uploadImage(knownId, logEl = 'existLog') {
   const { url, token } = getAuth();
   let id = knownId ? String(knownId) : document.getElementById('recipeId').value.trim();
-  const file = document.getElementById('imageFile').files[0];
-  const blob = file || (current && current.blob);
-  const fname = file ? file.name : 'recette.jpg';
-  if (!url || !token) { alert('Connecte-toi d\'abord.'); return; }
-  if (!blob) { alert('Aucune image : lance l\'analyse des photos ou choisis un fichier.'); return; }
+  const blob = current && current.blob;
+  if (!url || !token) { alert('Connecte-toi d\'abord.'); return false; }
+  if (!blob) { alert('Aucune image : lance l\'analyse des photos ou choisis un fichier.'); return false; }
   if (!id) {
     // Pas d'ID : on cherche la recette par le nom du JSON, sinon la plus récente.
     try {
       const r = await findRecipe(url, token);
       id = String(r.id);
       document.getElementById('recipeId').value = id;
-      log('imageLog', 'ID non renseigné → recette trouvée : ' + r.name + ' (ID ' + id + ')');
+      log(logEl, 'ID non renseigné → recette trouvée : ' + r.name + ' (ID ' + id + ')');
     } catch (e) {
-      log('imageLog', '✗ Impossible de trouver la recette : ' + e.message + await netHint(url), 'err');
-      return;
+      log(logEl, '✗ Impossible de trouver la recette : ' + e.message + await netHint(url), 'err');
+      return false;
     }
   }
   const form = new FormData();
-  form.append('image', blob, fname);
+  form.append('image', blob, 'recette.jpg');
   try {
     const res = await fetch(url + '/api/recipe/' + id + '/image/', {
       method: 'PUT',
@@ -752,14 +1035,15 @@ async function uploadImage(knownId) {
       body: form
     });
     if (res.ok) {
-      log('imageLog', '✓ Image envoyée pour la recette ' + id, 'ok');
-    } else {
-      const t = await res.text();
-      log('imageLog', '✗ Erreur ' + res.status + ' — ' + t.slice(0, 200), 'err');
+      log(logEl, '✓ Image envoyée pour la recette ' + id, 'ok');
+      return true;
     }
+    const t = await res.text();
+    log(logEl, '✗ Erreur ' + res.status + ' — ' + t.slice(0, 200), 'err');
   } catch (e) {
-    log('imageLog', '✗ Échec réseau : ' + e.message + await netHint(url), 'err');
+    log(logEl, '✗ Échec réseau : ' + e.message + await netHint(url), 'err');
   }
+  return false;
 }
 
 document.getElementById('recipeJson').value = JSON.stringify({
@@ -812,7 +1096,9 @@ document.getElementById('recipeJson').value = JSON.stringify({
   "keywords": [{"name":"post-entraînement"},{"name":"végane"},{"name":"riche en protéines"}]
 }, null, 2);
 
+document.getElementById('nutriSave').addEventListener('change', renderPreview);
 refreshStatus();
+renderPreview();
 </script>
 </body>
 </html>
