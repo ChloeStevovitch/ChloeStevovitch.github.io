@@ -74,6 +74,10 @@
   #candImg { width:100%; max-height:320px; object-fit:contain; border-radius:10px; border:1px solid var(--border); margin-top:10px; background:var(--bg); }
   .check { display:flex; align-items:center; gap:8px; color:var(--text); font-size:.88rem; margin-top:12px; }
   .check input { width:auto; }
+  .nt { width:100%; border-collapse:collapse; font-size:.8rem; margin-top:10px; }
+  .nt th, .nt td { padding:4px 6px; border-bottom:1px solid var(--border); text-align:right; }
+  .nt th:first-child, .nt td:first-child { text-align:left; }
+  .nt tr.tot td { font-weight:700; }
 </style>
 </head>
 <body>
@@ -108,11 +112,31 @@
   </div>
 
   <div class="card">
+    <h2>✏️ Modifier la recette</h2>
+    <p class="muted">Décris le changement voulu ; Claude adapte les ingrédients et les instructions du JSON ci-dessous. Tu peux enchaîner plusieurs modifications.</p>
+    <input type="text" id="modText" placeholder="ex : remplace le poulet par du tofu" onkeydown="if(event.key==='Enter') modifyRecipe()">
+    <div class="row">
+      <button onclick="modifyRecipe()" id="modBtn">Modifier avec Claude</button>
+      <button class="secondary" onclick="undoModify()">Annuler la dernière</button>
+    </div>
+    <div class="log" id="modLog"></div>
+  </div>
+
+  <div class="card">
     <h2>📋 JSON de la recette</h2>
     <p class="muted">Pré-rempli avec la dernière recette. Modifie librement avant d'importer.</p>
     <textarea id="recipeJson"></textarea>
     <button onclick="importRecipe()">Importer la recette</button>
     <div class="log" id="importLog"></div>
+  </div>
+
+  <div class="card">
+    <h2>🥗 Apports nutritionnels</h2>
+    <p class="muted">Estimation par Claude à partir des ingrédients et quantités du JSON (tables de composition usuelles). Calculée automatiquement après l'analyse ou une modification ; indicatif, pas une valeur médicale.</p>
+    <div id="nutriBox"></div>
+    <label class="check"><input type="checkbox" id="nutriSave" checked> Inclure les apports (par portion) dans la recette à l'import</label>
+    <button onclick="calcNutrition()" id="nutriBtn">Calculer / recalculer</button>
+    <div class="log" id="nutriLog"></div>
   </div>
 
   <div class="card">
@@ -338,41 +362,209 @@ async function analyzePhotos() {
   });
   content.push({ type: 'text', text: 'Extrais et traduis la recette.' });
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'x-api-key': key,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
-        'content-type': 'application/json'
-      },
-      body: JSON.stringify({
-        model: localStorage.getItem('claude_model') || DEFAULT_MODEL,
-        max_tokens: 8000,
-        system: SYSTEM_PROMPT,
-        tools: [RECIPE_TOOL],
-        tool_choice: { type: 'tool', name: 'submit_recipe' },
-        messages: [{ role: 'user', content }]
-      })
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      log('photoLog', '✗ Erreur API ' + res.status + ' — ' + ((data.error && data.error.message) || JSON.stringify(data)), 'err');
-      return;
-    }
-    const tool = (data.content || []).find(b => b.type === 'tool_use');
-    if (!tool) { log('photoLog', '✗ Réponse inattendue de Claude.', 'err'); return; }
-    const r = tool.input;
+    const r = await callClaude(SYSTEM_PROMPT, content, RECIPE_TOOL);
     document.getElementById('recipeJson').value = JSON.stringify(toTandoorPayload(r), null, 2);
     log('photoLog', '✓ Recette « ' + r.name + ' » extraite — relis le JSON ci-dessous avant d\'importer.', 'ok');
     if (r.notes) log('photoLog', 'ℹ️ ' + r.notes);
     await prepareImageQueue(r);
     await nextCandidate();
+    await calcNutrition();
   } catch (e) {
     log('photoLog', '✗ Échec : ' + e.message, 'err');
   } finally {
     btn.disabled = false;
   }
+}
+
+async function callClaude(system, content, tool) {
+  const key = localStorage.getItem('anthropic_key') || '';
+  if (!key) throw new Error('clé API Anthropic manquante (section « Connexion »)');
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'x-api-key': key,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true',
+      'content-type': 'application/json'
+    },
+    body: JSON.stringify({
+      model: localStorage.getItem('claude_model') || DEFAULT_MODEL,
+      max_tokens: 8000,
+      system,
+      tools: [tool],
+      tool_choice: { type: 'tool', name: tool.name },
+      messages: [{ role: 'user', content }]
+    })
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error('API ' + res.status + ' — ' + ((data.error && data.error.message) || JSON.stringify(data)));
+  const use = (data.content || []).find(b => b.type === 'tool_use');
+  if (!use) throw new Error('réponse inattendue de Claude');
+  return use.input;
+}
+
+// ---------- Modification par l'utilisateur ----------
+const MODIFY_PROMPT = `Tu modifies une recette de cuisine existante selon la demande de l'utilisateur.
+- Applique le changement de façon cohérente partout : ingrédients (quantités adaptées), instructions (techniques, ordre, temps de cuisson adaptés à un éventuel ingrédient de remplacement), nom, description et mots-clés si le changement les rend inexacts (ex. « végane »).
+- Ne modifie rien d'autre : garde le reste de la recette, sa structure en étapes et son style.
+- Renvoie la recette COMPLÈTE via l'outil submit_recipe. Dans « notes », résume en une phrase ce qui a changé. Mets dish_photo_index à null.`;
+
+let undoStack = [];
+
+function fromTandoorPayload(p) {
+  return {
+    name: p.name || '',
+    description: p.description || '',
+    servings: p.servings,
+    servings_text: p.servings_text,
+    working_time: p.working_time,
+    waiting_time: p.waiting_time,
+    steps: (p.steps || []).map(s => ({
+      name: s.name || '',
+      instruction: s.instruction || '',
+      ingredients: (s.ingredients || []).map(i => ({
+        amount: i.amount,
+        unit: i.unit ? i.unit.name : null,
+        food: i.food ? i.food.name : '',
+        note: i.note || ''
+      }))
+    })),
+    keywords: (p.keywords || []).map(k => k.name || k)
+  };
+}
+
+async function modifyRecipe() {
+  const box = document.getElementById('recipeJson');
+  const req = document.getElementById('modText').value.trim();
+  if (!req) { alert('Décris la modification voulue.'); return; }
+  let p;
+  try { p = JSON.parse(box.value); } catch (e) { log('modLog', 'JSON invalide : ' + e.message, 'err'); return; }
+  const btn = document.getElementById('modBtn');
+  btn.disabled = true;
+  log('modLog', '⏳ Modification en cours : « ' + req + ' »');
+  try {
+    const r = await callClaude(MODIFY_PROMPT, [{
+      type: 'text',
+      text: 'Recette actuelle (JSON) :\n' + JSON.stringify(fromTandoorPayload(p)) + '\n\nModification demandée : ' + req
+    }], RECIPE_TOOL);
+    undoStack.push(box.value);
+    box.value = JSON.stringify(toTandoorPayload(r), null, 2);
+    log('modLog', '✓ Recette modifiée — relis le JSON avant d\'importer.', 'ok');
+    if (r.notes) log('modLog', 'ℹ️ ' + r.notes);
+    document.getElementById('modText').value = '';
+    await calcNutrition();
+  } catch (e) {
+    log('modLog', '✗ Échec : ' + e.message, 'err');
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function undoModify() {
+  if (!undoStack.length) { log('modLog', 'Rien à annuler.'); return; }
+  document.getElementById('recipeJson').value = undoStack.pop();
+  log('modLog', '↩ Dernière modification annulée. Recalcule les apports si besoin.');
+  nutri = null; nutriFor = '';
+  document.getElementById('nutriBox').textContent = '';
+}
+
+// ---------- Apports nutritionnels ----------
+const NUTRI_TOOL = {
+  name: 'submit_nutrition',
+  description: 'Renvoie les valeurs nutritionnelles estimées de chaque ingrédient.',
+  input_schema: {
+    type: 'object',
+    required: ['ingredients'],
+    properties: {
+      ingredients: {
+        type: 'array',
+        items: {
+          type: 'object',
+          required: ['food', 'calories', 'proteins', 'carbohydrates', 'fats'],
+          properties: {
+            food: { type: 'string' },
+            quantity: { type: 'string', description: 'Quantité totale utilisée, ex. « 400 g », « 2 c. à soupe ≈ 30 ml ».' },
+            calories: { type: 'number', description: 'kcal pour la quantité totale' },
+            proteins: { type: 'number', description: 'g' },
+            carbohydrates: { type: 'number', description: 'g' },
+            sugars: { type: 'number', description: 'g (inclus dans les glucides)' },
+            fibers: { type: 'number', description: 'g' },
+            fats: { type: 'number', description: 'g' },
+            saturated_fats: { type: 'number', description: 'g (inclus dans les lipides)' }
+          }
+        }
+      },
+      assumptions: { type: 'string', description: 'Hypothèses et incertitudes, en français, courtes.' }
+    }
+  }
+};
+
+const NUTRI_PROMPT = `Tu estimes les apports nutritionnels d'une recette. Pour CHAQUE ingrédient listé (fusionne les doublons), donne les valeurs pour la QUANTITÉ TOTALE utilisée dans la recette, pas pour 100 g, d'après les tables de composition usuelles (CIQUAL / USDA).
+- Tiens compte de l'état de l'ingrédient (en conserve égoutté, cru/cuit, etc.) et convertis les mesures en grammes de façon raisonnable.
+- Ingrédients sans quantité (« au goût », « pincée », garniture non chiffrée) : compte-les à ~0 et signale-le dans « assumptions ».
+- Ne compte que ce qui est dans la liste d'ingrédients ; ne suppose pas d'ajouts.
+Réponds uniquement via l'outil submit_nutrition.`;
+
+let nutri = null;    // { total, perPortion, servings, rows, assumptions }
+let nutriFor = '';   // valeur du JSON pour laquelle le calcul a été fait
+
+const r1 = n => Math.round((Number(n) || 0) * 10) / 10;
+const sumKey = (rows, k) => rows.reduce((a, r) => a + (Number(r[k]) || 0), 0);
+
+async function calcNutrition() {
+  const src = document.getElementById('recipeJson').value;
+  let p;
+  try { p = JSON.parse(src); } catch (e) { log('nutriLog', 'JSON invalide : ' + e.message, 'err'); return; }
+  if (!localStorage.getItem('anthropic_key')) { log('nutriLog', 'Clé API Anthropic requise pour le calcul.', 'err'); return; }
+  const btn = document.getElementById('nutriBtn');
+  btn.disabled = true;
+  log('nutriLog', '⏳ Calcul des apports nutritionnels…');
+  try {
+    const r = fromTandoorPayload(p);
+    const list = r.steps.flatMap(s => s.ingredients);
+    const out = await callClaude(NUTRI_PROMPT, [{
+      type: 'text',
+      text: 'Recette « ' + r.name + ' » — ' + (r.servings || 1) + ' ' + (r.servings_text || 'portion(s)') + '.\nIngrédients :\n' + JSON.stringify(list)
+    }], NUTRI_TOOL);
+    const rows = out.ingredients || [];
+    const servings = Number(p.servings) > 0 ? Number(p.servings) : 1;
+    const keys = ['calories', 'proteins', 'carbohydrates', 'sugars', 'fibers', 'fats', 'saturated_fats'];
+    const total = {}, perPortion = {};
+    keys.forEach(k => { total[k] = r1(sumKey(rows, k)); perPortion[k] = r1(sumKey(rows, k) / servings); });
+    nutri = { total, perPortion, servings, rows, assumptions: out.assumptions || '' };
+    nutriFor = src;
+    renderNutrition();
+    log('nutriLog', '✓ Apports calculés (' + perPortion.calories + ' kcal par portion).', 'ok');
+  } catch (e) {
+    log('nutriLog', '✗ Échec : ' + e.message, 'err');
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function renderNutrition() {
+  const box = document.getElementById('nutriBox');
+  box.textContent = '';
+  if (!nutri) return;
+  const t = document.createElement('table');
+  t.className = 'nt';
+  const addRow = (cells, cls, tag = 'td') => {
+    const tr = document.createElement('tr');
+    if (cls) tr.className = cls;
+    cells.forEach(c => { const td = document.createElement(tag); td.textContent = c; tr.append(td); });
+    t.append(tr);
+  };
+  addRow(['Ingrédient', 'kcal', 'Prot. g', 'Gluc. g', 'Lip. g'], '', 'th');
+  nutri.rows.forEach(r => addRow([r.food + (r.quantity ? ' (' + r.quantity + ')' : ''), r1(r.calories), r1(r.proteins), r1(r.carbohydrates), r1(r.fats)]));
+  const tt = nutri.total, pp = nutri.perPortion;
+  addRow(['Total recette', tt.calories, tt.proteins, tt.carbohydrates, tt.fats], 'tot');
+  addRow(['Par portion (÷ ' + nutri.servings + ')', pp.calories, pp.proteins, pp.carbohydrates, pp.fats], 'tot');
+  box.append(t);
+  const extra = document.createElement('p');
+  extra.className = 'muted';
+  extra.textContent = 'Par portion — dont sucres ' + pp.sugars + ' g · fibres ' + pp.fibers + ' g · graisses saturées ' + pp.saturated_fats + ' g.'
+    + (nutri.assumptions ? ' Hypothèses : ' + nutri.assumptions : '');
+  box.append(extra);
 }
 
 // ---------- Image de la recette ----------
@@ -496,6 +688,17 @@ async function importRecipe() {
   } catch (e) {
     log('importLog', 'JSON invalide : ' + e.message, 'err');
     return;
+  }
+  if (nutri && document.getElementById('nutriSave').checked) {
+    if (nutriFor === document.getElementById('recipeJson').value) {
+      const p = nutri.perPortion;
+      payload.nutrition = { calories: p.calories, proteins: p.proteins, carbohydrates: p.carbohydrates, fats: p.fats, source: 'Estimation Claude' };
+      const line = 'Par portion (estimation) : ' + p.calories + ' kcal · ' + p.proteins + ' g protéines · ' + p.carbohydrates + ' g glucides · ' + p.fats + ' g lipides.';
+      const d = payload.description ? payload.description + '\n' + line : line;
+      if (d.length <= 512) payload.description = d;
+    } else {
+      log('importLog', 'ℹ️ Apports non inclus : la recette a changé depuis le calcul — clique sur « Calculer / recalculer ».');
+    }
   }
   try {
     const res = await fetch(url + '/api/recipe/', {
