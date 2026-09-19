@@ -4,243 +4,405 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Import Tandoor</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🍲</text></svg>">
+<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+
+<!-- ============================================================
+     THÈME — tout le design se change ici (couleurs, ombres neumorphiques)
+     ============================================================ -->
 <style>
   :root {
-    --bg: #faf8f5;
-    --card: #ffffff;
-    --text: #2b2620;
-    --muted: #7a7268;
-    --accent: #a3763f;
-    --accent-dark: #7d5a30;
-    --border: #e6ddd0;
-    --ok: #3f7d4f;
-    --err: #b3462c;
+    --neu-bg: #e8e0d4;        /* fond de la page ET des éléments (indispensable au neumorphisme) */
+    --neu-light: #fbf6ee;     /* ombre claire (haut-gauche) */
+    --neu-dark: #c5b9a6;      /* ombre sombre (bas-droite) */
+    --neu-ink: #2b2620;       /* texte */
+    --neu-mute: #6a6154;      /* texte secondaire */
+    --neu-accent: #a3763f;    /* couleur d'accent */
+    --neu-accent-dark: #7d5a30;
+    --neu-on-accent: #ffffff; /* texte sur fond d'accent */
+    --neu-ok: #3f7d4f;
+    --neu-err: #b3462c;
+    --neu-out:    9px 9px 18px var(--neu-dark), -9px -9px 18px var(--neu-light);
+    --neu-out-sm: 5px 5px 10px var(--neu-dark), -5px -5px 10px var(--neu-light);
+    --neu-in:     inset 6px 6px 12px var(--neu-dark), inset -6px -6px 12px var(--neu-light);
+    --neu-in-sm:  inset 3px 3px 6px var(--neu-dark), inset -3px -3px 6px var(--neu-light);
   }
   @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) {
-      --bg: #1c1a17;
-      --card: #262320;
-      --text: #f0ebe3;
-      --muted: #b0a89c;
-      --accent: #d3a15f;
-      --accent-dark: #e6ba81;
-      --border: #3a352e;
+    :root {
+      --neu-bg: #2a2724;
+      --neu-light: #35312d;
+      --neu-dark: #1e1c1a;
+      --neu-ink: #f0ebe3;
+      --neu-mute: #b0a89c;
+      --neu-accent: #d3a15f;
+      --neu-accent-dark: #e6ba81;
+      --neu-on-accent: #2a2724;
     }
   }
-  * { box-sizing: border-box; }
-  html, body {
-    margin: 0; background: var(--bg); color: var(--text);
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    padding-top: env(safe-area-inset-top, 0px);
-    padding-bottom: env(safe-area-inset-bottom, 0px);
+</style>
+
+<style type="text/tailwindcss">
+  @theme {
+    --color-base: var(--neu-bg);
+    --color-ink: var(--neu-ink);
+    --color-mute: var(--neu-mute);
+    --color-accent: var(--neu-accent);
+    --color-ok: var(--neu-ok);
+    --color-err: var(--neu-err);
+    --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   }
-  .wrap { max-width: 1240px; margin: 0 auto; padding: 24px 16px 60px; }
-  .layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; }
-  @media (min-width: 960px) {
-    .layout { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; }
-    .layout > .col + .col { align-self: stretch; }
-    .preview { position: sticky; top: 16px; max-height: calc(100vh - 32px); }
+
+  /* ---------- Composants réutilisables (modifie ici pour changer le style partout) ---------- */
+  @layer components {
+    .card      { @apply mb-6 rounded-3xl bg-base p-5; box-shadow: var(--neu-out); }
+    .card[data-state=locked] { @apply opacity-60; }
+    .inset     { @apply rounded-2xl; box-shadow: var(--neu-in); }
+
+    .btn       { @apply mt-3 w-full cursor-pointer select-none rounded-2xl bg-base px-4 py-3 text-sm font-semibold text-accent transition; box-shadow: var(--neu-out-sm); }
+    .btn:hover:not(:disabled)  { color: var(--neu-accent-dark); }
+    .btn:active:not(:disabled) { box-shadow: var(--neu-in-sm); }
+    .btn:disabled { @apply cursor-not-allowed opacity-40; box-shadow: none; }
+    .btn-primary { background: var(--neu-accent); color: var(--neu-on-accent); }
+    .btn-primary:hover:not(:disabled) { background: var(--neu-accent-dark); color: var(--neu-on-accent); }
+
+    .field     { @apply w-full rounded-xl bg-base px-3 py-2.5 text-sm text-ink outline-none placeholder:text-mute/70; box-shadow: var(--neu-in-sm); }
+    .field:focus { box-shadow: var(--neu-in-sm), 0 0 0 2px var(--neu-accent); }
+    textarea.field { @apply min-h-56 font-mono text-xs; }
+    .lbl       { @apply mb-1 mt-3 block text-xs font-medium text-mute; }
+    .muted     { @apply text-xs leading-relaxed text-mute; }
+    .log       { @apply mt-3 whitespace-pre-wrap break-words text-xs; }
+    .check     { @apply mt-3 flex items-center gap-2 text-sm text-ink; }
+    .check input { @apply size-4 accent-[var(--neu-accent)]; }
+
+    /* gros bouton "choisir un fichier" bien visible */
+    .drop      { @apply flex cursor-pointer flex-col items-center justify-center gap-1 rounded-2xl bg-base px-4 py-6 text-center text-sm font-semibold text-accent transition; box-shadow: var(--neu-out-sm); }
+    .drop small { @apply text-xs font-normal text-mute; }
+    .drop:hover, .drop.over { box-shadow: var(--neu-in-sm); }
+    input:focus-visible + .drop { outline: 2px solid var(--neu-accent); outline-offset: 2px; }
+
+    /* étapes */
+    .step-dot  { @apply inline-flex size-8 shrink-0 items-center justify-center rounded-full bg-base text-sm font-bold text-mute; box-shadow: var(--neu-out-sm); }
+    .step-dot[data-state=done]    { background: var(--neu-accent); color: var(--neu-on-accent); }
+    .step-dot[data-state=current] { color: var(--neu-accent); box-shadow: var(--neu-in-sm), 0 0 0 2px var(--neu-accent); }
+    .step[data-state=current] .step-label { @apply font-semibold text-ink; }
+    .status-dot { @apply inline-block size-2.5 rounded-full bg-mute/60; }
+    .status-dot.on { background: var(--neu-ok); }
+
+    /* miniatures */
+    .thumb     { @apply relative; }
+    .thumb img { @apply block aspect-square w-full rounded-xl object-cover; box-shadow: var(--neu-out-sm); }
+    .thumb .n  { @apply absolute left-1.5 top-1.5 rounded-full bg-black/65 px-1.5 text-[11px] text-white; }
+    .thumb .x, .thumb .c { @apply absolute m-0 flex size-6 cursor-pointer items-center justify-center rounded-full border-0 bg-black/65 p-0 text-xs text-white; }
+    .thumb .x  { @apply right-1.5 top-1.5; }
+    .thumb .c  { @apply bottom-1.5 right-1.5; }
+
+    /* aperçu */
+    .preview   { @apply flex flex-col overflow-hidden p-0; }
+    .pv-scroll { @apply flex-1 overflow-auto p-5; }
+    .pv-bar    { @apply p-5 pt-1; }
+    .pv-title  { @apply mb-1 mt-4 text-xl font-bold; }
+    .pv-step h3 { @apply mb-1.5 mt-5 text-sm font-semibold text-accent; }
+    .pv-step ul { @apply mb-2 list-disc pl-5 text-sm; }
+    .pv-step p { @apply m-0 whitespace-pre-wrap text-sm leading-relaxed; }
+    .chip      { @apply mr-1 mt-1 inline-block rounded-full bg-base px-3 py-0.5 text-xs; box-shadow: var(--neu-out-sm); }
+    .pv-empty  { @apply rounded-2xl p-8 text-center text-sm text-mute; box-shadow: var(--neu-in); }
+
+    /* tableau nutrition */
+    .nt        { @apply mt-2 w-full border-collapse text-xs; }
+    .nt th, .nt td { @apply border-b border-mute/20 px-1.5 py-1 text-right; }
+    .nt th:first-child, .nt td:first-child { @apply text-left; }
+    .nt tr.tot td { @apply font-bold; }
+
+    /* recadrage */
+    .ratios button.on { background: var(--neu-accent); color: var(--neu-on-accent); }
   }
-  .preview { display: flex; flex-direction: column; padding: 0; overflow: hidden; }
-  .pv-scroll { overflow: auto; padding: 18px; flex: 1; }
-  .pv-bar { padding: 4px 18px 16px; border-top: 1px solid var(--border); background: var(--card); }
-  .pv-bar .muted { margin-top: 12px; }
-  #pvImg { width: 100%; max-height: 300px; object-fit: cover; border-radius: 10px; display: block; }
-  .pv-empty { border: 1px dashed var(--border); border-radius: 10px; padding: 28px; text-align: center; color: var(--muted); font-size: .85rem; }
-  .pv-title { font-size: 1.25rem; margin: 12px 0 6px; }
-  .chip { display: inline-block; padding: 2px 10px; border-radius: 99px; background: var(--bg); border: 1px solid var(--border); font-size: .75rem; margin: 2px 4px 2px 0; }
-  .pv-step h3 { font-size: .95rem; margin: 18px 0 6px; color: var(--accent-dark); }
-  .pv-step ul { margin: 0 0 8px; padding-left: 20px; font-size: .88rem; }
-  .pv-step p { margin: 0; font-size: .88rem; line-height: 1.5; white-space: pre-wrap; }
-  .modal { position: fixed; inset: 0; background: rgba(0,0,0,.65); display: flex; align-items: center; justify-content: center; z-index: 50; padding: 16px; }
-  .modal[hidden] { display: none; }
-  .modal-box { background: var(--card); border-radius: 14px; padding: 16px; width: min(100%, 760px); max-height: 100%; overflow: auto; }
-  .crop-stage { position: relative; width: fit-content; margin: 0 auto; touch-action: none; user-select: none; overflow: hidden; background: #000; }
-  .crop-stage img { display: block; max-width: min(85vw, 700px); max-height: 55vh; }
+
+  /* poignées de recadrage (hors composants : sélecteurs d'attributs) */
   #cropRect { position: absolute; border: 2px solid #fff; box-shadow: 0 0 0 9999px rgba(0,0,0,.55); cursor: move; touch-action: none; }
-  #cropRect i { position: absolute; width: 26px; height: 26px; background: #fff; border: 2px solid var(--accent); border-radius: 50%; touch-action: none; }
+  #cropRect i { position: absolute; width: 26px; height: 26px; background: #fff; border: 2px solid var(--neu-accent); border-radius: 50%; touch-action: none; }
   #cropRect i[data-h=nw] { left: -13px; top: -13px; cursor: nwse-resize; }
   #cropRect i[data-h=ne] { right: -13px; top: -13px; cursor: nesw-resize; }
   #cropRect i[data-h=sw] { left: -13px; bottom: -13px; cursor: nesw-resize; }
   #cropRect i[data-h=se] { right: -13px; bottom: -13px; cursor: nwse-resize; }
-  .ratios button.on { background: var(--accent); color: #fff; }
-  .thumb .c { position: absolute; right: 4px; bottom: 4px; width: 24px; height: 24px; margin: 0; padding: 0; border-radius: 50%; background: rgba(0,0,0,.65); font-size: .8rem; line-height: 24px; }
-  h1 { font-size: 1.4rem; margin: 8px 0 4px; }
-  p.sub { color: var(--muted); margin: 0 0 24px; font-size: 0.92rem; }
-  .card {
-    background: var(--card); border: 1px solid var(--border);
-    border-radius: 14px; padding: 18px; margin-bottom: 18px;
-  }
-  .card h2 { font-size: 1.02rem; margin: 0 0 12px; display:flex; align-items:center; gap:8px; }
-  label { display:block; font-size: 0.85rem; color: var(--muted); margin: 10px 0 4px; }
-  input[type=text], input[type=password], textarea {
-    width: 100%; padding: 10px 12px; border-radius: 8px;
-    border: 1px solid var(--border); background: var(--bg); color: var(--text);
-    font-size: 0.95rem; font-family: inherit;
-  }
-  textarea { min-height: 220px; font-family: ui-monospace, Menlo, monospace; font-size: 0.8rem; resize: vertical; }
-  button {
-    margin-top: 14px; width: 100%; padding: 12px; border: none; border-radius: 10px;
-    background: var(--accent); color: #fff; font-size: 0.95rem; font-weight: 600;
-    cursor: pointer;
-  }
-  button:active { background: var(--accent-dark); }
-  button.secondary { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
-  button:disabled { opacity: 0.5; }
-  .status-dot { width: 9px; height: 9px; border-radius: 50%; display:inline-block; background:#999; }
-  .status-dot.on { background: var(--ok); }
-  .log { margin-top: 12px; font-size: 0.82rem; white-space: pre-wrap; word-break: break-word; }
-  .log .ok { color: var(--ok); }
-  .log .err { color: var(--err); }
-  .muted { color: var(--muted); font-size: 0.8rem; }
-  input[type=file] { width:100%; margin-top:4px; }
-  .row { display:flex; gap:10px; }
-  .row > * { flex:1; }
-  .thumbs { display:grid; grid-template-columns:repeat(auto-fill, minmax(84px, 1fr)); gap:8px; margin-top:10px; }
-  .thumb { position:relative; }
-  .thumb img { width:100%; aspect-ratio:1; object-fit:cover; border-radius:8px; border:1px solid var(--border); display:block; }
-  .thumb .n { position:absolute; left:4px; top:4px; background:rgba(0,0,0,.65); color:#fff; font-size:.7rem; padding:1px 6px; border-radius:99px; }
-  .thumb .x { position:absolute; right:4px; top:4px; width:22px; height:22px; margin:0; padding:0; border-radius:50%; background:rgba(0,0,0,.65); font-size:.8rem; line-height:22px; }
-  .check { display:flex; align-items:center; gap:8px; color:var(--text); font-size:.88rem; margin-top:12px; }
-  .check input { width:auto; }
-  .nt { width:100%; border-collapse:collapse; font-size:.8rem; margin-top:10px; }
-  .nt th, .nt td { padding:4px 6px; border-bottom:1px solid var(--border); text-align:right; }
-  .nt th:first-child, .nt td:first-child { text-align:left; }
-  .nt tr.tot td { font-weight:700; }
+  .crop-stage img { display: block; max-width: min(85vw, 700px); max-height: 55vh; }
+  [hidden] { display: none !important; }
 </style>
 </head>
-<body>
-<div class="wrap">
-  <h1>🍲 Import Tandoor</h1>
-  <p class="sub">Interface autonome — tourne dans ce navigateur. Les photos ne sont envoyées qu'à l'API Claude (analyse) et, sans photo du plat, une recherche d'image est faite sur Wikimedia / Pollinations.</p>
 
-  <div class="layout">
-  <div class="col">
-  <div class="card">
-    <h2><span id="statusDot" class="status-dot"></span> Connexion</h2>
-    <label>URL de ton instance Tandoor</label>
-    <input type="text" id="tandoorUrl" placeholder="https://cook.cabanologues.com">
-    <label>Token API</label>
-    <input type="password" id="tandoorToken" placeholder="tda_xxxxxxxx">
-    <label>Clé API Anthropic (pour analyser les photos — optionnelle)</label>
-    <input type="password" id="anthropicKey" placeholder="sk-ant-...">
-    <label>Modèle Claude</label>
-    <input type="text" id="claudeModel" placeholder="claude-sonnet-5">
-    <button onclick="saveAuth()">Enregistrer et rester connecté</button>
-    <p class="muted" id="authInfo"></p>
-  </div>
+<body class="bg-base font-sans text-ink antialiased" style="padding-top: env(safe-area-inset-top, 0px)">
+<div class="mx-auto max-w-[1240px] px-4 pb-16 pt-6">
 
-  <div class="card">
-    <h2>📷 Photos de la recette</h2>
-    <p class="muted">Ajoute une ou plusieurs photos (pages de livre, notes, photo du plat…). Claude extrait le texte, le traduit en français et remplit le JSON ci-dessous pour que tu le relises.</p>
-    <input type="file" id="photoFiles" accept="image/*" multiple onchange="addPhotos(this)">
-    <div class="thumbs" id="thumbs"></div>
-    <div class="row">
-      <button onclick="analyzePhotos()" id="analyzeBtn">Analyser avec Claude</button>
-      <button class="secondary" onclick="clearPhotos()">Tout effacer</button>
+  <header class="mb-6">
+    <h1 class="text-2xl font-bold">🍲 Import Tandoor</h1>
+    <p class="muted mt-1">Transforme des photos de recette en recette Tandoor, en 5 étapes. Les photos ne sont envoyées qu'à l'API Claude ; sans photo du plat, l'image est cherchée sur Wikimedia / Pollinations.</p>
+  </header>
+
+  <!-- Progression -->
+  <ol id="stepper" class="mb-4 grid grid-cols-5 gap-2">
+    <li class="step flex flex-col items-center gap-1 text-center text-xs text-mute sm:flex-row sm:text-left" data-step="1"><span class="step-dot" data-badge="1">1</span><span class="step-label">Connexion</span></li>
+    <li class="step flex flex-col items-center gap-1 text-center text-xs text-mute sm:flex-row sm:text-left" data-step="2"><span class="step-dot" data-badge="2">2</span><span class="step-label">Recette</span></li>
+    <li class="step flex flex-col items-center gap-1 text-center text-xs text-mute sm:flex-row sm:text-left" data-step="3"><span class="step-dot" data-badge="3">3</span><span class="step-label">Ajuster <em class="not-italic opacity-70">(option)</em></span></li>
+    <li class="step flex flex-col items-center gap-1 text-center text-xs text-mute sm:flex-row sm:text-left" data-step="4"><span class="step-dot" data-badge="4">4</span><span class="step-label">Image</span></li>
+    <li class="step flex flex-col items-center gap-1 text-center text-xs text-mute sm:flex-row sm:text-left" data-step="5"><span class="step-dot" data-badge="5">5</span><span class="step-label">Envoyer</span></li>
+  </ol>
+  <div id="nextHint" class="inset mb-6 px-4 py-3 text-sm font-medium"></div>
+
+  <div class="grid grid-cols-1 gap-x-6 lg:grid-cols-2 lg:items-start">
+    <!-- ================= COLONNE GAUCHE : ce que tu fais ================= -->
+    <div>
+
+      <!-- 1 -->
+      <section class="card" data-card="1">
+        <div class="mb-2 flex items-center gap-3">
+          <span class="step-dot" data-badge="1">1</span>
+          <div>
+            <h2 class="flex items-center gap-2 font-semibold"><span id="statusDot" class="status-dot"></span> Connexion</h2>
+            <p class="muted">À faire une seule fois : les infos restent dans ce navigateur.</p>
+          </div>
+        </div>
+        <label class="lbl" for="tandoorUrl">URL de ton instance Tandoor</label>
+        <input class="field" type="text" id="tandoorUrl" placeholder="https://cook.cabanologues.com" oninput="updateUI()">
+        <label class="lbl" for="tandoorToken">Token API Tandoor</label>
+        <input class="field" type="password" id="tandoorToken" placeholder="tda_xxxxxxxx" oninput="updateUI()">
+        <label class="lbl" for="anthropicKey">Clé API Anthropic <span class="font-normal">(nécessaire pour analyser les photos et modifier la recette)</span></label>
+        <input class="field" type="password" id="anthropicKey" placeholder="sk-ant-...">
+        <label class="lbl" for="claudeModel">Modèle Claude</label>
+        <input class="field" type="text" id="claudeModel" placeholder="claude-sonnet-5">
+        <button class="btn btn-primary" onclick="saveAuth()">Enregistrer</button>
+        <p class="muted mt-2" id="authInfo"></p>
+      </section>
+
+      <!-- 2 -->
+      <section class="card" data-card="2">
+        <div class="mb-3 flex items-center gap-3">
+          <span class="step-dot" data-badge="2">2</span>
+          <div>
+            <h2 class="font-semibold">Ajoute la recette</h2>
+            <p class="muted">Photos de pages de livre, notes, capture d'écran, photo du plat… Claude lit le texte, le traduit en français et remplit la recette.</p>
+          </div>
+        </div>
+
+        <input id="photoFiles" class="sr-only" type="file" accept="image/*" multiple onchange="addPhotos(this)">
+        <label for="photoFiles" class="drop" id="dropZone">
+          <span class="text-2xl">📷</span>
+          <span>Choisir des photos</span>
+          <small>ou glisse-les ici · plusieurs possibles</small>
+        </label>
+        <div class="mt-3 grid grid-cols-[repeat(auto-fill,minmax(84px,1fr))] gap-3" id="thumbs"></div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <button class="btn btn-primary" onclick="analyzePhotos()" id="analyzeBtn">✨ Analyser avec Claude</button>
+          <button class="btn" onclick="clearPhotos()" id="clearBtn">Tout effacer</button>
+        </div>
+        <p class="muted mt-2 text-err" id="analyzeWhy"></p>
+        <div class="log" id="photoLog"></div>
+
+        <details class="mt-4">
+          <summary class="cursor-pointer text-xs font-medium text-accent">Ou : coller / éditer la recette en JSON à la main</summary>
+          <textarea class="field mt-3" id="recipeJson" oninput="renderPreview()" placeholder="Le JSON de la recette apparaît ici après l'analyse. Tu peux aussi en coller un."></textarea>
+          <button class="btn" onclick="loadExample()">Charger une recette d'exemple</button>
+        </details>
+      </section>
+
+      <!-- 3 -->
+      <section class="card" data-card="3">
+        <div class="mb-3 flex items-center gap-3">
+          <span class="step-dot" data-badge="3">3</span>
+          <div>
+            <h2 class="font-semibold">Ajuster <span class="text-xs font-normal text-mute">(facultatif)</span></h2>
+            <p class="muted">Demande un changement à Claude et consulte les apports nutritionnels. Vérifie le résultat dans l'aperçu à droite.</p>
+          </div>
+        </div>
+
+        <label class="lbl" for="modText">Modification voulue</label>
+        <input class="field" type="text" id="modText" placeholder="ex : remplace le poulet par du tofu" oninput="updateUI()" onkeydown="if(event.key==='Enter') modifyRecipe()">
+        <div class="grid grid-cols-2 gap-3">
+          <button class="btn btn-primary" onclick="modifyRecipe()" id="modBtn">Modifier avec Claude</button>
+          <button class="btn" onclick="undoModify()" id="undoBtn">↩ Annuler la dernière</button>
+        </div>
+        <p class="muted mt-2 text-err" id="modWhy"></p>
+        <div class="log" id="modLog"></div>
+
+        <h3 class="mt-6 text-sm font-semibold">🥗 Apports nutritionnels</h3>
+        <p class="muted">Estimation par Claude à partir des ingrédients (calculée automatiquement après l'analyse ou une modification). Indicatif, pas une valeur médicale.</p>
+        <div id="nutriBox"></div>
+        <label class="check"><input type="checkbox" id="nutriSave" checked> Inclure les apports (par portion) dans la recette envoyée</label>
+        <button class="btn" onclick="calcNutrition()" id="nutriBtn">Calculer / recalculer</button>
+        <p class="muted mt-2 text-err" id="nutriWhy"></p>
+        <div class="log" id="nutriLog"></div>
+      </section>
+
+      <!-- 4 -->
+      <section class="card" data-card="4">
+        <div class="mb-3 flex items-center gap-3">
+          <span class="step-dot" data-badge="4">4</span>
+          <div>
+            <h2 class="font-semibold">Image de la recette</h2>
+            <p class="muted">Après l'analyse, une image est proposée dans l'aperçu : ta photo du plat si tu en as fournie une, sinon une photo libre (Wikimedia Commons), sinon une image générée.</p>
+          </div>
+        </div>
+
+        <input id="imageFile" class="sr-only" type="file" accept="image/*" onchange="pickOwnImage(this)">
+        <label for="imageFile" class="drop">
+          <span class="text-2xl">🖼️</span>
+          <span>Choisir mon image</span>
+          <small>depuis mes fichiers</small>
+        </label>
+
+        <div class="grid grid-cols-3 gap-3">
+          <button class="btn" onclick="nextCandidate()" id="nextImgBtn">Autre proposition</button>
+          <button class="btn" onclick="cropCurrent()" id="cropBtn">✂️ Recadrer</button>
+          <button class="btn" onclick="restoreOriginal()" id="origBtn">Image d'origine</button>
+        </div>
+        <div class="log" id="imageLog"></div>
+
+        <details class="mt-4">
+          <summary class="cursor-pointer text-xs font-medium text-accent">Avancé : ajouter l'image à une recette déjà présente dans Tandoor</summary>
+          <p class="muted mt-3">Envoie seulement l'image courante à une recette existante (« Tout envoyer » crée, lui, une nouvelle recette avec son image).</p>
+          <button class="btn" onclick="loadRecipes()">Choisir dans mes recettes</button>
+          <select id="recipePick" hidden onchange="document.getElementById('recipeId').value = this.value" class="field mt-3"></select>
+          <label class="lbl" for="recipeId">ou ID de la recette</label>
+          <input class="field" type="text" id="recipeId" placeholder="vide = recette du JSON, sinon la plus récente">
+          <button class="btn" onclick="uploadImage()" id="sendImgBtn">Envoyer l'image seule</button>
+          <div class="log" id="existLog"></div>
+        </details>
+      </section>
+
+      <p class="muted text-center">Le token Tandoor et la clé API sont stockés uniquement dans ce navigateur (localStorage). Le token n'est envoyé qu'à ton serveur Tandoor, la clé qu'à api.anthropic.com.</p>
     </div>
-    <div class="log" id="photoLog"></div>
-  </div>
 
-  <div class="card">
-    <h2>✏️ Modifier la recette</h2>
-    <p class="muted">Décris le changement voulu ; Claude adapte les ingrédients et les instructions du JSON ci-dessous. Tu peux enchaîner plusieurs modifications.</p>
-    <input type="text" id="modText" placeholder="ex : remplace le poulet par du tofu" onkeydown="if(event.key==='Enter') modifyRecipe()">
-    <div class="row">
-      <button onclick="modifyRecipe()" id="modBtn">Modifier avec Claude</button>
-      <button class="secondary" onclick="undoModify()">Annuler la dernière</button>
+    <!-- ================= COLONNE DROITE : aperçu + envoi ================= -->
+    <div class="lg:self-stretch">
+      <section class="card preview lg:sticky lg:top-4 lg:max-h-[calc(100vh-2rem)]" data-card="5">
+        <div class="pv-scroll">
+          <div class="mb-3 flex items-center gap-3">
+            <span class="step-dot" data-badge="5">5</span>
+            <div>
+              <h2 class="font-semibold">Aperçu et envoi</h2>
+              <p class="muted">Ce qui sera créé dans Tandoor. Content ? Envoie.</p>
+            </div>
+          </div>
+          <img id="pvImg" class="block max-h-80 w-full rounded-2xl object-cover" style="box-shadow: var(--neu-out-sm)" alt="" hidden>
+          <div class="pv-empty" id="pvNoImg">Aucune image pour l'instant</div>
+          <p class="muted mt-2" id="candLabel"></p>
+          <div id="pvBody"></div>
+        </div>
+        <div class="pv-bar">
+          <div class="muted" id="pvChecklist"></div>
+          <button class="btn btn-primary" onclick="importRecipe()" id="sendBtn">🚀 Tout envoyer à Tandoor</button>
+          <p class="muted mt-2 text-err" id="sendWhy"></p>
+          <div class="log" id="importLog"></div>
+        </div>
+      </section>
     </div>
-    <div class="log" id="modLog"></div>
   </div>
-
-  <div class="card">
-    <h2>📋 JSON de la recette</h2>
-    <p class="muted">Pré-rempli avec la dernière recette. Modifie librement : l'aperçu à droite se met à jour.</p>
-    <textarea id="recipeJson" oninput="renderPreview()"></textarea>
-  </div>
-
-  <div class="card">
-    <h2>🥗 Apports nutritionnels</h2>
-    <p class="muted">Estimation par Claude à partir des ingrédients et quantités du JSON (tables de composition usuelles). Calculée automatiquement après l'analyse ou une modification ; indicatif, pas une valeur médicale.</p>
-    <div id="nutriBox"></div>
-    <label class="check"><input type="checkbox" id="nutriSave" checked> Inclure les apports (par portion) dans la recette à l'import</label>
-    <button onclick="calcNutrition()" id="nutriBtn">Calculer / recalculer</button>
-    <div class="log" id="nutriLog"></div>
-  </div>
-
-  <div class="card">
-    <h2>🖼️ Image de la recette</h2>
-    <p class="muted">Après l'analyse, une image est proposée dans l'aperçu : la photo du plat si tu en as fournie une, sinon une photo libre trouvée sur Wikimedia Commons, sinon une image générée.</p>
-    <div class="row">
-      <button class="secondary" onclick="nextCandidate()">Autre proposition</button>
-      <button class="secondary" onclick="cropCurrent()">✂️ Recadrer</button>
-      <button class="secondary" onclick="restoreOriginal()">Image d'origine</button>
-    </div>
-    <label>Ou ton propre fichier</label>
-    <input type="file" id="imageFile" accept="image/*" onchange="pickOwnImage(this)">
-    <div class="log" id="imageLog"></div>
-  </div>
-
-  <div class="card">
-    <h2>📎 Ajouter l'image à une recette existante</h2>
-    <p class="muted">Facultatif : envoie seulement l'image courante à une recette déjà présente dans Tandoor (« Tout envoyer » crée, lui, une nouvelle recette avec son image).</p>
-    <button class="secondary" onclick="loadRecipes()" style="margin-top:0">Choisir dans mes recettes</button>
-    <select id="recipePick" hidden onchange="document.getElementById('recipeId').value = this.value" style="width:100%;margin-top:8px;padding:10px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text)"></select>
-    <label>ou ID de la recette</label>
-    <input type="text" id="recipeId" placeholder="vide = recette du JSON, sinon la plus récente">
-    <button onclick="uploadImage()">Envoyer l'image seule</button>
-    <div class="log" id="existLog"></div>
-  </div>
-
-  <p class="muted" style="text-align:center">Le token Tandoor et la clé API sont stockés uniquement dans ce navigateur (localStorage). Le token n'est envoyé qu'à ton serveur Tandoor, la clé qu'à api.anthropic.com.</p>
-  </div><!-- /col gauche -->
-
-  <div class="col">
-    <div class="card preview">
-      <div class="pv-scroll">
-        <h2>👁️ Aperçu de la recette</h2>
-        <img id="pvImg" alt="" hidden>
-        <div class="pv-empty" id="pvNoImg">Aucune image pour l'instant</div>
-        <p class="muted" id="candLabel"></p>
-        <div id="pvBody"></div>
-      </div>
-      <div class="pv-bar">
-        <div class="muted" id="pvChecklist"></div>
-        <button onclick="importRecipe()" id="sendBtn">🚀 Tout envoyer à Tandoor</button>
-        <div class="log" id="importLog"></div>
-      </div>
-    </div>
-  </div><!-- /col droite -->
-  </div><!-- /layout -->
 </div>
 
-<div class="modal" id="cropModal" hidden>
-  <div class="modal-box">
-    <h2>✂️ Recadrer</h2>
-    <div class="crop-stage" id="cropStage">
+<!-- Recadrage -->
+<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-4" id="cropModal" hidden>
+  <div class="max-h-full w-full max-w-[760px] overflow-auto rounded-3xl bg-base p-5" style="box-shadow: var(--neu-out)">
+    <h2 class="mb-3 font-semibold">✂️ Recadrer</h2>
+    <div class="crop-stage relative mx-auto w-fit touch-none select-none overflow-hidden bg-black" id="cropStage">
       <img id="cropImg" alt="">
       <div id="cropRect"><i data-h="nw"></i><i data-h="ne"></i><i data-h="sw"></i><i data-h="se"></i></div>
     </div>
-    <div class="row ratios" id="cropRatios">
-      <button class="secondary on" data-r="free" onclick="setRatio('free')">Libre</button>
-      <button class="secondary" data-r="1" onclick="setRatio('1')">1:1</button>
-      <button class="secondary" data-r="1.3333" onclick="setRatio('1.3333')">4:3</button>
-      <button class="secondary" data-r="1.7778" onclick="setRatio('1.7778')">16:9</button>
+    <div class="ratios grid grid-cols-4 gap-3" id="cropRatios">
+      <button class="btn on" data-r="free" onclick="setRatio('free')">Libre</button>
+      <button class="btn" data-r="1" onclick="setRatio('1')">1:1</button>
+      <button class="btn" data-r="1.3333" onclick="setRatio('1.3333')">4:3</button>
+      <button class="btn" data-r="1.7778" onclick="setRatio('1.7778')">16:9</button>
     </div>
-    <div class="row">
-      <button onclick="applyCrop()">Valider</button>
-      <button class="secondary" onclick="closeCrop()">Annuler</button>
+    <div class="grid grid-cols-2 gap-3">
+      <button class="btn btn-primary" onclick="applyCrop()">Valider</button>
+      <button class="btn" onclick="closeCrop()">Annuler</button>
     </div>
   </div>
 </div>
 
 <script>
+const $ = id => document.getElementById(id);
+
 function log(el, msg, cls) {
   const d = document.getElementById(el);
   const line = document.createElement('div');
-  if (cls) line.className = cls;
+  if (cls === 'ok') line.className = 'text-ok';
+  else if (cls === 'err') line.className = 'text-err';
   line.textContent = msg;
   d.prepend(line);
+}
+
+// ---------- État de l'interface : étapes, boutons verrouillés ----------
+const busy = { analyze: false, mod: false, nutri: false, send: false };
+
+function uiState() {
+  const { url, token } = getAuth();
+  let p = null;
+  try { p = JSON.parse($('recipeJson').value); } catch (e) {}
+  return {
+    connected: !!(url && token),
+    key: !!localStorage.getItem('anthropic_key'),
+    hasRecipe: !!(p && p.name && Array.isArray(p.steps) && p.steps.length),
+    hasImage: !!current,
+    hasPhotos: photos.length > 0,
+    hasMod: !!$('modText').value.trim(),
+    fresh: !!(nutri && nutriFor === $('recipeJson').value),
+    sentThis: !!(sent && sent.json === $('recipeJson').value)
+  };
+}
+
+function gate(id, ok, why, whyId) {
+  $(id).disabled = !ok;
+  if (whyId) $(whyId).textContent = ok ? '' : why;
+}
+
+function updateUI() {
+  const s = uiState();
+  const noKey = 'Ajoute et enregistre ta clé API Claude à l\'étape 1.';
+  const noRecipe = 'Disponible dès qu\'une recette existe (étape 2).';
+
+  gate('analyzeBtn', s.key && s.hasPhotos && !busy.analyze,
+    !s.key ? noKey : 'Ajoute au moins une photo pour lancer l\'analyse.', 'analyzeWhy');
+  $('clearBtn').disabled = !s.hasPhotos;
+
+  gate('modBtn', s.key && s.hasRecipe && s.hasMod && !busy.mod,
+    !s.hasRecipe ? noRecipe : !s.key ? noKey : 'Écris la modification voulue.', 'modWhy');
+  $('undoBtn').disabled = !undoStack.length;
+
+  gate('nutriBtn', s.key && s.hasRecipe && !busy.nutri,
+    !s.hasRecipe ? noRecipe : noKey, 'nutriWhy');
+
+  $('nextImgBtn').disabled = !queue.length;
+  $('cropBtn').disabled = !s.hasImage;
+  $('origBtn').disabled = !s.hasImage;
+  $('sendImgBtn').disabled = !s.hasImage || !s.connected;
+
+  gate('sendBtn', s.connected && s.hasRecipe && !busy.send,
+    !s.connected ? 'Renseigne la connexion à Tandoor (étape 1).' : 'Il faut d\'abord une recette (étape 2).', 'sendWhy');
+
+  // progression : 1 connexion, 2 recette, 3 ajuster (facultatif), 4 image, 5 envoi
+  const done = { 1: s.connected, 2: s.hasRecipe, 3: s.fresh || undoStack.length > 0, 4: s.hasImage, 5: s.sentThis };
+  const cur = [1, 2, 4, 5].find(n => !done[n]) || 5;
+  document.querySelectorAll('[data-badge]').forEach(b => {
+    const n = Number(b.dataset.badge);
+    const state = done[n] ? 'done' : n === cur ? 'current' : 'todo';
+    b.dataset.state = state;
+    b.textContent = state === 'done' ? '✓' : n;
+  });
+  document.querySelectorAll('#stepper .step').forEach(li => {
+    const n = Number(li.dataset.step);
+    li.dataset.state = done[n] ? 'done' : n === cur ? 'current' : 'todo';
+  });
+  document.querySelector('[data-card="3"]').dataset.state = s.hasRecipe ? '' : 'locked';
+
+  let hint;
+  if (s.sentThis) hint = '🎉 Recette envoyée dans Tandoor (ID ' + sent.id + ').';
+  else if (!s.connected) hint = '👉 Étape 1 : renseigne l\'URL de Tandoor et ton token, puis clique sur « Enregistrer ».';
+  else if (!s.hasRecipe) hint = s.hasPhotos
+    ? '👉 Étape 2 : clique sur « Analyser avec Claude » pour créer la recette à partir de tes photos.'
+    : '👉 Étape 2 : choisis une ou plusieurs photos de la recette.';
+  else if (!s.hasImage) hint = '👉 Étape 4 : choisis une image pour la recette (l\'étape 3 « Ajuster » est facultative), ou envoie sans image.';
+  else hint = '✅ Tout est prêt : vérifie l\'aperçu, puis clique sur « Tout envoyer à Tandoor ».';
+  $('nextHint').textContent = hint;
 }
 
 function getAuth() {
@@ -254,17 +416,18 @@ function refreshStatus() {
   const { url, token } = getAuth();
   const dot = document.getElementById('statusDot');
   const info = document.getElementById('authInfo');
+  document.getElementById('tandoorUrl').value = url;
+  document.getElementById('tandoorToken').value = token;
+  document.getElementById('anthropicKey').value = localStorage.getItem('anthropic_key') || '';
+  document.getElementById('claudeModel').value = localStorage.getItem('claude_model') || '';
   if (url && token) {
     dot.classList.add('on');
-    info.textContent = 'Connecté à ' + url;
-    document.getElementById('tandoorUrl').value = url;
-    document.getElementById('tandoorToken').value = token;
-    document.getElementById('anthropicKey').value = localStorage.getItem('anthropic_key') || '';
-    document.getElementById('claudeModel').value = localStorage.getItem('claude_model') || '';
+    info.textContent = 'Connecté à ' + url + (localStorage.getItem('anthropic_key') ? ' · clé Claude enregistrée' : ' · pas de clé Claude (analyse et modification indisponibles)');
   } else {
     dot.classList.remove('on');
     info.textContent = 'Non connecté';
   }
+  updateUI();
 }
 
 function saveAuth() {
@@ -344,9 +507,16 @@ function renderThumbs() {
     d.append(img, n, x, c);
     box.append(d);
   });
+  updateUI();
 }
 
 function clearPhotos() { photos = []; renderThumbs(); }
+
+// glisser-déposer de photos sur la zone de dépôt
+const dz = $('dropZone');
+['dragenter', 'dragover'].forEach(ev => dz.addEventListener(ev, e => { e.preventDefault(); dz.classList.add('over'); }));
+['dragleave', 'drop'].forEach(ev => dz.addEventListener(ev, e => { e.preventDefault(); dz.classList.remove('over'); }));
+dz.addEventListener('drop', e => addPhotos({ files: [...e.dataTransfer.files].filter(f => f.type.startsWith('image/')), value: '' }));
 
 const RECIPE_TOOL = {
   name: 'submit_recipe',
@@ -429,8 +599,7 @@ async function analyzePhotos() {
   const key = localStorage.getItem('anthropic_key') || '';
   if (!key) { alert('Renseigne ta clé API Anthropic dans « Connexion » puis enregistre.'); return; }
   if (!photos.length) { alert('Ajoute au moins une photo.'); return; }
-  const btn = document.getElementById('analyzeBtn');
-  btn.disabled = true;
+  busy.analyze = true; updateUI();
   log('photoLog', '⏳ Analyse de ' + photos.length + ' photo(s) par Claude…');
   const content = [];
   photos.forEach((p, i) => {
@@ -449,7 +618,7 @@ async function analyzePhotos() {
   } catch (e) {
     log('photoLog', '✗ Échec : ' + e.message, 'err');
   } finally {
-    btn.disabled = false;
+    busy.analyze = false; updateUI();
   }
 }
 
@@ -516,8 +685,7 @@ async function modifyRecipe() {
   if (!req) { alert('Décris la modification voulue.'); return; }
   let p;
   try { p = JSON.parse(box.value); } catch (e) { log('modLog', 'JSON invalide : ' + e.message, 'err'); return; }
-  const btn = document.getElementById('modBtn');
-  btn.disabled = true;
+  busy.mod = true; updateUI();
   log('modLog', '⏳ Modification en cours : « ' + req + ' »');
   try {
     const r = await callClaude(MODIFY_PROMPT, [{
@@ -533,7 +701,7 @@ async function modifyRecipe() {
   } catch (e) {
     log('modLog', '✗ Échec : ' + e.message, 'err');
   } finally {
-    btn.disabled = false;
+    busy.mod = false; updateUI();
   }
 }
 
@@ -593,8 +761,7 @@ async function calcNutrition() {
   let p;
   try { p = JSON.parse(src); } catch (e) { log('nutriLog', 'JSON invalide : ' + e.message, 'err'); return; }
   if (!localStorage.getItem('anthropic_key')) { log('nutriLog', 'Clé API Anthropic requise pour le calcul.', 'err'); return; }
-  const btn = document.getElementById('nutriBtn');
-  btn.disabled = true;
+  busy.nutri = true; updateUI();
   log('nutriLog', '⏳ Calcul des apports nutritionnels…');
   try {
     const r = fromTandoorPayload(p);
@@ -615,7 +782,7 @@ async function calcNutrition() {
   } catch (e) {
     log('nutriLog', '✗ Échec : ' + e.message, 'err');
   } finally {
-    btn.disabled = false;
+    busy.nutri = false; updateUI();
   }
 }
 
@@ -670,10 +837,20 @@ function renderPreview() {
   const chk = document.getElementById('pvChecklist');
   const src = document.getElementById('recipeJson').value;
   body.textContent = '';
+  if (!src.trim()) {
+    body.append(el('div', 'pv-empty mt-4', 'Aucune recette pour l\'instant. Commence à l\'étape 2 : choisis des photos et lance l\'analyse.'));
+    chk.textContent = '';
+    updateUI();
+    return;
+  }
   let p;
-  try { p = JSON.parse(src); } catch (e) {
-    body.append(el('p', 'log err', 'JSON invalide : ' + e.message));
+  try {
+    p = JSON.parse(src);
+    if (!p || typeof p !== 'object') throw new Error('objet attendu');
+  } catch (e) {
+    body.append(el('p', 'mt-4 text-xs text-err', 'JSON invalide : ' + e.message));
     chk.textContent = '⚠️ JSON invalide — corrige-le pour pouvoir envoyer.';
+    updateUI();
     return;
   }
   body.append(el('h3', 'pv-title', p.name || '(sans nom)'));
@@ -715,6 +892,7 @@ function renderPreview() {
   parts.push(current ? '✓ Image' : '✗ Pas d\'image');
   parts.push(nutriFresh && document.getElementById('nutriSave').checked ? '✓ Apports' : '– Apports non inclus');
   chk.textContent = 'Sera envoyé : ' + parts.join(' · ');
+  updateUI();
 }
 
 function setCurrent(blob, label, orig) {
@@ -755,8 +933,7 @@ function restoreOriginal() {
 
 // ---------- Recadrage ----------
 let cropState = null;
-const $ = id => document.getElementById(id);
-const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const clamp =(v, a, b) => Math.max(a, Math.min(b, v));
 const CROP_MIN = 30;
 
 function openCrop(blob, onDone) {
@@ -910,6 +1087,7 @@ async function nextCandidate() {
       log('imageLog', '✗ Proposition ignorée (' + c.kind + ') : ' + e.message, 'err');
     }
   }
+  updateUI();
   log('imageLog', 'Plus de proposition disponible. Choisis ton propre fichier.', 'err');
   return false;
 }
@@ -984,6 +1162,7 @@ async function importRecipe() {
       log('importLog', 'ℹ️ Apports non inclus : la recette a changé depuis le calcul — clique sur « Calculer / recalculer ».');
     }
   }
+  busy.send = true; updateUI();
   try {
     const res = await fetch(url + '/api/recipe/', {
       method: 'POST',
@@ -1005,6 +1184,8 @@ async function importRecipe() {
     }
   } catch (e) {
     log('importLog', '✗ Échec réseau : ' + e.message + await netHint(url), 'err');
+  } finally {
+    busy.send = false; updateUI();
   }
 }
 
@@ -1046,7 +1227,7 @@ async function uploadImage(knownId, logEl = 'existLog') {
   return false;
 }
 
-document.getElementById('recipeJson').value = JSON.stringify({
+const EXAMPLE = {
   "name": "Rösti de haricots blancs au « cottage cheese »",
   "description": "Un repas salé et rassasiant, parfait après l'entraînement.",
   "servings": 1,
@@ -1094,7 +1275,11 @@ document.getElementById('recipeJson').value = JSON.stringify({
     }
   ],
   "keywords": [{"name":"post-entraînement"},{"name":"végane"},{"name":"riche en protéines"}]
-}, null, 2);
+};
+
+function loadExample() {
+  setRecipe(JSON.stringify(EXAMPLE, null, 2));
+}
 
 document.getElementById('nutriSave').addEventListener('change', renderPreview);
 refreshStatus();
