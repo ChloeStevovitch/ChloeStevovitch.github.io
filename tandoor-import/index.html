@@ -93,9 +93,9 @@
 
   <div class="card">
     <h2>🖼️ Photo</h2>
-    <p class="muted">Une fois la recette importée, choisis une photo (celle du livre par exemple) et envoie-la.</p>
-    <label>ID de la recette</label>
-    <input type="text" id="recipeId" placeholder="rempli automatiquement après import">
+    <p class="muted">Choisis une photo (celle du livre par exemple) et envoie-la. Sans ID, elle est associée à la dernière recette créée.</p>
+    <label>ID de la recette (optionnel)</label>
+    <input type="text" id="recipeId" placeholder="vide = dernière recette créée">
     <label>Fichier image</label>
     <input type="file" id="imageFile" accept="image/*">
     <button onclick="uploadImage()">Envoyer l'image</button>
@@ -178,11 +178,27 @@ async function importRecipe() {
 
 async function uploadImage() {
   const { url, token } = getAuth();
-  const id = document.getElementById('recipeId').value.trim();
+  let id = document.getElementById('recipeId').value.trim();
   const file = document.getElementById('imageFile').files[0];
   if (!url || !token) { alert('Connecte-toi d\'abord.'); return; }
-  if (!id) { alert('ID de recette manquant.'); return; }
   if (!file) { alert('Choisis une image.'); return; }
+  if (!id) {
+    // Pas d'ID saisi : on prend la recette la plus récemment créée.
+    try {
+      const r = await fetch(url + '/api/recipe/?page_size=1&sort_order=-created_at', {
+        headers: { 'Authorization': 'Bearer ' + token }
+      });
+      const d = await r.json();
+      const last = d.results && d.results[0];
+      if (!r.ok || !last) throw new Error('aucune recette trouvée');
+      id = String(last.id);
+      document.getElementById('recipeId').value = id;
+      log('imageLog', 'ID non renseigné → dernière recette : ' + last.name + ' (ID ' + id + ')');
+    } catch (e) {
+      log('imageLog', '✗ Impossible de trouver la dernière recette : ' + e.message, 'err');
+      return;
+    }
+  }
   const form = new FormData();
   form.append('image', file, file.name);
   try {
