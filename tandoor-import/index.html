@@ -318,6 +318,12 @@
           <span>Choisir une image</span>
         </label>
 
+        <label class="lbl" for="imgQuery">Chercher sur Internet, ou coller un lien d'image</label>
+        <div class="flex gap-3">
+          <input class="field" type="text" id="imgQuery" placeholder="Mots-clés (vide : nom de la recette) ou https://…" oninput="updateUI()" onkeydown="if(event.key==='Enter') searchImages()">
+          <button class="btn mt-0 w-auto px-4" onclick="searchImages()" id="imgSearchBtn">Chercher</button>
+        </div>
+
         <div class="grid grid-cols-3 gap-3">
           <button class="btn" onclick="nextCandidate()" id="nextImgBtn">Autre</button>
           <button class="btn" onclick="cropCurrent()" id="cropBtn">Recadrer</button>
@@ -521,6 +527,7 @@ function updateUI() {
   $('kwInput').disabled = !s.hasRecipe;
 
   $('nextImgBtn').disabled = !queue.length;
+  $('imgSearchBtn').disabled = !(s.hasRecipe || $('imgQuery').value.trim());
   $('cropBtn').disabled = !s.hasImage;
   $('origBtn').disabled = !s.hasImage;
 
@@ -1350,6 +1357,39 @@ async function prepareImageQueue(r) {
     log('imageLog', 'Recherche Wikimedia impossible : ' + e.message, 'err');
   }
   queue.push({ kind: 'ai', prompt: r.image_prompt || ('appetizing photo of ' + r.name), seed: 1 });
+}
+
+// Cherche une image sur Internet pour la recette courante (nouvelle ou existante), ou charge un lien d'image
+async function searchImages() {
+  const raw = $('imgQuery').value.trim();
+  if (/^https?:\/\/\S+$/i.test(raw)) { await loadImageUrl(raw); return; }
+  let name = '';
+  try { name = JSON.parse($('recipeJson').value).name || ''; } catch (e) {}
+  const q = raw || name;
+  if (!q) { log('imageLog', 'Indique des mots-clés ou charge une recette.', 'err'); return; }
+  log('imageLog', 'Recherche en cours…');
+  queue = [];
+  try {
+    (await wikimediaCandidates(q)).forEach(c => queue.push(c));
+  } catch (e) {
+    log('imageLog', 'Recherche Wikimedia impossible : ' + e.message, 'err');
+  }
+  queue.push({ kind: 'ai', prompt: 'appetizing food photo of ' + q, seed: 1 });
+  updateUI();
+  await nextCandidate();
+}
+
+async function loadImageUrl(u) {
+  log('imageLog', 'Téléchargement de l\'image…');
+  try {
+    const res = await fetchT(u, {}, 20000);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const blob = await res.blob();
+    if (!blob.type.startsWith('image/')) throw new Error('ce lien n\'est pas une image');
+    setCurrent(await resizeToJpeg(blob), 'Image du lien : ' + u);
+  } catch (e) {
+    log('imageLog', 'Impossible de charger ce lien (' + e.message + '). Beaucoup de sites interdisent le téléchargement depuis une page web : enregistre l\'image sur ton appareil puis utilise « Choisir une image ».', 'err');
+  }
 }
 
 async function loadCandidate(c) {
