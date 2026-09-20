@@ -219,7 +219,7 @@
           <button class="btn btn-primary" onclick="saveAuth()">Enregistrer</button>
           <button class="btn" onclick="testConnection()">Tester</button>
         </div>
-        <p class="muted mt-3" id="authInfo"></p>
+        <p class="muted mt-3 whitespace-pre-line" id="authInfo"></p>
         </div>
       </section>
 
@@ -1410,19 +1410,32 @@ async function testConnection() {
   const info = $('authInfo');
   if (!url || !token) { info.textContent = 'Enregistre d\'abord l\'adresse et le token.'; return; }
   info.textContent = 'Test en cours…';
+  const lines = ['Page : ' + location.origin + location.pathname, 'Serveur : ' + url];
+  if (location.protocol === 'https:' && /^http:/i.test(url)) {
+    lines.push('Problème : la page est en HTTPS et l\'adresse Tandoor en HTTP, le navigateur bloque ce mélange.');
+  }
+  // 1. le serveur est-il joignable (réseau + certificat) ?
+  let reachable = false;
+  try {
+    await fetchT(url + '/api/', { mode: 'no-cors' }, 8000);
+    reachable = true;
+    lines.push('1. Serveur joignable : oui');
+  } catch (e) {
+    lines.push('1. Serveur joignable : NON (' + e.message + ')');
+  }
+  // 2. l'API répond-elle avec le token (CORS compris) ?
   try {
     const r = await fetchT(url + '/api/recipe/?page_size=1', { headers: { 'Authorization': 'Bearer ' + token } }, 10000);
     if (r.ok) {
       const d = await r.json().catch(() => ({}));
       info.textContent = 'Connexion OK' + (d.count != null ? ' (' + d.count + ' recettes).' : '.');
-    } else if (r.status === 401 || r.status === 403) {
-      info.textContent = 'Le serveur répond, mais le token est refusé (' + r.status + ').';
-    } else {
-      info.textContent = 'Le serveur répond avec l\'erreur ' + r.status + '.';
+      return;
     }
+    lines.push('2. API avec token : HTTP ' + r.status + (r.status === 401 || r.status === 403 ? ' (token refusé)' : ''));
   } catch (e) {
-    info.textContent = 'Échec : ' + e.message + await netHint(url);
+    lines.push('2. API avec token : échec (' + e.message + ')' + (reachable ? ' — le serveur est joignable, donc requête bloquée par CORS ou par le navigateur' : ''));
   }
+  info.textContent = lines.join('\n');
 }
 
 // ---------- Brouillon local (IndexedDB) : la recette reste sur l'appareil tant qu'elle n'est pas envoyée ----------
