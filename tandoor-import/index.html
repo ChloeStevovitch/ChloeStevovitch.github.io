@@ -540,10 +540,10 @@ function updateUI() {
 }
 
 function getAuth() {
-  return {
-    url: (localStorage.getItem('tandoor_url') || '').replace(/\/$/, ''),
-    token: localStorage.getItem('tandoor_token') || ''
-  };
+  let url = (localStorage.getItem('tandoor_url') || '').replace(/\/$/, '');
+  // page servie par Tandoor lui-même (dossier static) : même origine, donc pas de CORS
+  if (!url && location.pathname.startsWith('/static/')) url = location.origin;
+  return { url, token: localStorage.getItem('tandoor_token') || '' };
 }
 
 function refreshStatus() {
