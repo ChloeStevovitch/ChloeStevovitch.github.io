@@ -399,7 +399,8 @@ async function fetchT(url, opts = {}, ms = 20000) {
   const ctl = new AbortController();
   const t = setTimeout(() => ctl.abort(), ms);
   try {
-    return await fetch(url, { ...opts, signal: ctl.signal });
+    // credentials: 'omit' : pas de cookie de session Tandoor, sinon Django exige un jeton CSRF au lieu du token API
+    return await fetch(url, { credentials: 'omit', ...opts, signal: ctl.signal });
   } catch (e) {
     if (e.name === 'AbortError') throw new Error('délai dépassé (' + Math.round(ms / 1000) + ' s)');
     throw e;
