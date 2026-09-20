@@ -456,6 +456,7 @@ function goStep(n) {
   $('mobNext').disabled = mobStep === 5;
   if (isDesktop()) document.querySelector('[data-card="' + mobStep + '"]').scrollIntoView({ behavior: 'smooth', block: 'start' });
   else window.scrollTo({ top: 0, behavior: 'smooth' });
+  updateUI();
 }
 window.addEventListener('resize', () => { if (isDesktop()) document.querySelectorAll('.mob-off').forEach(c => c.classList.remove('mob-off')); else goStep(mobStep); });
 
@@ -552,6 +553,7 @@ function updateUI() {
   else if (!s.hasImage) hint = 'Choisis une image, ou envoie sans.';
   else hint = 'Prêt : vérifie l\'aperçu, puis envoie.';
   $('nextHint').textContent = hint;
+  $('nextHint').hidden = !(isDesktop() || mobStep === cur || s.sentThis);
 
   draftDirty();
 }
@@ -1172,14 +1174,15 @@ function renderPreview() {
   });
 
   const parts = ['Recette ✓'];
-  parts.push(current ? 'Image ✓' : 'Image –');
+  parts.push(current ? (current.existing ? 'Image inchangée' : 'Image ✓') : 'Image –');
   parts.push(nutriFresh && document.getElementById('nutriSave').checked ? 'Nutrition ✓' : 'Nutrition –');
   chk.textContent = parts.join('    ');
   updateUI();
 }
 
-function setCurrent(blob, label, orig) {
-  current = { blob, label, orig: orig || blob };
+function setCurrent(blob, label, orig, existing, origExisting) {
+  // existing : image déjà enregistrée dans Tandoor (inutile de la renvoyer tant qu'on n'y touche pas)
+  current = { blob, label, orig: orig || blob, existing: !!existing, origExisting: origExisting == null ? !!existing : !!origExisting };
   if (currentUrl) URL.revokeObjectURL(currentUrl);
   currentUrl = URL.createObjectURL(blob);
   const img = document.getElementById('pvImg');
@@ -1209,13 +1212,13 @@ const baseLabel = l => l.replace(/ \(recadrée\)$/, '');
 
 function cropCurrent() {
   if (!current) { alert('Aucune image à recadrer.'); return; }
-  const orig = current.orig, label = baseLabel(current.label) + ' (recadrée)';
-  openCrop(orig, b => setCurrent(b, label, orig));
+  const orig = current.orig, label = baseLabel(current.label) + ' (recadrée)', oe = current.origExisting;
+  openCrop(orig, b => setCurrent(b, label, orig, false, oe));
 }
 
 function restoreOriginal() {
   if (!current) return;
-  setCurrent(current.orig, baseLabel(current.label), current.orig);
+  setCurrent(current.orig, baseLabel(current.label), current.orig, current.origExisting, current.origExisting);
 }
 
 // ---------- Recadrage ----------
@@ -1512,7 +1515,7 @@ async function restoreDraft() {
       sent = d.sent || null;
       $('recipeJson').value = d.json || '';
       renderThumbs();
-      if (d.current && d.current.blob) setCurrent(d.current.blob, d.current.label, d.current.orig);
+      if (d.current && d.current.blob) setCurrent(d.current.blob, d.current.label, d.current.orig, d.current.existing, d.current.origExisting);
       if (nutri) renderNutrition();
       renderCost();
       renderPreview();
@@ -1603,6 +1606,27 @@ async function searchRecipes() {
   }
 }
 
+// Affiche l'image actuelle d'une recette Tandoor (token d'abord, puis cookie de session si même origine)
+async function loadExistingImage(r, url, token) {
+  const src = r.image || r.image_url;
+  if (!src) return;
+  let u;
+  try { const a = new URL(src, url); u = new URL(a.pathname + a.search, url).href; } catch (e) { return; }
+  const tries = [{ headers: { 'Authorization': 'Bearer ' + token } }];
+  if (new URL(u).origin === location.origin) tries.push({ credentials: 'include' });
+  for (const t of tries) {
+    try {
+      const res = await fetchT(u, t, 15000);
+      if (!res.ok) continue;
+      const blob = await res.blob();
+      if (!blob.type.startsWith('image/')) continue;
+      if (editing && editing.id === r.id && !current) setCurrent(blob, 'Image actuelle de la recette', blob, true);
+      return;
+    } catch (e) { /* essai suivant */ }
+  }
+  log('imageLog', 'Image actuelle non affichable (Tandoor refuse l\'accès avec ce token).');
+}
+
 async function openExisting(id) {
   const { url, token } = getAuth();
   if (!url || !token) { log('editLog', 'Connexion manquante (étape 1).', 'err'); return; }
@@ -1614,6 +1638,7 @@ async function openExisting(id) {
     setRecipe(JSON.stringify(fromTandoorApi(r), null, 2));
     log('editLog', 'Recette chargée : ' + r.name);
     goStep(3);
+    loadExistingImage(r, url, token);
   } catch (e) {
     log('editLog', 'Échec : ' + e.message + await netHint(url), 'err');
   }
@@ -1785,8 +1810,8 @@ async function importRecipe() {
       log('importLog', (editing ? 'Recette mise à jour' : 'Recette créée') + ' (ID ' + id + ').', 'ok');
     }
     let imageOk = true;
-    if (current) imageOk = await uploadImage(id, 'importLog');
-    else if (!retryImage) log('importLog', 'Envoyée sans image.');
+    if (current && !current.existing) imageOk = await uploadImage(id, 'importLog');
+    else if (!retryImage) log('importLog', current ? 'Image inchangée.' : 'Envoyée sans image.');
     if (imageOk) {
       sent.done = true;
       addHistory({ id, name: sent.name, url, t: Date.now(), edited: !!editing });
