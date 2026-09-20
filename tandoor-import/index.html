@@ -147,7 +147,7 @@
     .chip button { @apply ml-1.5 cursor-pointer text-mute; }
     .listrow   { @apply flex w-full cursor-pointer items-center justify-between gap-3 rounded-xl bg-base px-3 py-2 text-left text-sm; box-shadow: var(--neu-out-sm); }
     .listrow:active { box-shadow: var(--neu-in-sm); }
-    .hist-row  { @apply flex items-center justify-between gap-3 rounded-2xl px-4 py-3; box-shadow: var(--neu-in-sm); }
+    .hist-row  { @apply flex flex-col gap-3 rounded-2xl px-4 py-3 sm:flex-row sm:items-center sm:justify-between; box-shadow: var(--neu-in-sm); }
 
     /* recadrage */
     .ratios button.on { background: var(--neu-grad); color: var(--neu-on-accent); }
@@ -256,7 +256,7 @@
             <input class="field" type="text" id="editQuery" placeholder="Rechercher (vide : les dernières)" onkeydown="if(event.key==='Enter') searchRecipes()">
             <button class="btn mt-0 w-auto px-4" onclick="searchRecipes()">Chercher</button>
           </div>
-          <div id="editList" class="mt-3 grid gap-2"></div>
+          <div id="editList" class="mt-3 grid grid-cols-[minmax(0,1fr)] gap-2"></div>
           <div class="log" id="editLog"></div>
         </details>
 
@@ -361,7 +361,7 @@
       <h2 class="font-semibold">Dernières recettes</h2>
       <button class="cursor-pointer text-xs text-accent underline" onclick="loadRecent()">Actualiser</button>
     </div>
-    <div id="histList" class="grid gap-3"></div>
+    <div id="histList" class="grid grid-cols-[minmax(0,1fr)] gap-3"></div>
     <p class="muted mt-3" id="histNote"></p>
     <div class="log" id="histLog"></div>
   </section>
@@ -1666,13 +1666,13 @@ function renderHistory() {
       el('div', 'truncate text-sm font-semibold', x.name),
       el('div', 'muted', [when, mine.has(x.id) ? 'envoyée depuis cette page' : ''].filter(Boolean).join(' · '))
     );
-    const acts = el('div', 'flex shrink-0 gap-2');
-    const open = el('a', 'btn mt-0 w-auto px-3 py-1.5 text-center text-xs', 'Ouvrir');
+    const acts = el('div', 'grid grid-cols-3 gap-2 sm:flex sm:shrink-0');
+    const open = el('a', 'btn mt-0 w-full px-3 py-1.5 text-center text-xs sm:w-auto', 'Ouvrir');
     open.href = x.url + '/view/recipe/' + x.id; open.target = '_blank'; open.rel = 'noopener';
-    const edit = el('button', 'btn mt-0 w-auto px-3 py-1.5 text-xs', 'Modifier');
+    const edit = el('button', 'btn mt-0 w-full px-3 py-1.5 text-xs sm:w-auto', 'Modifier');
     edit.onclick = () => openExisting(x.id);
     if (x.url !== cur) edit.disabled = true;
-    const del = el('button', 'btn mt-0 w-auto px-3 py-1.5 text-xs text-err', 'Supprimer');
+    const del = el('button', 'btn mt-0 w-full px-3 py-1.5 text-xs text-err sm:w-auto', 'Supprimer');
     del.onclick = () => deleteRecent(x);
     if (x.url !== cur) del.disabled = true;
     acts.append(open, edit, del);
