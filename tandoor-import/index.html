@@ -325,7 +325,7 @@
         </div>
 
         <div class="grid grid-cols-3 gap-3">
-          <button class="btn" onclick="nextCandidate()" id="nextImgBtn">Autre</button>
+          <button class="btn" onclick="nextOrSearch()" id="nextImgBtn">Autre</button>
           <button class="btn" onclick="cropCurrent()" id="cropBtn">Recadrer</button>
           <button class="btn" onclick="restoreOriginal()" id="origBtn">Original</button>
         </div>
@@ -526,7 +526,7 @@ function updateUI() {
   $('kwBtn').disabled = !s.hasRecipe;
   $('kwInput').disabled = !s.hasRecipe;
 
-  $('nextImgBtn').disabled = !queue.length;
+  $('nextImgBtn').disabled = !(queue.length || s.hasRecipe);
   $('imgSearchBtn').disabled = !(s.hasRecipe || $('imgQuery').value.trim());
   $('cropBtn').disabled = !s.hasImage;
   $('origBtn').disabled = !s.hasImage;
@@ -1360,6 +1360,12 @@ async function prepareImageQueue(r) {
 }
 
 // Cherche une image sur Internet pour la recette courante (nouvelle ou existante), ou charge un lien d'image
+// « Autre » : image suivante ; s'il n'y en a pas encore, lance la recherche (nom de la recette ou mots-clés saisis)
+async function nextOrSearch() {
+  if (queue.length) await nextCandidate();
+  else await searchImages();
+}
+
 async function searchImages() {
   const raw = $('imgQuery').value.trim();
   if (/^https?:\/\/\S+$/i.test(raw)) { await loadImageUrl(raw); return; }
