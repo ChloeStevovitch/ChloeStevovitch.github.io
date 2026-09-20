@@ -357,8 +357,12 @@
 
   <!-- Dernières recettes importées -->
   <section id="histSection" class="card mt-2" hidden>
-    <h2 class="mb-3 font-semibold">Dernières recettes importées</h2>
+    <div class="mb-3 flex items-center justify-between gap-3">
+      <h2 class="font-semibold">Dernières recettes</h2>
+      <button class="cursor-pointer text-xs text-accent underline" onclick="loadRecent()">Actualiser</button>
+    </div>
     <div id="histList" class="grid gap-3"></div>
+    <p class="muted mt-3" id="histNote"></p>
     <div class="log" id="histLog"></div>
   </section>
 </div>
@@ -587,6 +591,7 @@ function saveAuth() {
   localStorage.setItem('anthropic_key', document.getElementById('anthropicKey').value.trim());
   localStorage.setItem('claude_model', document.getElementById('claudeModel').value.trim());
   refreshStatus();
+  loadRecent();
   if (uiState().connected) setAuthOpen(false);
   if (mobStep === 1 && uiState().connected) goStep(2);
 }
@@ -1384,8 +1389,8 @@ async function netHint(url) {
   }
 }
 
-async function apiGet(url, token, path) {
-  const r = await fetchT(url + path, { headers: { 'Authorization': 'Bearer ' + token } }, 15000);
+async function apiGet(url, token, path, ms = 15000) {
+  const r = await fetchT(url + path, { headers: { 'Authorization': 'Bearer ' + token } }, ms);
   const d = await r.json().catch(() => ({}));
   if (!r.ok) throw new Error('erreur ' + r.status);
   return d;
@@ -1612,18 +1617,41 @@ function addHistory(entry) {
   try { localStorage.setItem(HIST_KEY, JSON.stringify(h.slice(0, 20))); } catch (e) {}
   renderHistory();
 }
+let remoteHist = null;   // dernières recettes lues dans Tandoor (null = indisponible)
+let histError = '';
+
+async function loadRecent() {
+  const { url, token } = getAuth();
+  if (!url || !token) { remoteHist = null; histError = ''; renderHistory(); return; }
+  try {
+    const d = await apiGet(url, token, '/api/recipe/?page_size=10&sort_order=-created_at', 8000);
+    remoteHist = (d.results || [])
+      .map(r => ({ id: r.id, name: r.name, url, t: Date.parse(r.created_at || r.updated_at) || 0 }))
+      .sort((a, b) => (b.t - a.t) || (b.id - a.id))
+      .slice(0, 10);
+    histError = '';
+  } catch (e) {
+    remoteHist = null;
+    histError = 'Liste Tandoor indisponible (' + e.message + ').';
+  }
+  renderHistory();
+}
+
 function renderHistory() {
-  const h = getHistory();
-  $('histSection').hidden = !h.length;
+  const { url: cur, token } = getAuth();
+  const local = getHistory();
+  const items = remoteHist || local;
+  $('histSection').hidden = !(cur && token) && !items.length;
   const box = $('histList');
   box.textContent = '';
-  const cur = getAuth().url;
-  h.forEach(x => {
+  const mine = new Set(local.filter(x => x.url === cur).map(x => x.id));
+  items.forEach(x => {
     const row = el('div', 'hist-row');
     const info = el('div', 'min-w-0');
+    const when = x.t ? new Date(x.t).toLocaleString('fr-CA', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
     info.append(
       el('div', 'truncate text-sm font-semibold', x.name),
-      el('div', 'muted', new Date(x.t).toLocaleString('fr-CA', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) + (x.edited ? ' · mise à jour' : ''))
+      el('div', 'muted', [when, mine.has(x.id) ? 'envoyée depuis cette page' : ''].filter(Boolean).join(' · '))
     );
     const acts = el('div', 'flex shrink-0 gap-2');
     const open = el('a', 'btn mt-0 w-auto px-3 py-1.5 text-center text-xs', 'Ouvrir');
@@ -1638,6 +1666,9 @@ function renderHistory() {
     row.append(info, acts);
     box.append(row);
   });
+  $('histNote').textContent = remoteHist
+    ? (items.length ? '' : 'Aucune recette dans Tandoor.')
+    : (histError ? histError + (local.length ? ' Historique de cette page affiché.' : '') : '');
 }
 
 async function deleteRecent(x) {
@@ -1649,7 +1680,7 @@ async function deleteRecent(x) {
     if (res.ok || res.status === 404) {
       try { localStorage.setItem(HIST_KEY, JSON.stringify(getHistory().filter(h => !(h.id === x.id && h.url === x.url)))); } catch (e) {}
       if (editing && editing.id === x.id) editing = null;
-      renderHistory();
+      await loadRecent();
       updateUI();
       log('histLog', res.ok ? 'Recette supprimée : ' + x.name : 'Déjà absente de Tandoor, retirée de la liste.', 'ok');
     } else {
@@ -1746,6 +1777,7 @@ async function importRecipe() {
     if (imageOk) {
       sent.done = true;
       addHistory({ id, name: sent.name, url, t: Date.now(), edited: !!editing });
+      loadRecent();
       try { await idbDel(DRAFT_KEY); } catch (e) {}
       $('draftInfo').textContent = '';
     } else {
@@ -1841,6 +1873,7 @@ syncThemeIcon();
 refreshStatus();
 renderPreview();
 renderHistory();
+loadRecent();
 {
   let saved = null;
   try { saved = localStorage.getItem('auth_open'); } catch (e) {}
