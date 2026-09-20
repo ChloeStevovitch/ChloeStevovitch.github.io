@@ -16,17 +16,19 @@
      ============================================================ -->
 <style>
   :root {
-    --neu-bg: #e3eef8;        /* fond de la page ET des éléments (indispensable au neumorphisme) */
-    --neu-light: #f8fcff;     /* ombre claire (haut-gauche) */
-    --neu-dark: #c2d3e5;      /* ombre sombre (bas-droite) */
-    --neu-ink: #1d4553;       /* texte */
-    --neu-mute: #587082;      /* texte secondaire */
-    --neu-accent: #6a52c8;    /* accent (liens, icônes, texte des boutons) */
-    --neu-accent-dark: #4f3aa8;
-    --neu-grad: #6a52c8;      /* boutons principaux, étapes faites (peut être un linear-gradient(...)) */
-    --neu-on-accent: #ffffff; /* texte sur fond d'accent */
-    --neu-ok: #1f8a70;
-    --neu-err: #cc4358;
+    --neu-bg: #f3eee8;        /* fond de la page ET des éléments (indispensable au neumorphisme) */
+    --neu-light: #ffffff;     /* ombre claire (haut-gauche) */
+    --neu-dark: #d9d0c5;      /* ombre sombre (bas-droite) */
+    --neu-ink: #212121;       /* texte */
+    --neu-mute: #67625c;      /* texte secondaire */
+    --neu-accent: #8f5f42;    /* accent (liens, icônes, texte des boutons) : brun de Tandoor */
+    --neu-accent-dark: #6f4630;
+    --neu-grad: #f4ff77;      /* boutons principaux, étapes faites : jaune de Tandoor (peut être un linear-gradient(...)) */
+    --neu-on-accent: #212121; /* texte sur fond jaune */
+    --neu-bar: #f4ff77;       /* barre du haut */
+    --neu-on-bar: #212121;
+    --neu-ok: #2f7d4f;
+    --neu-err: #c0392b;
     --neu-out:    10px 10px 24px var(--neu-dark), -10px -10px 24px var(--neu-light);
     --neu-out-sm: 6px 6px 14px var(--neu-dark), -6px -6px 14px var(--neu-light);
     --neu-in:     inset 6px 6px 14px var(--neu-dark), inset -6px -6px 14px var(--neu-light);
@@ -34,27 +36,31 @@
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
-      --neu-bg: #232b36;
-      --neu-light: #2d3745;
-      --neu-dark: #181e26;
-      --neu-ink: #e6f1f7;
-      --neu-mute: #9fb2c1;
-      --neu-accent: #a99cff;
-      --neu-accent-dark: #c4baff;
-      --neu-grad: #a99cff;
-      --neu-on-accent: #141922;
+      --neu-bg: #262422;
+      --neu-light: #312e2b;
+      --neu-dark: #1a1917;
+      --neu-ink: #f0ebe5;
+      --neu-mute: #aaa39b;
+      --neu-accent: #dba884;
+      --neu-accent-dark: #efc7a6;
+      --neu-grad: #e2ec66;
+      --neu-on-accent: #212121;
+      --neu-bar: #dfe95f;
+      --neu-on-bar: #212121;
     }
   }
   :root[data-theme="dark"] {
-      --neu-bg: #232b36;
-      --neu-light: #2d3745;
-      --neu-dark: #181e26;
-      --neu-ink: #e6f1f7;
-      --neu-mute: #9fb2c1;
-      --neu-accent: #a99cff;
-      --neu-accent-dark: #c4baff;
-      --neu-grad: #a99cff;
-      --neu-on-accent: #141922;
+      --neu-bg: #262422;
+      --neu-light: #312e2b;
+      --neu-dark: #1a1917;
+      --neu-ink: #f0ebe5;
+      --neu-mute: #aaa39b;
+      --neu-accent: #dba884;
+      --neu-accent-dark: #efc7a6;
+      --neu-grad: #e2ec66;
+      --neu-on-accent: #212121;
+      --neu-bar: #dfe95f;
+      --neu-on-bar: #212121;
     }
 </style>
 
@@ -66,6 +72,8 @@
     --color-accent: var(--neu-accent);
     --color-ok: var(--neu-ok);
     --color-err: var(--neu-err);
+    --color-bar: var(--neu-bar);
+    --color-on-bar: var(--neu-on-bar);
     --font-sans: "Quicksand", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   }
 
@@ -134,6 +142,8 @@
 
     .icon-btn  { @apply flex size-10 shrink-0 cursor-pointer items-center justify-center rounded-full bg-base text-accent transition; box-shadow: var(--neu-out-sm); }
     .icon-btn:active { box-shadow: var(--neu-in-sm); }
+    .bar .icon-btn { background: transparent; color: inherit; box-shadow: none; }
+    .bar .icon-btn:hover { background: rgb(0 0 0 / .08); }
     .chip button { @apply ml-1.5 cursor-pointer text-mute; }
     .listrow   { @apply flex w-full cursor-pointer items-center justify-between gap-3 rounded-xl bg-base px-3 py-2 text-left text-sm; box-shadow: var(--neu-out-sm); }
     .listrow:active { box-shadow: var(--neu-in-sm); }
@@ -161,16 +171,18 @@
 </style>
 </head>
 
-<body class="bg-base font-sans text-ink antialiased" style="padding-top: env(safe-area-inset-top, 0px)">
-<div class="mx-auto max-w-[1240px] px-4 pb-32 pt-6 lg:pb-16">
-
-  <div class="mb-3 flex items-center justify-between gap-3">
-    <h1 class="text-2xl font-bold tracking-tight">Import Tandoor</h1>
+<body class="bg-base font-sans text-ink antialiased">
+<header class="bar bg-bar text-on-bar">
+  <div class="mx-auto flex max-w-[1240px] items-center justify-between gap-3 px-4 py-3" style="padding-top: max(0.75rem, env(safe-area-inset-top, 0px))">
+    <h1 class="text-lg font-bold tracking-tight">Import Tandoor</h1>
     <button type="button" id="themeBtn" class="icon-btn" onclick="toggleTheme()" aria-label="Changer de thème" title="Thème clair / sombre">
       <svg id="iconSun" class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
       <svg id="iconMoon" class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 1 1 9.5 4 6.5 6.5 0 0 0 20 14.5z"/></svg>
     </button>
   </div>
+</header>
+<div class="mx-auto max-w-[1240px] px-4 pb-32 pt-5 lg:pb-16">
+
 
   <ol id="stepper" class="sticky top-0 z-30 -mx-4 mb-3 grid grid-cols-5 gap-2 bg-base px-4 py-2 lg:static lg:mx-0 lg:px-0">
     <li class="step flex cursor-pointer flex-col items-center gap-1.5 text-center sm:gap-3 text-xs text-mute sm:flex-row sm:text-left" data-step="1" onclick="goStep(1)"><span class="step-dot" data-badge="1">1</span><span class="step-label">Connexion</span></li>
@@ -541,8 +553,8 @@ function updateUI() {
 
 function getAuth() {
   let url = (localStorage.getItem('tandoor_url') || '').replace(/\/$/, '');
-  // page servie par Tandoor lui-même (dossier static) : même origine, donc pas de CORS
-  if (!url && location.pathname.startsWith('/static/')) url = location.origin;
+  // page servie derrière le même serveur que l'API (proxy du NAS) : même origine, donc pas de CORS
+  if (!url && /^https?:$/.test(location.protocol) && !location.hostname.endsWith('github.io')) url = location.origin;
   return { url, token: localStorage.getItem('tandoor_token') || '' };
 }
 
