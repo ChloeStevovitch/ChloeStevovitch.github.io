@@ -9,6 +9,7 @@ interface CahierSettings {
 	paperColor: string;
 	lineColor: string;
 	marginColor: string;
+	textColor: string;
 	lineHeight: number; // px, distance between two ruled lines
 	baselineOffset: number; // px, distance from top of content to the first rule
 	marginPosition: number; // px, distance of the red margin from the left edge
@@ -23,6 +24,7 @@ const DEFAULT_SETTINGS: CahierSettings = {
 	paperColor: "#faf5e9",
 	lineColor: "#a9c8e8",
 	marginColor: "#e08585",
+	textColor: "#2b3a55",
 	lineHeight: 30,
 	baselineOffset: 24,
 	marginPosition: 48,
@@ -81,6 +83,7 @@ export default class CahierEcolierPlugin extends Plugin {
 		body.style.setProperty("--cahier-paper", s.paperColor);
 		body.style.setProperty("--cahier-line-color", s.lineColor);
 		body.style.setProperty("--cahier-margin-color", s.marginColor);
+		body.style.setProperty("--cahier-text-color", s.textColor);
 		body.style.setProperty("--cahier-line-height", `${s.lineHeight}px`);
 		body.style.setProperty("--cahier-baseline-offset", `${s.baselineOffset}px`);
 		body.style.setProperty("--cahier-margin-position", `${s.marginPosition}px`);
@@ -165,6 +168,16 @@ class CahierEcolierSettingTab extends PluginSettingTab {
 			.addColorPicker((c) =>
 				c.setValue(s.marginColor).onChange(async (v) => {
 					s.marginColor = v;
+					await this.plugin.saveSettings();
+					this.plugin.applyStyles();
+				})
+			);
+
+		new Setting(containerEl)
+			.setName("Couleur du texte")
+			.addColorPicker((c) =>
+				c.setValue(s.textColor).onChange(async (v) => {
+					s.textColor = v;
 					await this.plugin.saveSettings();
 					this.plugin.applyStyles();
 				})

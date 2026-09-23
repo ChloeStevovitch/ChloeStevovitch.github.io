@@ -44,6 +44,22 @@
 .cahier-ecolier-reading.cahier-ecolier-enabled .markdown-preview-view {
 	font-family: var(--cahier-font-family);
 	font-size: var(--cahier-font-size);
+	color: var(--cahier-text-color);
+}
+
+.cahier-ecolier-editor.cahier-ecolier-enabled .cm-line span,
+.cahier-ecolier-reading.cahier-ecolier-enabled .markdown-preview-view p,
+.cahier-ecolier-reading.cahier-ecolier-enabled .markdown-preview-view li,
+.cahier-ecolier-reading.cahier-ecolier-enabled .markdown-preview-view h1,
+.cahier-ecolier-reading.cahier-ecolier-enabled .markdown-preview-view h2,
+.cahier-ecolier-reading.cahier-ecolier-enabled .markdown-preview-view h3,
+.cahier-ecolier-reading.cahier-ecolier-enabled .markdown-preview-view h4,
+.cahier-ecolier-reading.cahier-ecolier-enabled .markdown-preview-view h5,
+.cahier-ecolier-reading.cahier-ecolier-enabled .markdown-preview-view h6,
+.cahier-ecolier-reading.cahier-ecolier-enabled .markdown-preview-view blockquote,
+.cahier-ecolier-reading.cahier-ecolier-enabled .markdown-preview-view td,
+.cahier-ecolier-reading.cahier-ecolier-enabled .markdown-preview-view th {
+	color: var(--cahier-text-color);
 }
 
 .cahier-ecolier-editor.cahier-ecolier-enabled .cm-content {
