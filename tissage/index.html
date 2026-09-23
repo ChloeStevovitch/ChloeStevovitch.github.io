@@ -7,110 +7,139 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
   :root {
-    --bg: #f6f3ee; --panel: #ffffff; --text: #2b2830; --muted: #7a7480;
-    --line: #e4dfd8; --accent: #e9579b; --accent-ink: #fff;
+    --bg: #f3eee8; --light: #ffffff; --dark: #d9d0c5;
+    --ink: #212121; --mute: #67625c; --accent: #8f5f42;
+    --bar: #f4ff77; --on-bar: #212121;
+    --raise: 6px 6px 12px var(--dark), -6px -6px 12px var(--light);
+    --raise-sm: 3px 3px 6px var(--dark), -3px -3px 6px var(--light);
+    --inset: inset 3px 3px 6px var(--dark), inset -3px -3px 6px var(--light);
   }
   @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) {
-      --bg: #1c1a20; --panel: #26232b; --text: #eeeaf2; --muted: #a39cab;
-      --line: #3a3541; --accent: #f37ab2; --accent-ink: #1c1a20;
-    }
+    :root { --bg: #262422; --light: #312e2b; --dark: #1a1917; --ink: #f0ebe5; --mute: #aaa39b; --accent: #dba884; --bar: #dfe95f; }
   }
   * { box-sizing: border-box; }
-  body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; background: var(--bg); color: var(--text); }
-  .app { display: grid; grid-template-columns: 340px 1fr; min-height: 100vh; }
-  aside { background: var(--panel); border-right: 1px solid var(--line); padding: 20px; overflow-y: auto; max-height: 100vh; }
-  h1 { font-size: 1.25rem; margin: 0 0 4px; }
-  .sub { color: var(--muted); font-size: .85rem; margin: 0 0 16px; }
-  fieldset { border: 1px solid var(--line); border-radius: 10px; padding: 12px; margin: 0 0 14px; }
-  legend { font-weight: 600; font-size: .9rem; padding: 0 6px; }
-  label { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: .85rem; margin: 6px 0; }
-  label > span.v { color: var(--muted); font-variant-numeric: tabular-nums; min-width: 44px; text-align: right; }
-  input[type=range] { flex: 1; accent-color: var(--accent); }
-  input[type=number] { width: 72px; min-width: 0; padding: 4px 6px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--text); }
-  .row { display: flex; gap: 8px; }
+  body { margin: 0; min-height: 100vh; background: var(--bg); color: var(--ink); font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  header { background: var(--bar); color: var(--on-bar); padding: 14px 16px; font-weight: 700; font-size: 1.1rem; }
+  .app { display: grid; grid-template-columns: 360px 1fr; min-height: calc(100vh - 50px); }
+  aside { padding: 24px 20px; overflow-y: auto; max-height: calc(100vh - 50px); }
+  .sub { color: var(--mute); font-size: .85rem; line-height: 1.5; margin: 0 4px 20px; }
+
+  .card { background: var(--bg); border-radius: 24px; padding: 18px 20px; margin: 0 0 22px; box-shadow: 9px 9px 18px var(--dark), -9px -9px 18px var(--light); }
+  .card h2 { font-size: .95rem; margin: 0 0 10px; }
+  label { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: .85rem; margin: 10px 0; color: var(--mute); }
+  label > .name { flex: 0 0 82px; }
+
+  input[type=number], select {
+    border: none; border-radius: 12px; padding: 7px 10px; background: var(--bg); color: var(--ink);
+    box-shadow: var(--inset); font: inherit; font-size: .85rem; outline: none;
+  }
+  input[type=number] { width: 70px; min-width: 0; text-align: right; font-variant-numeric: tabular-nums; }
+  input[type=number]:focus, select:focus { box-shadow: var(--inset), 0 0 0 2px var(--accent); }
+  .row { display: flex; gap: 12px; }
   .row label { flex: 1; min-width: 0; }
-  .swatches { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+
+  /* Curseurs */
+  input[type=range] { -webkit-appearance: none; appearance: none; flex: 1; min-width: 0; height: 10px; border-radius: 10px; background: var(--bg); box-shadow: var(--inset); outline: none; }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--bg); box-shadow: var(--raise-sm); cursor: pointer; border: 2px solid var(--bg); background-image: radial-gradient(circle, var(--accent) 0 3px, transparent 4px); }
+  input[type=range]::-moz-range-thumb { width: 20px; height: 20px; border-radius: 50%; background: var(--bg); box-shadow: var(--raise-sm); cursor: pointer; border: none; background-image: radial-gradient(circle, var(--accent) 0 3px, transparent 4px); }
+
+  /* Interrupteurs */
+  input[type=checkbox] { -webkit-appearance: none; appearance: none; width: 46px; height: 26px; border-radius: 26px; background: var(--bg); box-shadow: var(--inset); position: relative; cursor: pointer; flex: none; margin: 0; transition: background .2s; }
+  input[type=checkbox]::after { content: ""; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: var(--bg); box-shadow: 2px 2px 4px var(--dark), -2px -2px 4px var(--light); transition: transform .2s, background .2s; }
+  input[type=checkbox]:checked::after { transform: translateX(20px); background: var(--accent); }
+
+  /* Couleurs */
+  input[type=color] { -webkit-appearance: none; appearance: none; width: 40px; height: 40px; border: none; border-radius: 12px; padding: 5px; background: var(--bg); box-shadow: var(--raise-sm); cursor: pointer; }
+  input[type=color]::-webkit-color-swatch-wrapper { padding: 0; }
+  input[type=color]::-webkit-color-swatch { border: none; border-radius: 8px; }
+  input[type=color]::-moz-color-swatch { border: none; border-radius: 8px; }
+  input[type=color]:disabled { opacity: .4; cursor: default; }
+  .swatches { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 14px; }
   .sw { position: relative; }
-  .sw input[type=color] { width: 36px; height: 36px; border: 1px solid var(--line); border-radius: 8px; padding: 0; cursor: pointer; background: none; }
-  .sw button { position: absolute; top: -6px; right: -6px; width: 18px; height: 18px; border-radius: 50%; border: none; background: var(--text); color: var(--panel); font-size: 11px; line-height: 18px; padding: 0; cursor: pointer; display: none; }
-  .sw:hover button { display: block; }
-  .add { width: 36px; height: 36px; border-radius: 8px; border: 1px dashed var(--muted); background: none; color: var(--muted); font-size: 20px; cursor: pointer; }
-  .btn { border: none; border-radius: 8px; padding: 9px 14px; font-weight: 600; cursor: pointer; background: var(--accent); color: var(--accent-ink); }
-  .btn.ghost { background: transparent; color: var(--text); border: 1px solid var(--line); }
-  .exports { display: flex; gap: 8px; flex-wrap: wrap; }
+  .sw button { position: absolute; top: -7px; right: -7px; width: 20px; height: 20px; border-radius: 50%; border: none; background: var(--bg); color: var(--mute); box-shadow: var(--raise-sm); font-size: 12px; line-height: 20px; padding: 0; cursor: pointer; display: none; }
+  .sw:hover button, .sw:focus-within button { display: block; }
+  @media (hover: none) { .sw button { display: block; } }
+  .add { width: 40px; height: 40px; border-radius: 12px; border: none; background: var(--bg); box-shadow: var(--inset); color: var(--mute); font-size: 20px; cursor: pointer; }
+
+  .btn { border: none; border-radius: 16px; padding: 12px 16px; font: inherit; font-weight: 600; cursor: pointer; background: var(--bg); color: var(--accent); box-shadow: 5px 5px 10px var(--dark), -5px -5px 10px var(--light); flex: 1; }
+  .btn:active { box-shadow: var(--inset); }
+  .btn.ghost { color: var(--mute); font-weight: 500; }
+  .exports { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 14px; }
+
   main { display: flex; flex-direction: column; min-width: 0; }
-  .stage { flex: 1; display: flex; align-items: center; justify-content: center; padding: 24px; overflow: hidden; min-height: 60vh; }
-  .frame { position: relative; box-shadow: 0 8px 30px rgba(0,0,0,.15);
+  .stage { flex: 1; display: flex; align-items: center; justify-content: center; padding: 32px; overflow: hidden; min-height: 60vh; }
+  .well { padding: 16px; border-radius: 24px; background: var(--bg); box-shadow: 9px 9px 18px var(--dark), -9px -9px 18px var(--light); }
+  .frame { position: relative; border-radius: 6px; overflow: hidden;
     background-color: #fff;
     background-image: linear-gradient(45deg,#ddd 25%,transparent 25%),linear-gradient(-45deg,#ddd 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#ddd 75%),linear-gradient(-45deg,transparent 75%,#ddd 75%);
     background-size: 16px 16px; background-position: 0 0,0 8px,8px -8px,-8px 0; }
   #art { position: absolute; top: 0; left: 0; overflow: hidden; transform-origin: 0 0; }
   #layer { position: absolute; transform-origin: 50% 50%; }
   #layer > div { position: absolute; }
-  .info { text-align: center; color: var(--muted); font-size: .8rem; padding-bottom: 12px; }
+  .info { text-align: center; color: var(--mute); font-size: .8rem; padding-bottom: 16px; }
+
   @media (max-width: 800px) {
     .app { grid-template-columns: 1fr; }
-    aside { max-height: none; border-right: none; border-bottom: 1px solid var(--line); padding: 16px; }
-    main { order: -1; position: sticky; top: 0; background: var(--bg); z-index: 2; }
-    .stage { min-height: 45vh; padding: 16px; }
+    aside { max-height: none; padding: 20px 16px; }
+    main { position: sticky; top: 0; background: var(--bg); z-index: 2; order: -1; }
+    .stage { min-height: 42vh; padding: 20px 16px; }
   }
 </style>
 </head>
 <body>
+<header>Quadrillage tissé</header>
 <div class="app">
   <aside>
-    <h1>Quadrillage tissé</h1>
     <p class="sub">Bandes horizontales et verticales qui passent dessus / dessous en alternance.</p>
 
-    <fieldset>
-      <legend>Toile</legend>
+    <section class="card">
+      <h2>Toile</h2>
       <div class="row">
         <label>Largeur <input type="number" id="W" min="10" max="10000"></label>
         <label>Hauteur <input type="number" id="H" min="10" max="10000"></label>
       </div>
-      <label>Fond <input type="color" id="bg"></label>
-      <label>Fond transparent <input type="checkbox" id="bgT"></label>
-      <label>Rotation <input type="range" id="rot" min="-90" max="90" step="1"><span class="v" id="rotV"></span></label>
-    </fieldset>
+      <label><span class="name">Fond</span> <input type="color" id="bg"></label>
+      <label><span class="name">Transparent</span> <input type="checkbox" id="bgT"></label>
+      <label><span class="name">Rotation</span> <input type="range" id="rot" min="-90" max="90"><input type="number" id="rotN" min="-90" max="90"></label>
+    </section>
 
-    <fieldset>
-      <legend>Bandes horizontales</legend>
-      <label>Épaisseur <input type="range" id="hT" min="1" max="400"><span class="v" id="hTV"></span></label>
-      <label>Espacement <input type="range" id="hG" min="0" max="400"><span class="v" id="hGV"></span></label>
-      <label>Décalage <input type="range" id="hO" min="0" max="400"><span class="v" id="hOV"></span></label>
+    <section class="card">
+      <h2>Bandes horizontales</h2>
+      <label><span class="name">Épaisseur</span> <input type="range" id="hT" min="1" max="400"><input type="number" id="hTN" min="1"></label>
+      <label><span class="name">Espacement</span> <input type="range" id="hG" min="0" max="400"><input type="number" id="hGN" min="0"></label>
+      <label><span class="name">Décalage</span> <input type="range" id="hO" min="0" max="400"><input type="number" id="hON" min="0"></label>
       <div class="swatches" id="hC"></div>
-    </fieldset>
+    </section>
 
-    <fieldset>
-      <legend>Bandes verticales</legend>
-      <label>Épaisseur <input type="range" id="vT" min="1" max="400"><span class="v" id="vTV"></span></label>
-      <label>Espacement <input type="range" id="vG" min="0" max="400"><span class="v" id="vGV"></span></label>
-      <label>Décalage <input type="range" id="vO" min="0" max="400"><span class="v" id="vOV"></span></label>
+    <section class="card">
+      <h2>Bandes verticales</h2>
+      <label><span class="name">Épaisseur</span> <input type="range" id="vT" min="1" max="400"><input type="number" id="vTN" min="1"></label>
+      <label><span class="name">Espacement</span> <input type="range" id="vG" min="0" max="400"><input type="number" id="vGN" min="0"></label>
+      <label><span class="name">Décalage</span> <input type="range" id="vO" min="0" max="400"><input type="number" id="vON" min="0"></label>
       <div class="swatches" id="vC"></div>
-    </fieldset>
+    </section>
 
-    <fieldset>
-      <legend>Tissage</legend>
-      <label>Opacité des bandes <input type="range" id="op" min="0" max="100"><span class="v" id="opV"></span></label>
+    <section class="card">
+      <h2>Tissage</h2>
+      <label><span class="name">Opacité aux croisements</span> <input type="range" id="op" min="0" max="100"><input type="number" id="opN" min="0" max="100"></label>
       <label>Tissé (dessus / dessous) <input type="checkbox" id="weave"></label>
       <label>Inverser l'alternance <input type="checkbox" id="flip"></label>
-    </fieldset>
+    </section>
 
-    <fieldset>
-      <legend>Télécharger</legend>
+    <section class="card">
+      <h2>Télécharger</h2>
       <label>Résolution <select id="scale"><option value="1">×1</option><option value="2">×2</option><option value="3">×3</option></select></label>
       <div class="exports">
         <button class="btn" data-fmt="png">PNG</button>
         <button class="btn" data-fmt="jpeg">JPEG</button>
         <button class="btn" data-fmt="pdf">PDF</button>
-        <button class="btn ghost" id="reset">Réinitialiser</button>
       </div>
-    </fieldset>
+      <div class="exports"><button class="btn ghost" id="reset">Réinitialiser</button></div>
+    </section>
   </aside>
 
   <main>
-    <div class="stage" id="stage"><div class="frame" id="frame"><div id="art"><div id="layer"></div></div></div></div>
+    <div class="stage" id="stage"><div class="well"><div class="frame" id="frame"><div id="art"><div id="layer"></div></div></div></div></div>
     <div class="info" id="info"></div>
   </main>
 </div>
@@ -128,11 +157,12 @@ try { S = Object.assign({}, DEFAULTS, JSON.parse(localStorage.getItem('tissage')
 S.hC = [...S.hC]; S.vC = [...S.vC];
 
 const $ = id => document.getElementById(id);
-const NUM = ['W','H','rot','hT','hG','hO','vT','vG','vO','op'];
-const UNIT = { rot: '°', op: '%' };
+const SLIDERS = ['rot','hT','hG','hO','vT','vG','vO','op'];
+const SNAP = 2; // distance (en unités) à laquelle le curseur colle aux valeurs rondes
 
 function syncInputs() {
-  NUM.forEach(k => $(k).value = S[k]);
+  $('W').value = S.W; $('H').value = S.H;
+  SLIDERS.forEach(k => { $(k).value = S[k]; $(k + 'N').value = S[k]; });
   $('bg').value = S.bg; $('bgT').checked = S.bgT; $('weave').checked = S.weave; $('flip').checked = S.flip;
   renderSwatches('hC'); renderSwatches('vC');
 }
@@ -151,7 +181,8 @@ function renderSwatches(key) {
   box.append(add);
 }
 
-/* Modèle : liste de rectangles dans l'ordre de dessin, dans un calque de taille LW×LH */
+/* Modèle : liste de rectangles dans l'ordre de dessin, dans un calque de taille LW×LH.
+   Les bandes sont opaques ; seule la bande du dessus, aux croisements, prend l'opacité réglée. */
 function strips(len, t, gap, off, colors) {
   const p = t + gap, out = [];
   let start = ((off % p) + p) % p - p, k = 0;
@@ -164,32 +195,32 @@ function buildModel() {
   const LW = rot ? D : W, LH = rot ? D : H;
   const hs = strips(LH, +S.hT, +S.hG, +S.hO, S.hC);
   const vs = strips(LW, +S.vT, +S.vG, +S.vO, S.vC);
-  const base = [], cross = [];
+  const a = S.op / 100, base = [], cross = [];
   // segments horizontaux hors croisements
   for (const h of hs) {
     let x = 0;
     for (const v of vs) {
-      if (v.pos > x) base.push({ x, y: h.pos, w: v.pos - x, h: h.t, c: h.color });
+      if (v.pos > x) base.push({ x, y: h.pos, w: v.pos - x, h: h.t, c: h.color, a: 1 });
       x = Math.max(x, v.pos + v.t);
     }
-    if (x < LW) base.push({ x, y: h.pos, w: LW - x, h: h.t, c: h.color });
+    if (x < LW) base.push({ x, y: h.pos, w: LW - x, h: h.t, c: h.color, a: 1 });
   }
   // segments verticaux hors croisements
   for (const v of vs) {
     let y = 0;
     for (const h of hs) {
-      if (h.pos > y) base.push({ x: v.pos, y, w: v.t, h: h.pos - y, c: v.color });
+      if (h.pos > y) base.push({ x: v.pos, y, w: v.t, h: h.pos - y, c: v.color, a: 1 });
       y = Math.max(y, h.pos + h.t);
     }
-    if (y < LH) base.push({ x: v.pos, y, w: v.t, h: LH - y, c: v.color });
+    if (y < LH) base.push({ x: v.pos, y, w: v.t, h: LH - y, c: v.color, a: 1 });
   }
-  // croisements : dessous puis dessus
+  // croisements : dessous opaque, puis dessus avec l'opacité
   for (const h of hs) for (const v of vs) {
     const r = { x: v.pos, y: h.pos, w: v.t, h: h.t };
     let hTop = S.weave ? (h.i + v.i) % 2 === 0 : false;
     if (S.flip) hTop = !hTop;
     const [under, over] = hTop ? [v.color, h.color] : [h.color, v.color];
-    cross.push({ ...r, c: under }, { ...r, c: over });
+    cross.push({ ...r, c: under, a: 1 }, { ...r, c: over, a });
   }
   return { W, H, LW, LH, rot, rects: base.concat(cross) };
 }
@@ -201,7 +232,6 @@ function rgba(hex, a) {
 
 /* Aperçu en CSS : chaque rectangle est un div positionné */
 function renderPreview(m) {
-  const a = S.op / 100;
   const art = $('art'), layer = $('layer'), frame = $('frame'), stage = $('stage');
   art.style.width = m.W + 'px'; art.style.height = m.H + 'px';
   art.style.background = S.bgT ? 'transparent' : S.bg;
@@ -209,8 +239,8 @@ function renderPreview(m) {
   layer.style.left = (m.W - m.LW) / 2 + 'px'; layer.style.top = (m.H - m.LH) / 2 + 'px';
   layer.style.transform = `rotate(${m.rot}deg)`;
   layer.innerHTML = m.rects.map(r =>
-    `<div style="left:${r.x}px;top:${r.y}px;width:${r.w}px;height:${r.h}px;background:${rgba(r.c, a)}"></div>`).join('');
-  const availW = stage.clientWidth - 48, availH = stage.clientHeight - 48;
+    `<div style="left:${r.x}px;top:${r.y}px;width:${r.w}px;height:${r.h}px;background:${rgba(r.c, r.a)}"></div>`).join('');
+  const availW = stage.clientWidth - 96, availH = stage.clientHeight - 96;
   const k = Math.min(1, availW / m.W, availH / m.H);
   art.style.transform = `scale(${k})`;
   frame.style.width = m.W * k + 'px'; frame.style.height = m.H * k + 'px';
@@ -227,8 +257,7 @@ function renderCanvas(m, scale, forceBg) {
   ctx.translate(m.W / 2, m.H / 2);
   ctx.rotate(m.rot * Math.PI / 180);
   ctx.translate(-m.LW / 2, -m.LH / 2);
-  const a = S.op / 100;
-  for (const r of m.rects) { ctx.fillStyle = rgba(r.c, a); ctx.fillRect(r.x, r.y, r.w, r.h); }
+  for (const r of m.rects) { ctx.fillStyle = rgba(r.c, r.a); ctx.fillRect(r.x, r.y, r.w, r.h); }
   return cv;
 }
 
@@ -251,17 +280,41 @@ function exportAs(fmt) {
 }
 
 function update() {
-  NUM.forEach(k => { const e = $(k + 'V'); if (e) e.textContent = S[k] + (UNIT[k] || ' px'); });
   $('bg').disabled = S.bgT;
   renderPreview(buildModel());
   try { localStorage.setItem('tissage', JSON.stringify(S)); } catch {}
 }
 
-NUM.forEach(k => $(k).addEventListener('input', e => {
-  let v = +e.target.value;
-  if ((k === 'W' || k === 'H') && (!v || v < 10)) return;
-  S[k] = Math.min(v, k === 'W' || k === 'H' ? 10000 : v); update();
+['W', 'H'].forEach(k => $(k).addEventListener('input', e => {
+  const v = Math.round(+e.target.value);
+  if (!v || v < 10 || v > 10000) return;
+  S[k] = v; update();
 }));
+
+/* Curseurs : aimantés sur 0 et les dizaines pendant le glissement ;
+   le champ numérique à côté permet une valeur exacte. */
+let dragging = false;
+window.addEventListener('pointerup', () => dragging = false);
+SLIDERS.forEach(k => {
+  const range = $(k), num = $(k + 'N');
+  range.addEventListener('pointerdown', () => dragging = true);
+  range.addEventListener('input', () => {
+    let v = +range.value;
+    if (dragging) {
+      const r = Math.round(v / 10) * 10;
+      if (Math.abs(v - r) <= SNAP) { v = r; range.value = v; }
+    }
+    S[k] = v; num.value = v; update();
+  });
+  num.addEventListener('input', () => {
+    if (num.value === '' || isNaN(+num.value)) return;
+    let v = Math.round(+num.value);
+    if (num.min !== '') v = Math.max(+num.min, v);
+    if (num.max !== '') v = Math.min(+num.max, v);
+    S[k] = v; range.value = v; update();
+  });
+});
+
 $('bg').oninput = e => { S.bg = e.target.value; update(); };
 $('bgT').onchange = e => { S.bgT = e.target.checked; update(); };
 $('weave').onchange = e => { S.weave = e.target.checked; update(); };
