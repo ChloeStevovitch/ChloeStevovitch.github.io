@@ -8,10 +8,17 @@
 	font-display: swap;
 }
 
-/* ---- Fond papier ligné + marge rouge ---- */
+/* ---- Papier : feuille centrée, plus large que le texte, moins large que la page ----
+   La ligne rouge et les lignes bleues sont peintes sur .cm-content /
+   .markdown-preview-sizer (pas sur le conteneur qui défile), ce qui les
+   limite à la largeur du "papier" réglée par --cahier-paper-width. Au-delà,
+   le fond reste celui d'Obsidian — l'effet d'une feuille posée sur la page. */
 
-.cahier-ecolier-editor.cahier-ecolier-enabled .cm-scroller,
-.cahier-ecolier-reading.cahier-ecolier-enabled .markdown-preview-view {
+.cahier-ecolier-editor.cahier-ecolier-enabled .cm-content,
+.cahier-ecolier-reading.cahier-ecolier-enabled .markdown-preview-sizer {
+	max-width: var(--cahier-paper-width) !important;
+	margin-left: auto !important;
+	margin-right: auto !important;
 	background-color: var(--cahier-paper);
 	background-image:
 		/* marge rouge verticale */
@@ -24,7 +31,7 @@
 			transparent var(--cahier-margin-position),
 			transparent 100%
 		),
-		/* lignes bleues horizontales */
+		/* lignes bleues horizontales — marge blanche sans lignes de chaque côté */
 		repeating-linear-gradient(
 			to bottom,
 			transparent 0,
@@ -33,8 +40,17 @@
 			var(--cahier-line-color) var(--cahier-line-height)
 		);
 	background-repeat: no-repeat, repeat-y;
-	background-position: 0 0, 0 var(--cahier-baseline-offset);
-	background-attachment: local, local;
+	background-position: 0 0, var(--cahier-paper-side-margin) var(--cahier-baseline-offset);
+	background-size: 100% 100%, calc(100% - 2 * var(--cahier-paper-side-margin)) var(--cahier-line-height);
+}
+
+.cahier-ecolier-editor.cahier-ecolier-enabled .cm-content {
+	padding-top: 0;
+	padding-left: calc(var(--cahier-margin-position) + 16px) !important;
+}
+
+.cahier-ecolier-reading.cahier-ecolier-enabled .markdown-preview-sizer {
+	padding-left: calc(var(--cahier-margin-position) + 16px) !important;
 }
 
 /* ---- Texte : police manuscrite posée sur les lignes ---- */
@@ -62,19 +78,10 @@
 	color: var(--cahier-text-color);
 }
 
-.cahier-ecolier-editor.cahier-ecolier-enabled .cm-content {
-	padding-top: 0;
-	padding-left: calc(var(--cahier-margin-position) + 16px) !important;
-}
-
 .cahier-ecolier-editor.cahier-ecolier-enabled .cm-line {
 	line-height: var(--cahier-line-height);
 	padding-top: 0;
 	padding-bottom: 0;
-}
-
-.cahier-ecolier-reading.cahier-ecolier-enabled .markdown-preview-sizer {
-	padding-left: calc(var(--cahier-margin-position) + 16px) !important;
 }
 
 .cahier-ecolier-reading.cahier-ecolier-enabled .markdown-preview-view p,

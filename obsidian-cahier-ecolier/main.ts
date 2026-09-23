@@ -13,6 +13,8 @@ interface CahierSettings {
 	lineHeight: number; // px, distance between two ruled lines
 	baselineOffset: number; // px, distance from top of content to the first rule
 	marginPosition: number; // px, distance of the red margin from the left edge
+	paperWidth: number; // px, width of the paper sheet itself (wider than the text, narrower than the page)
+	paperSideMargin: number; // px, blank unruled margin on each side of the ruled lines
 	fontChoice: FontChoice;
 	fontSize: number; // px
 }
@@ -28,6 +30,8 @@ const DEFAULT_SETTINGS: CahierSettings = {
 	lineHeight: 30,
 	baselineOffset: 24,
 	marginPosition: 48,
+	paperWidth: 820,
+	paperSideMargin: 20,
 	fontChoice: "patrick-hand",
 	fontSize: 17,
 };
@@ -87,6 +91,8 @@ export default class CahierEcolierPlugin extends Plugin {
 		body.style.setProperty("--cahier-line-height", `${s.lineHeight}px`);
 		body.style.setProperty("--cahier-baseline-offset", `${s.baselineOffset}px`);
 		body.style.setProperty("--cahier-margin-position", `${s.marginPosition}px`);
+		body.style.setProperty("--cahier-paper-width", `${s.paperWidth}px`);
+		body.style.setProperty("--cahier-paper-side-margin", `${s.paperSideMargin}px`);
 		body.style.setProperty("--cahier-font-family", FONT_STACKS[s.fontChoice]);
 		body.style.setProperty("--cahier-font-size", `${s.fontSize}px`);
 	}
@@ -228,6 +234,42 @@ class CahierEcolierSettingTab extends PluginSettingTab {
 					.setValue(s.marginPosition)
 					.onChange(async (v) => {
 						s.marginPosition = v;
+						await this.plugin.saveSettings();
+						this.plugin.applyStyles();
+						this.display();
+					})
+			);
+
+		containerEl.createEl("h3", { text: "Papier" });
+		containerEl.createEl("p", {
+			text: "Le papier est plus large que le texte, mais moins large que la page — au-delà, le fond reste celui d'Obsidian.",
+			cls: "setting-item-description",
+		});
+
+		new Setting(containerEl)
+			.setName("Largeur du papier")
+			.setDesc(`${s.paperWidth}px`)
+			.addSlider((sl) =>
+				sl
+					.setLimits(400, 1400, 10)
+					.setValue(s.paperWidth)
+					.onChange(async (v) => {
+						s.paperWidth = v;
+						await this.plugin.saveSettings();
+						this.plugin.applyStyles();
+						this.display();
+					})
+			);
+
+		new Setting(containerEl)
+			.setName("Marge blanche (sans lignes)")
+			.setDesc(`${s.paperSideMargin}px de chaque côté des lignes bleues`)
+			.addSlider((sl) =>
+				sl
+					.setLimits(0, 120, 1)
+					.setValue(s.paperSideMargin)
+					.onChange(async (v) => {
+						s.paperSideMargin = v;
 						await this.plugin.saveSettings();
 						this.plugin.applyStyles();
 						this.display();
