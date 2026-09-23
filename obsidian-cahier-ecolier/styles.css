@@ -1,0 +1,70 @@
+/* Cahier d'écolier — papier ligné bleu, marge rouge, police manuscrite. */
+
+@font-face {
+	font-family: "Cahier Ecolier Patrick Hand";
+	src: url("fonts/PatrickHand-Regular.woff2") format("woff2");
+	font-weight: 400;
+	font-style: normal;
+	font-display: swap;
+}
+
+/* ---- Fond papier ligné + marge rouge ---- */
+
+.cahier-ecolier-editor.cahier-ecolier-enabled .cm-scroller,
+.cahier-ecolier-reading.cahier-ecolier-enabled .markdown-preview-view {
+	background-color: var(--cahier-paper);
+	background-image:
+		/* marge rouge verticale */
+		linear-gradient(
+			to right,
+			transparent 0,
+			transparent calc(var(--cahier-margin-position) - 1px),
+			var(--cahier-margin-color) calc(var(--cahier-margin-position) - 1px),
+			var(--cahier-margin-color) var(--cahier-margin-position),
+			transparent var(--cahier-margin-position),
+			transparent 100%
+		),
+		/* lignes bleues horizontales */
+		repeating-linear-gradient(
+			to bottom,
+			transparent 0,
+			transparent calc(var(--cahier-line-height) - 1px),
+			var(--cahier-line-color) calc(var(--cahier-line-height) - 1px),
+			var(--cahier-line-color) var(--cahier-line-height)
+		);
+	background-repeat: no-repeat, repeat-y;
+	background-position: 0 0, 0 var(--cahier-baseline-offset);
+	background-attachment: local, local;
+}
+
+/* ---- Texte : police manuscrite posée sur les lignes ---- */
+
+.cahier-ecolier-editor.cahier-ecolier-enabled .cm-content,
+.cahier-ecolier-editor.cahier-ecolier-enabled .cm-line,
+.cahier-ecolier-reading.cahier-ecolier-enabled .markdown-preview-view {
+	font-family: var(--cahier-font-family);
+	font-size: var(--cahier-font-size);
+}
+
+.cahier-ecolier-editor.cahier-ecolier-enabled .cm-content {
+	padding-top: 0;
+	padding-left: calc(var(--cahier-margin-position) + 16px) !important;
+}
+
+.cahier-ecolier-editor.cahier-ecolier-enabled .cm-line {
+	line-height: var(--cahier-line-height);
+	padding-top: 0;
+	padding-bottom: 0;
+}
+
+.cahier-ecolier-reading.cahier-ecolier-enabled .markdown-preview-sizer {
+	padding-left: calc(var(--cahier-margin-position) + 16px) !important;
+}
+
+.cahier-ecolier-reading.cahier-ecolier-enabled .markdown-preview-view p,
+.cahier-ecolier-reading.cahier-ecolier-enabled .markdown-preview-view li,
+.cahier-ecolier-reading.cahier-ecolier-enabled .markdown-preview-view blockquote,
+.cahier-ecolier-reading.cahier-ecolier-enabled .markdown-preview-view td,
+.cahier-ecolier-reading.cahier-ecolier-enabled .markdown-preview-view th {
+	line-height: var(--cahier-line-height);
+}

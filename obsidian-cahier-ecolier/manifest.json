@@ -1,0 +1,10 @@
+{
+  "id": "cahier-ecolier",
+  "name": "Cahier d'écolier",
+  "version": "1.0.0",
+  "minAppVersion": "1.4.0",
+  "description": "Habille l'éditeur en papier ligné bleu à marge rouge, avec une police manuscrite — l'ambiance d'un cahier d'écolier.",
+  "author": "Chloé Stevovitch",
+  "authorUrl": "https://chloestevovitch.github.io",
+  "isDesktopOnly": false
+}
