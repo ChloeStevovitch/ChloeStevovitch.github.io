@@ -76,6 +76,10 @@
   #art { position: absolute; top: 0; left: 0; overflow: hidden; transform-origin: 0 0; }
   #layer { position: absolute; transform-origin: 50% 50%; }
   #layer > div { position: absolute; }
+  #tiles { position: absolute; inset: 0; display: none; background-repeat: repeat; background-position: 0 0; }
+  .hint { color: var(--mute); font-size: .78rem; line-height: 1.4; margin: 0 0 6px; }
+  .hint:empty { display: none; }
+  input:disabled { opacity: .45; }
   .info { text-align: center; color: var(--mute); font-size: .8rem; padding-bottom: 16px; }
 
   @media (max-width: 800px) {
@@ -94,6 +98,9 @@
 
     <section class="card">
       <h2>Toile</h2>
+      <label>Raccord infini (taille minimale) <input type="checkbox" id="tile"></label>
+      <label>Aperçu en mosaïque <input type="checkbox" id="mosaic"></label>
+      <p class="hint" id="tileHint"></p>
       <div class="row">
         <label>Largeur <input type="number" id="W" min="10" max="10000"></label>
         <label>Hauteur <input type="number" id="H" min="10" max="10000"></label>
@@ -139,7 +146,7 @@
   </aside>
 
   <main>
-    <div class="stage" id="stage"><div class="well"><div class="frame" id="frame"><div id="art"><div id="layer"></div></div></div></div></div>
+    <div class="stage" id="stage"><div class="well"><div class="frame" id="frame"><div id="art"><div id="layer"></div></div><div id="tiles"></div></div></div></div>
     <div class="info" id="info"></div>
   </main>
 </div>
@@ -150,7 +157,7 @@ const DEFAULTS = {
   hT: 90, hG: 150, hO: 60, vT: 90, vG: 150, vO: 60,
   hC: ['#3f9e74', '#f39bc9', '#f4c84e', '#b8a6ea'],
   vC: ['#7f9ce6', '#f4c84e', '#b8a6ea', '#5b7bd5'],
-  op: 100, weave: true, flip: false
+  op: 100, weave: true, flip: false, tile: false, mosaic: false
 };
 let S;
 try { S = Object.assign({}, DEFAULTS, JSON.parse(localStorage.getItem('tissage') || '{}')); } catch { S = { ...DEFAULTS }; }
@@ -164,6 +171,7 @@ function syncInputs() {
   $('W').value = S.W; $('H').value = S.H;
   SLIDERS.forEach(k => { $(k).value = S[k]; $(k + 'N').value = S[k]; });
   $('bg').value = S.bg; $('bgT').checked = S.bgT; $('weave').checked = S.weave; $('flip').checked = S.flip;
+  $('tile').checked = S.tile; $('mosaic').checked = S.mosaic;
   renderSwatches('hC'); renderSwatches('vC');
 }
 function renderSwatches(key) {
@@ -230,9 +238,32 @@ function rgba(hex, a) {
   return `rgba(${n >> 16},${(n >> 8) & 255},${n & 255},${a})`;
 }
 
+/* Plus petite tuile qui se raccorde : un nombre entier de périodes, qui boucle à la fois
+   la liste des couleurs et l'alternance dessus/dessous (cycle de 2). */
+function gcd(a, b) { return b ? gcd(b, a % b) : a; }
+function lcm(a, b) { return a / gcd(a, b) * b; }
+function tileSize() {
+  const cyc = S.weave ? 2 : 1;
+  return {
+    W: (+S.vT + +S.vG) * lcm(S.vC.length, cyc),
+    H: (+S.hT + +S.hG) * lcm(S.hC.length, cyc)
+  };
+}
+
 /* Aperçu en CSS : chaque rectangle est un div positionné */
 function renderPreview(m) {
-  const art = $('art'), layer = $('layer'), frame = $('frame'), stage = $('stage');
+  const art = $('art'), layer = $('layer'), frame = $('frame'), stage = $('stage'), tiles = $('tiles');
+  const availW = stage.clientWidth - 96, availH = stage.clientHeight - 96;
+  if (S.mosaic) {
+    const n = 3, k = Math.min(1, availW / (m.W * n), availH / (m.H * n));
+    art.style.display = 'none'; tiles.style.display = 'block';
+    tiles.style.backgroundImage = `url(${renderCanvas(m, Math.min(1, k * (window.devicePixelRatio || 1) * 2)).toDataURL()})`;
+    tiles.style.backgroundSize = `${m.W * k}px ${m.H * k}px`;
+    frame.style.width = m.W * k * n + 'px'; frame.style.height = m.H * k * n + 'px';
+    $('info').textContent = `Tuile ${m.W} × ${m.H} px répétée 3 × 3 — aperçu à ${Math.round(k * 100)} %`;
+    return;
+  }
+  art.style.display = ''; tiles.style.display = 'none';
   art.style.width = m.W + 'px'; art.style.height = m.H + 'px';
   art.style.background = S.bgT ? 'transparent' : S.bg;
   layer.style.width = m.LW + 'px'; layer.style.height = m.LH + 'px';
@@ -240,7 +271,6 @@ function renderPreview(m) {
   layer.style.transform = `rotate(${m.rot}deg)`;
   layer.innerHTML = m.rects.map(r =>
     `<div style="left:${r.x}px;top:${r.y}px;width:${r.w}px;height:${r.h}px;background:${rgba(r.c, r.a)}"></div>`).join('');
-  const availW = stage.clientWidth - 96, availH = stage.clientHeight - 96;
   const k = Math.min(1, availW / m.W, availH / m.H);
   art.style.transform = `scale(${k})`;
   frame.style.width = m.W * k + 'px'; frame.style.height = m.H * k + 'px';
@@ -281,6 +311,15 @@ function exportAs(fmt) {
 
 function update() {
   $('bg').disabled = S.bgT;
+  if (S.tile) {
+    const t = tileSize();
+    S.W = t.W; S.H = t.H; S.rot = 0;
+    $('W').value = S.W; $('H').value = S.H; $('rot').value = 0; $('rotN').value = 0;
+    $('tileHint').textContent = S.W > 10000 || S.H > 10000
+      ? 'Attention : la tuile dépasse 10 000 px, réduis le nombre de couleurs ou l\'espacement.'
+      : 'La taille suit l\'épaisseur, l\'espacement et le nombre de couleurs. Rotation désactivée pour garder le raccord.';
+  } else $('tileHint').textContent = '';
+  ['W', 'H', 'rot', 'rotN'].forEach(id => $(id).disabled = S.tile);
   renderPreview(buildModel());
   try { localStorage.setItem('tissage', JSON.stringify(S)); } catch {}
 }
@@ -319,6 +358,8 @@ $('bg').oninput = e => { S.bg = e.target.value; update(); };
 $('bgT').onchange = e => { S.bgT = e.target.checked; update(); };
 $('weave').onchange = e => { S.weave = e.target.checked; update(); };
 $('flip').onchange = e => { S.flip = e.target.checked; update(); };
+$('tile').onchange = e => { S.tile = e.target.checked; update(); };
+$('mosaic').onchange = e => { S.mosaic = e.target.checked; update(); };
 document.querySelectorAll('[data-fmt]').forEach(b => b.onclick = () => exportAs(b.dataset.fmt));
 $('reset').onclick = () => { S = { ...DEFAULTS, hC: [...DEFAULTS.hC], vC: [...DEFAULTS.vC] }; syncInputs(); update(); };
 window.addEventListener('resize', update);
