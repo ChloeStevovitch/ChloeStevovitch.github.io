@@ -62,9 +62,20 @@ const FONT_STACKS: Record<FontChoice, string> = {
 interface PagingConf {
 	enabled: boolean;
 	linesPerPage: number;
+	startLine: number; // 1-indexed doc line where pagination starts counting (after any frontmatter)
 }
 
 const setPaging = StateEffect.define<PagingConf>();
+
+// Le frontmatter (--- ... ---) ne doit compter ni pour la pagination ni
+// porter la couverture : elle doit s'afficher juste après.
+function frontmatterEndLine(doc: Text): number {
+	if (doc.lines < 1 || doc.line(1).text.trim() !== "---") return 0;
+	for (let ln = 2; ln <= doc.lines; ln++) {
+		if (doc.line(ln).text.trim() === "---") return ln;
+	}
+	return 0;
+}
 
 class PageGapWidget extends WidgetType {
 	eq(): boolean {
@@ -80,11 +91,11 @@ class PageGapWidget extends WidgetType {
 	}
 }
 
-function buildPageBreaks(doc: Text, linesPerPage: number): DecorationSet {
+function buildPageBreaks(doc: Text, linesPerPage: number, startLine: number): DecorationSet {
 	if (linesPerPage < 1) return Decoration.none;
 	const widgets = [];
 	const total = doc.lines;
-	for (let ln = linesPerPage; ln < total; ln += linesPerPage) {
+	for (let ln = startLine + linesPerPage; ln < total; ln += linesPerPage) {
 		const line = doc.line(ln);
 		widgets.push(Decoration.widget({ widget: new PageGapWidget(), side: 1, block: true }).range(line.to));
 	}
@@ -93,7 +104,7 @@ function buildPageBreaks(doc: Text, linesPerPage: number): DecorationSet {
 
 const pagingField = StateField.define<{ conf: PagingConf; deco: DecorationSet }>({
 	create() {
-		return { conf: { enabled: false, linesPerPage: 25 }, deco: Decoration.none };
+		return { conf: { enabled: false, linesPerPage: 25, startLine: 0 }, deco: Decoration.none };
 	},
 	update(value, tr) {
 		let conf = value.conf;
@@ -106,7 +117,7 @@ const pagingField = StateField.define<{ conf: PagingConf; deco: DecorationSet }>
 		}
 		if (!conf.enabled) return { conf, deco: Decoration.none };
 		if (tr.docChanged || confChanged) {
-			return { conf, deco: buildPageBreaks(tr.state.doc, conf.linesPerPage) };
+			return { conf, deco: buildPageBreaks(tr.state.doc, conf.linesPerPage, conf.startLine) };
 		}
 		return { conf, deco: value.deco.map(tr.changes) };
 	},
@@ -120,6 +131,7 @@ interface CoverConf {
 	title: string;
 	color: string;
 	image: string | null;
+	pos: number; // doc offset to insert at — after any frontmatter, so it isn't split across it
 }
 
 const setCover = StateEffect.define<CoverConf>();
@@ -167,7 +179,7 @@ const coverField = StateField.define<DecorationSet>({
 			if (e.is(setCover)) {
 				if (!e.value.enabled) return Decoration.none;
 				return Decoration.set([
-					Decoration.widget({ widget: new CoverWidget(e.value), side: -1, block: true }).range(0),
+					Decoration.widget({ widget: new CoverWidget(e.value), side: -1, block: true }).range(e.value.pos),
 				]);
 			}
 		}
@@ -276,16 +288,27 @@ export default class CahierEcolierPlugin extends Plugin {
 		const color = (fm?.["cahier-cover-color"] as string) || this.settings.coverColor;
 		const imageRaw = fm?.["cahier-cover-image"] as string | undefined;
 		const image = imageRaw ? this.resolveImagePath(imageRaw) : null;
-		const coverConf: CoverConf = { enabled: coverEnabled, title, color, image };
 
 		const paged = !!fm?.["cahier-paged"];
 		const linesPerPage = Number(fm?.["cahier-lines-per-page"]) || this.settings.linesPerPage;
-		const pagingConf: PagingConf = { enabled: paged, linesPerPage };
 
 		document.body.classList.toggle("cahier-ecolier-cover", coverEnabled);
 		document.body.classList.toggle("cahier-ecolier-paged", paged);
 
 		const cm = this.getCm();
+		let coverPos = 0;
+		let startLine = 0;
+		if (cm) {
+			const doc = cm.state.doc;
+			const fmEndLine = frontmatterEndLine(doc);
+			startLine = fmEndLine;
+			if (fmEndLine > 0) {
+				const line = doc.line(fmEndLine);
+				coverPos = Math.min(line.to + 1, doc.length);
+			}
+		}
+		const coverConf: CoverConf = { enabled: coverEnabled, title, color, image, pos: coverPos };
+		const pagingConf: PagingConf = { enabled: paged, linesPerPage, startLine };
 		cm?.dispatch({ effects: [setCover.of(coverConf), setPaging.of(pagingConf)] });
 
 		this.renderReadingCover(coverConf);
@@ -301,7 +324,14 @@ export default class CahierEcolierPlugin extends Plugin {
 			return;
 		}
 		const fresh = buildCoverEl(conf);
-		if (existing) existing.replaceWith(fresh);
+		if (existing) {
+			existing.replaceWith(fresh);
+			return;
+		}
+		// Insère après le bloc de propriétés (Properties) rendu par Obsidian s'il y en a un,
+		// pour ne pas passer devant le frontmatter.
+		const metadata = sizer.querySelector(":scope > .metadata-container");
+		if (metadata) metadata.insertAdjacentElement("afterend", fresh);
 		else sizer.insertBefore(fresh, sizer.firstChild);
 	}
 }
