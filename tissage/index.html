@@ -137,6 +137,7 @@
         <button class="btn" data-fmt="png">PNG</button>
         <button class="btn" data-fmt="jpeg">JPEG</button>
         <button class="btn" data-fmt="pdf">PDF</button>
+        <button class="btn" data-fmt="svg">SVG</button>
       </div>
       <div class="exports"><button class="btn ghost" id="reset">Réinitialiser</button></div>
     </section>
@@ -288,6 +289,21 @@ function renderCanvas(m, scale, forceBg) {
   return cv;
 }
 
+/* Rendu SVG vectoriel (même modèle) */
+function renderSVG(m) {
+  const bg = S.bgT ? '' : `<rect width="${m.W}" height="${m.H}" fill="${S.bg}"/>`;
+  const rects = m.rects.map(r =>
+    `<rect x="${r.x}" y="${r.y}" width="${r.w}" height="${r.h}" fill="${r.c}"${r.a < 1 ? ` fill-opacity="${r.a}"` : ''}/>`).join('\n');
+  const tr = m.rot ? ` transform="translate(${m.W / 2} ${m.H / 2}) rotate(${m.rot}) translate(${-m.LW / 2} ${-m.LH / 2})"` : '';
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${m.W}" height="${m.H}" viewBox="0 0 ${m.W} ${m.H}" shape-rendering="crispEdges">
+<defs><clipPath id="c"><rect width="${m.W}" height="${m.H}"/></clipPath></defs>
+${bg}
+<g clip-path="url(#c)"><g${tr}>
+${rects}
+</g></g>
+</svg>`;
+}
+
 function download(url, name) {
   const l = document.createElement('a'); l.href = url; l.download = name; document.body.append(l); l.click(); l.remove();
 }
@@ -297,6 +313,9 @@ function exportAs(fmt) {
     renderCanvas(m, scale).toBlob(b => { const u = URL.createObjectURL(b); download(u, 'quadrillage.png'); setTimeout(() => URL.revokeObjectURL(u), 2000); }, 'image/png');
   } else if (fmt === 'jpeg') {
     renderCanvas(m, scale, true).toBlob(b => { const u = URL.createObjectURL(b); download(u, 'quadrillage.jpg'); setTimeout(() => URL.revokeObjectURL(u), 2000); }, 'image/jpeg', 0.95);
+  } else if (fmt === 'svg') {
+    const u = URL.createObjectURL(new Blob([renderSVG(m)], { type: 'image/svg+xml' }));
+    download(u, 'quadrillage.svg'); setTimeout(() => URL.revokeObjectURL(u), 2000);
   } else {
     if (!window.jspdf) { alert('La librairie PDF n\'a pas pu être chargée.'); return; }
     const cv = renderCanvas(m, scale);
