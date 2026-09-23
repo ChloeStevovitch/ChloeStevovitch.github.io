@@ -91,3 +91,53 @@
 .cahier-ecolier-reading.cahier-ecolier-enabled .markdown-preview-view th {
 	line-height: var(--cahier-line-height);
 }
+
+/* ---- Sauts de page (éditeur uniquement) : espace + marges blanches entre feuilles ----
+   Le widget compense le padding-left du texte pour retrouver toute la largeur du papier. */
+
+.cahier-page-gap {
+	height: calc(var(--cahier-page-margin) * 2 + var(--cahier-page-gap-size));
+	margin-left: calc(-1 * (var(--cahier-margin-position) + 16px));
+	width: calc(100% + var(--cahier-margin-position) + 16px);
+	background: linear-gradient(
+		to bottom,
+		var(--cahier-paper) 0,
+		var(--cahier-paper) var(--cahier-page-margin),
+		transparent var(--cahier-page-margin),
+		transparent calc(var(--cahier-page-margin) + var(--cahier-page-gap-size)),
+		var(--cahier-paper) calc(var(--cahier-page-margin) + var(--cahier-page-gap-size)),
+		var(--cahier-paper) calc(var(--cahier-page-margin) * 2 + var(--cahier-page-gap-size))
+	);
+	pointer-events: none;
+}
+
+/* ---- Page de couverture (éditeur et vue de lecture) ---- */
+
+.cahier-cover-page {
+	margin-left: calc(-1 * (var(--cahier-margin-position) + 16px));
+	width: calc(100% + var(--cahier-margin-position) + 16px);
+	aspect-ratio: 3 / 4;
+	max-height: 80vh;
+	margin-bottom: var(--cahier-page-margin, 24px);
+	background-color: var(--cahier-paper);
+	background-size: cover;
+	background-position: center;
+	border-radius: 4px;
+	box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+	display: flex;
+	align-items: flex-end;
+	justify-content: center;
+	overflow: hidden;
+}
+
+.cahier-cover-title {
+	width: 100%;
+	box-sizing: border-box;
+	padding: 1.4em 1em;
+	text-align: center;
+	font-family: var(--cahier-font-family);
+	font-size: calc(var(--cahier-font-size) * 1.8);
+	color: #fff;
+	text-shadow: 0 2px 6px rgba(0, 0, 0, 0.55);
+	background: linear-gradient(to top, rgba(0, 0, 0, 0.4), transparent);
+}

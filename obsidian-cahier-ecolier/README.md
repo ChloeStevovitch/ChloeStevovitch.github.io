@@ -33,3 +33,34 @@ License) est embarquée dans `fonts/` — aucune connexion internet n'est
 nécessaire pour l'afficher. Une option "police manuscrite du système" est
 aussi disponible dans les paramètres si tu préfères une police déjà
 installée sur ta machine.
+
+## Pages et couverture (par note)
+
+Désactivées par défaut pour ne pas s'imposer à toutes tes notes — tu les
+actives note par note via le frontmatter (YAML en haut du fichier) :
+
+```yaml
+---
+title: "Mon histoire"
+cahier-paged: true
+cahier-lines-per-page: 30
+cahier-cover: true
+cahier-cover-color: "#274472"
+cahier-cover-image: "attachments/couverture.jpg"
+---
+```
+
+- `cahier-paged: true` — découpe la note en feuilles séparées par un espace,
+  avec une marge blanche (sans lignes) en haut et en bas de chaque feuille.
+  Ne s'applique qu'à l'éditeur (source / édition en direct), pas à la vue de
+  lecture. `cahier-lines-per-page` surcharge, pour cette note, le réglage
+  global "Lignes par page".
+- `cahier-cover: true` — ajoute une page de couverture avant le contenu, en
+  éditeur comme en vue de lecture. `cahier-cover-image` (un chemin d'image
+  du coffre, un lien `[[...]]` ou une URL) est prioritaire sur
+  `cahier-cover-color`. Le titre affiché est la propriété `title` du
+  frontmatter, sinon le nom du fichier.
+
+Comme je ne peux pas prévisualiser Obsidian moi-même, ces deux réglages sont
+volontairement gardés simples pour une première version — dis-moi ce qu'il
+faut ajuster une fois testé en vrai (positions, tailles, comportement).
