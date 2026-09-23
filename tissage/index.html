@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quadrillage tissé</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #f6f3ee; --panel: #ffffff; --text: #2b2830; --muted: #7a7480;
+    --line: #e4dfd8; --accent: #e9579b; --accent-ink: #fff;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #1c1a20; --panel: #26232b; --text: #eeeaf2; --muted: #a39cab;
+      --line: #3a3541; --accent: #f37ab2; --accent-ink: #1c1a20;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; background: var(--bg); color: var(--text); }
+  .app { display: grid; grid-template-columns: 340px 1fr; min-height: 100vh; }
+  aside { background: var(--panel); border-right: 1px solid var(--line); padding: 20px; overflow-y: auto; max-height: 100vh; }
+  h1 { font-size: 1.25rem; margin: 0 0 4px; }
+  .sub { color: var(--muted); font-size: .85rem; margin: 0 0 16px; }
+  fieldset { border: 1px solid var(--line); border-radius: 10px; padding: 12px; margin: 0 0 14px; }
+  legend { font-weight: 600; font-size: .9rem; padding: 0 6px; }
+  label { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: .85rem; margin: 6px 0; }
+  label > span.v { color: var(--muted); font-variant-numeric: tabular-nums; min-width: 44px; text-align: right; }
+  input[type=range] { flex: 1; accent-color: var(--accent); }
+  input[type=number] { width: 72px; min-width: 0; padding: 4px 6px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--text); }
+  .row { display: flex; gap: 8px; }
+  .row label { flex: 1; min-width: 0; }
+  .swatches { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  .sw { position: relative; }
+  .sw input[type=color] { width: 36px; height: 36px; border: 1px solid var(--line); border-radius: 8px; padding: 0; cursor: pointer; background: none; }
+  .sw button { position: absolute; top: -6px; right: -6px; width: 18px; height: 18px; border-radius: 50%; border: none; background: var(--text); color: var(--panel); font-size: 11px; line-height: 18px; padding: 0; cursor: pointer; display: none; }
+  .sw:hover button { display: block; }
+  .add { width: 36px; height: 36px; border-radius: 8px; border: 1px dashed var(--muted); background: none; color: var(--muted); font-size: 20px; cursor: pointer; }
+  .btn { border: none; border-radius: 8px; padding: 9px 14px; font-weight: 600; cursor: pointer; background: var(--accent); color: var(--accent-ink); }
+  .btn.ghost { background: transparent; color: var(--text); border: 1px solid var(--line); }
+  .exports { display: flex; gap: 8px; flex-wrap: wrap; }
+  main { display: flex; flex-direction: column; min-width: 0; }
+  .stage { flex: 1; display: flex; align-items: center; justify-content: center; padding: 24px; overflow: hidden; min-height: 60vh; }
+  .frame { position: relative; box-shadow: 0 8px 30px rgba(0,0,0,.15);
+    background-color: #fff;
+    background-image: linear-gradient(45deg,#ddd 25%,transparent 25%),linear-gradient(-45deg,#ddd 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#ddd 75%),linear-gradient(-45deg,transparent 75%,#ddd 75%);
+    background-size: 16px 16px; background-position: 0 0,0 8px,8px -8px,-8px 0; }
+  #art { position: absolute; top: 0; left: 0; overflow: hidden; transform-origin: 0 0; }
+  #layer { position: absolute; transform-origin: 50% 50%; }
+  #layer > div { position: absolute; }
+  .info { text-align: center; color: var(--muted); font-size: .8rem; padding-bottom: 12px; }
+  @media (max-width: 800px) {
+    .app { grid-template-columns: 1fr; }
+    aside { max-height: none; border-right: none; border-bottom: 1px solid var(--line); padding: 16px; }
+    main { order: -1; position: sticky; top: 0; background: var(--bg); z-index: 2; }
+    .stage { min-height: 45vh; padding: 16px; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside>
+    <h1>Quadrillage tissé</h1>
+    <p class="sub">Bandes horizontales et verticales qui passent dessus / dessous en alternance.</p>
+
+    <fieldset>
+      <legend>Toile</legend>
+      <div class="row">
+        <label>Largeur <input type="number" id="W" min="10" max="10000"></label>
+        <label>Hauteur <input type="number" id="H" min="10" max="10000"></label>
+      </div>
+      <label>Fond <input type="color" id="bg"></label>
+      <label>Fond transparent <input type="checkbox" id="bgT"></label>
+      <label>Rotation <input type="range" id="rot" min="-90" max="90" step="1"><span class="v" id="rotV"></span></label>
+    </fieldset>
+
+    <fieldset>
+      <legend>Bandes horizontales</legend>
+      <label>Épaisseur <input type="range" id="hT" min="1" max="400"><span class="v" id="hTV"></span></label>
+      <label>Espacement <input type="range" id="hG" min="0" max="400"><span class="v" id="hGV"></span></label>
+      <label>Décalage <input type="range" id="hO" min="0" max="400"><span class="v" id="hOV"></span></label>
+      <div class="swatches" id="hC"></div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Bandes verticales</legend>
+      <label>Épaisseur <input type="range" id="vT" min="1" max="400"><span class="v" id="vTV"></span></label>
+      <label>Espacement <input type="range" id="vG" min="0" max="400"><span class="v" id="vGV"></span></label>
+      <label>Décalage <input type="range" id="vO" min="0" max="400"><span class="v" id="vOV"></span></label>
+      <div class="swatches" id="vC"></div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Tissage</legend>
+      <label>Opacité des bandes <input type="range" id="op" min="0" max="100"><span class="v" id="opV"></span></label>
+      <label>Tissé (dessus / dessous) <input type="checkbox" id="weave"></label>
+      <label>Inverser l'alternance <input type="checkbox" id="flip"></label>
+    </fieldset>
+
+    <fieldset>
+      <legend>Télécharger</legend>
+      <label>Résolution <select id="scale"><option value="1">×1</option><option value="2">×2</option><option value="3">×3</option></select></label>
+      <div class="exports">
+        <button class="btn" data-fmt="png">PNG</button>
+        <button class="btn" data-fmt="jpeg">JPEG</button>
+        <button class="btn" data-fmt="pdf">PDF</button>
+        <button class="btn ghost" id="reset">Réinitialiser</button>
+      </div>
+    </fieldset>
+  </aside>
+
+  <main>
+    <div class="stage" id="stage"><div class="frame" id="frame"><div id="art"><div id="layer"></div></div></div></div>
+    <div class="info" id="info"></div>
+  </main>
+</div>
+
+<script>
+const DEFAULTS = {
+  W: 1200, H: 1200, bg: '#f4f0e8', bgT: false, rot: 0,
+  hT: 90, hG: 150, hO: 60, vT: 90, vG: 150, vO: 60,
+  hC: ['#3f9e74', '#f39bc9', '#f4c84e', '#b8a6ea'],
+  vC: ['#7f9ce6', '#f4c84e', '#b8a6ea', '#5b7bd5'],
+  op: 100, weave: true, flip: false
+};
+let S;
+try { S = Object.assign({}, DEFAULTS, JSON.parse(localStorage.getItem('tissage') || '{}')); } catch { S = { ...DEFAULTS }; }
+S.hC = [...S.hC]; S.vC = [...S.vC];
+
+const $ = id => document.getElementById(id);
+const NUM = ['W','H','rot','hT','hG','hO','vT','vG','vO','op'];
+const UNIT = { rot: '°', op: '%' };
+
+function syncInputs() {
+  NUM.forEach(k => $(k).value = S[k]);
+  $('bg').value = S.bg; $('bgT').checked = S.bgT; $('weave').checked = S.weave; $('flip').checked = S.flip;
+  renderSwatches('hC'); renderSwatches('vC');
+}
+function renderSwatches(key) {
+  const box = $(key); box.innerHTML = '';
+  S[key].forEach((c, i) => {
+    const d = document.createElement('div'); d.className = 'sw';
+    const inp = document.createElement('input'); inp.type = 'color'; inp.value = c;
+    inp.oninput = () => { S[key][i] = inp.value; update(); };
+    const x = document.createElement('button'); x.textContent = '×'; x.title = 'Retirer';
+    x.onclick = () => { if (S[key].length > 1) { S[key].splice(i, 1); renderSwatches(key); update(); } };
+    d.append(inp, x); box.append(d);
+  });
+  const add = document.createElement('button'); add.className = 'add'; add.textContent = '+'; add.title = 'Ajouter une couleur';
+  add.onclick = () => { S[key].push(S[key][S[key].length - 1]); renderSwatches(key); update(); };
+  box.append(add);
+}
+
+/* Modèle : liste de rectangles dans l'ordre de dessin, dans un calque de taille LW×LH */
+function strips(len, t, gap, off, colors) {
+  const p = t + gap, out = [];
+  let start = ((off % p) + p) % p - p, k = 0;
+  for (let pos = start; pos < len; pos += p, k++) out.push({ pos, t, color: colors[k % colors.length], i: k });
+  return out;
+}
+function buildModel() {
+  const W = +S.W, H = +S.H, rot = +S.rot;
+  const D = rot ? Math.ceil(Math.hypot(W, H)) : 0;
+  const LW = rot ? D : W, LH = rot ? D : H;
+  const hs = strips(LH, +S.hT, +S.hG, +S.hO, S.hC);
+  const vs = strips(LW, +S.vT, +S.vG, +S.vO, S.vC);
+  const base = [], cross = [];
+  // segments horizontaux hors croisements
+  for (const h of hs) {
+    let x = 0;
+    for (const v of vs) {
+      if (v.pos > x) base.push({ x, y: h.pos, w: v.pos - x, h: h.t, c: h.color });
+      x = Math.max(x, v.pos + v.t);
+    }
+    if (x < LW) base.push({ x, y: h.pos, w: LW - x, h: h.t, c: h.color });
+  }
+  // segments verticaux hors croisements
+  for (const v of vs) {
+    let y = 0;
+    for (const h of hs) {
+      if (h.pos > y) base.push({ x: v.pos, y, w: v.t, h: h.pos - y, c: v.color });
+      y = Math.max(y, h.pos + h.t);
+    }
+    if (y < LH) base.push({ x: v.pos, y, w: v.t, h: LH - y, c: v.color });
+  }
+  // croisements : dessous puis dessus
+  for (const h of hs) for (const v of vs) {
+    const r = { x: v.pos, y: h.pos, w: v.t, h: h.t };
+    let hTop = S.weave ? (h.i + v.i) % 2 === 0 : false;
+    if (S.flip) hTop = !hTop;
+    const [under, over] = hTop ? [v.color, h.color] : [h.color, v.color];
+    cross.push({ ...r, c: under }, { ...r, c: over });
+  }
+  return { W, H, LW, LH, rot, rects: base.concat(cross) };
+}
+
+function rgba(hex, a) {
+  const n = parseInt(hex.slice(1), 16);
+  return `rgba(${n >> 16},${(n >> 8) & 255},${n & 255},${a})`;
+}
+
+/* Aperçu en CSS : chaque rectangle est un div positionné */
+function renderPreview(m) {
+  const a = S.op / 100;
+  const art = $('art'), layer = $('layer'), frame = $('frame'), stage = $('stage');
+  art.style.width = m.W + 'px'; art.style.height = m.H + 'px';
+  art.style.background = S.bgT ? 'transparent' : S.bg;
+  layer.style.width = m.LW + 'px'; layer.style.height = m.LH + 'px';
+  layer.style.left = (m.W - m.LW) / 2 + 'px'; layer.style.top = (m.H - m.LH) / 2 + 'px';
+  layer.style.transform = `rotate(${m.rot}deg)`;
+  layer.innerHTML = m.rects.map(r =>
+    `<div style="left:${r.x}px;top:${r.y}px;width:${r.w}px;height:${r.h}px;background:${rgba(r.c, a)}"></div>`).join('');
+  const availW = stage.clientWidth - 48, availH = stage.clientHeight - 48;
+  const k = Math.min(1, availW / m.W, availH / m.H);
+  art.style.transform = `scale(${k})`;
+  frame.style.width = m.W * k + 'px'; frame.style.height = m.H * k + 'px';
+  $('info').textContent = `${m.W} × ${m.H} px — aperçu à ${Math.round(k * 100)} %`;
+}
+
+/* Rendu canvas pour l'export (même modèle) */
+function renderCanvas(m, scale, forceBg) {
+  const cv = document.createElement('canvas');
+  cv.width = m.W * scale; cv.height = m.H * scale;
+  const ctx = cv.getContext('2d');
+  ctx.scale(scale, scale);
+  if (!S.bgT || forceBg) { ctx.fillStyle = S.bgT ? '#ffffff' : S.bg; ctx.fillRect(0, 0, m.W, m.H); }
+  ctx.translate(m.W / 2, m.H / 2);
+  ctx.rotate(m.rot * Math.PI / 180);
+  ctx.translate(-m.LW / 2, -m.LH / 2);
+  const a = S.op / 100;
+  for (const r of m.rects) { ctx.fillStyle = rgba(r.c, a); ctx.fillRect(r.x, r.y, r.w, r.h); }
+  return cv;
+}
+
+function download(url, name) {
+  const l = document.createElement('a'); l.href = url; l.download = name; document.body.append(l); l.click(); l.remove();
+}
+function exportAs(fmt) {
+  const m = buildModel(), scale = +$('scale').value;
+  if (fmt === 'png') {
+    renderCanvas(m, scale).toBlob(b => { const u = URL.createObjectURL(b); download(u, 'quadrillage.png'); setTimeout(() => URL.revokeObjectURL(u), 2000); }, 'image/png');
+  } else if (fmt === 'jpeg') {
+    renderCanvas(m, scale, true).toBlob(b => { const u = URL.createObjectURL(b); download(u, 'quadrillage.jpg'); setTimeout(() => URL.revokeObjectURL(u), 2000); }, 'image/jpeg', 0.95);
+  } else {
+    if (!window.jspdf) { alert('La librairie PDF n\'a pas pu être chargée.'); return; }
+    const cv = renderCanvas(m, scale);
+    const pdf = new jspdf.jsPDF({ orientation: m.W >= m.H ? 'l' : 'p', unit: 'px', format: [m.W, m.H], hotfixes: ['px_scaling'] });
+    pdf.addImage(cv.toDataURL('image/png'), 'PNG', 0, 0, m.W, m.H);
+    pdf.save('quadrillage.pdf');
+  }
+}
+
+function update() {
+  NUM.forEach(k => { const e = $(k + 'V'); if (e) e.textContent = S[k] + (UNIT[k] || ' px'); });
+  $('bg').disabled = S.bgT;
+  renderPreview(buildModel());
+  try { localStorage.setItem('tissage', JSON.stringify(S)); } catch {}
+}
+
+NUM.forEach(k => $(k).addEventListener('input', e => {
+  let v = +e.target.value;
+  if ((k === 'W' || k === 'H') && (!v || v < 10)) return;
+  S[k] = Math.min(v, k === 'W' || k === 'H' ? 10000 : v); update();
+}));
+$('bg').oninput = e => { S.bg = e.target.value; update(); };
+$('bgT').onchange = e => { S.bgT = e.target.checked; update(); };
+$('weave').onchange = e => { S.weave = e.target.checked; update(); };
+$('flip').onchange = e => { S.flip = e.target.checked; update(); };
+document.querySelectorAll('[data-fmt]').forEach(b => b.onclick = () => exportAs(b.dataset.fmt));
+$('reset').onclick = () => { S = { ...DEFAULTS, hC: [...DEFAULTS.hC], vC: [...DEFAULTS.vC] }; syncInputs(); update(); };
+window.addEventListener('resize', update);
+
+syncInputs(); update();
+</script>
+</body>
+</html>
