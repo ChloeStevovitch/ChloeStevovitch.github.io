@@ -215,6 +215,8 @@ const coverField = StateField.define<DecorationSet>({
 export default class CahierEcolierPlugin extends Plugin {
 	settings: CahierSettings;
 	private lastConfKeys = new WeakMap<EditorView, string>();
+	private resizeHandler: (() => void) | null = null;
+	private resizeDebounce: number | null = null;
 
 	async onload() {
 		await this.loadSettings();
@@ -280,10 +282,28 @@ export default class CahierEcolierPlugin extends Plugin {
 				if (file === this.app.workspace.getActiveFile()) this.updateActiveFileFeatures();
 			})
 		);
-		this.app.workspace.onLayoutReady(() => this.updateActiveFileFeatures());
+		this.app.workspace.onLayoutReady(() => {
+			this.updateActiveFileFeatures();
+			// Au tout premier affichage, la zone d'édition peut ne pas encore
+			// avoir sa taille définitive (panneaux en cours de mise en place).
+			setTimeout(() => this.updateActiveFileFeatures(), 400);
+		});
+
+		// La couverture prend toute la hauteur visible : la recalculer si la
+		// fenêtre (ou un panneau latéral) change de taille.
+		this.resizeHandler = () => {
+			if (this.resizeDebounce) window.clearTimeout(this.resizeDebounce);
+			this.resizeDebounce = window.setTimeout(() => {
+				this.resizeDebounce = null;
+				this.updateActiveFileFeatures();
+			}, 200);
+		};
+		window.addEventListener("resize", this.resizeHandler);
 	}
 
 	onunload() {
+		if (this.resizeHandler) window.removeEventListener("resize", this.resizeHandler);
+		if (this.resizeDebounce) window.clearTimeout(this.resizeDebounce);
 		document.body.classList.remove("cahier-ecolier-enabled", "cahier-ecolier-paged", "cahier-ecolier-cover");
 	}
 
@@ -402,8 +422,9 @@ export default class CahierEcolierPlugin extends Plugin {
 			color,
 			image,
 			pos: coverPos,
-			// La couverture fait la taille d'une page (mêmes lignes/page × même espacement).
-			height: linesPerPage * s.lineHeight,
+			// La couverture prend toute la hauteur visible de l'éditeur (l'écran
+			// au premier affichage), pas seulement la hauteur d'une page de texte.
+			height: Math.max(cm.scrollDOM.clientHeight || 0, linesPerPage * s.lineHeight),
 		};
 		const pagingConf: PagingConf = { enabled: paged, linesPerPage, startLine };
 

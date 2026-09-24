@@ -81,8 +81,13 @@
 
 /* ---- Pas de papier derrière les propriétés (frontmatter) ---- */
 
-.cahier-ecolier-enabled .cm-content .metadata-container {
-	background-color: var(--background-primary);
+/* .metadata-container est un frère de .cm-content (tous deux enfants de
+   .cm-sizer), pas un descendant — d'où le sélecteur non imbriqué. !important
+   est nécessaire : la règle native d'Obsidian
+   ".markdown-source-view.is-live-preview.show-properties .metadata-container"
+   a une spécificité plus élevée et gagnerait sinon. */
+.cahier-ecolier-enabled .metadata-container {
+	display: none !important;
 }
 
 /* ---- Lignes bleues : une bordure par ligne, pas un motif de fond global ----
