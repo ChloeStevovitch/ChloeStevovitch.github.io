@@ -182,11 +182,13 @@ function buildCoverEl(conf: CoverConf): HTMLElement {
 		div.style.backgroundImage = `url("${conf.image.replace(/"/g, '\\"')}")`;
 	} else {
 		div.style.backgroundColor = conf.color;
+		// Le titre n'est superposé que sur une couverture de couleur — une
+		// image de couverture est affichée telle quelle, sans texte dessus.
+		const title = document.createElement("div");
+		title.className = "cahier-cover-title";
+		title.textContent = conf.title;
+		div.appendChild(title);
 	}
-	const title = document.createElement("div");
-	title.className = "cahier-cover-title";
-	title.textContent = conf.title;
-	div.appendChild(title);
 	return div;
 }
 
@@ -217,6 +219,8 @@ export default class CahierEcolierPlugin extends Plugin {
 	private lastConfKeys = new WeakMap<EditorView, string>();
 	private resizeHandler: (() => void) | null = null;
 	private resizeDebounce: number | null = null;
+	private editorResizeObserver: ResizeObserver | null = null;
+	private observedScroller: HTMLElement | null = null;
 
 	async onload() {
 		await this.loadSettings();
@@ -304,6 +308,7 @@ export default class CahierEcolierPlugin extends Plugin {
 	onunload() {
 		if (this.resizeHandler) window.removeEventListener("resize", this.resizeHandler);
 		if (this.resizeDebounce) window.clearTimeout(this.resizeDebounce);
+		this.editorResizeObserver?.disconnect();
 		document.body.classList.remove("cahier-ecolier-enabled", "cahier-ecolier-paged", "cahier-ecolier-cover");
 	}
 
@@ -355,6 +360,9 @@ export default class CahierEcolierPlugin extends Plugin {
 		body.style.setProperty("--cahier-font-size", `${s.fontSize}px`);
 		body.style.setProperty("--cahier-page-margin", `${s.pageMargin}px`);
 		body.style.setProperty("--cahier-page-gap-size", `${s.pageGapSize}px`);
+		if (!body.style.getPropertyValue("--cahier-content-offset")) {
+			body.style.setProperty("--cahier-content-offset", "0px");
+		}
 
 		this.updateActiveFileFeatures();
 	}
@@ -364,6 +372,19 @@ export default class CahierEcolierPlugin extends Plugin {
 		// L'API publique d'Obsidian n'expose pas l'EditorView CodeMirror 6 sous-jacent ;
 		// `editor.cm` est un accès non documenté mais stable, utilisé par de nombreux plugins.
 		return (mdView?.editor as unknown as { cm?: EditorView })?.cm;
+	}
+
+	private ensureResizeObserver(cm: EditorView) {
+		const target = cm.scrollDOM;
+		if (this.observedScroller === target) return;
+		this.editorResizeObserver?.disconnect();
+		this.observedScroller = target;
+		// Plus fiable qu'un délai deviné après l'ouverture d'un fichier : se
+		// déclenche exactement quand la taille réelle de la zone d'édition est
+		// connue, y compris au tout premier affichage (panneaux en cours de
+		// mise en place) — c'est de là que dépend la hauteur de la couverture.
+		this.editorResizeObserver = new ResizeObserver(() => this.updateActiveFileFeatures());
+		this.editorResizeObserver.observe(target);
 	}
 
 	private resolveImagePath(raw: string): string {
@@ -405,6 +426,7 @@ export default class CahierEcolierPlugin extends Plugin {
 
 		const cm = this.getCm();
 		if (!cm) return;
+		this.ensureResizeObserver(cm);
 
 		let coverPos = 0;
 		let startLine = 0;
@@ -427,6 +449,14 @@ export default class CahierEcolierPlugin extends Plugin {
 			height: Math.max(cm.scrollDOM.clientHeight || 0, linesPerPage * s.lineHeight),
 		};
 		const pagingConf: PagingConf = { enabled: paged, linesPerPage, startLine };
+
+		// Décalage du motif de lignes de fond (voir styles.css) pour qu'il
+		// commence juste après la couverture + son saut de page, plutôt qu'au
+		// tout début de .cm-content — sinon les lignes "préremplies" se
+		// dessineraient par-dessus la couverture elle-même.
+		const gapHeight = s.pageMargin * 2 + s.pageGapSize;
+		const contentOffset = coverEnabled ? coverConf.height + gapHeight : 0;
+		document.body.style.setProperty("--cahier-content-offset", `${contentOffset}px`);
 
 		// Évite de redispatcher (et donc de reconstruire le widget) quand rien n'a
 		// changé — "layout-change" se déclenche pour toutes sortes de raisons.

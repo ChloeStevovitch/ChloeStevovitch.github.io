@@ -22,23 +22,34 @@
 	margin-right: auto !important;
 	background-color: var(--cahier-paper);
 	padding-top: 0;
-	/* Seule la marge rouge verticale est peinte ici. Les lignes bleues
-	   horizontales sont portées par chaque ligne de texte elle-même (voir
-	   plus bas) : ça les garde alignées avec leur propre texte, même quand
-	   une couverture, un saut de page ou le frontmatter change la hauteur
-	   de ce qu'il y a au-dessus — un motif de fond unique sur tout le bloc
-	   se désynchronise dès que cette hauteur n'est pas un multiple exact
-	   de l'espacement des lignes. */
+	/* Deux couches : la marge rouge verticale (sur toute la hauteur), et des
+	   lignes bleues horizontales "préremplies" — dessinées partout, même là
+	   où il n'y a pas encore de texte, pour qu'une page ressemble à une
+	   vraie feuille de papier ligné plutôt qu'à des lignes qui s'arrêtent
+	   net après le dernier mot écrit. --cahier-content-offset (calculé en
+	   JS) décale ce motif pour qu'il commence juste après la couverture et
+	   son saut de page, pas depuis le tout début de .cm-content. Ça reste
+	   aligné avec le vrai texte tant qu'aucun titre (plus grand) n'a encore
+	   décalé les lignes réelles portées par chaque .cm-line — au-delà,
+	   léger décalage assumé plutôt que des lignes qui s'arrêtent. */
 	background-image: linear-gradient(
-		to right,
-		transparent 0,
-		transparent calc(var(--cahier-margin-position) - 1px),
-		var(--cahier-margin-color) calc(var(--cahier-margin-position) - 1px),
-		var(--cahier-margin-color) var(--cahier-margin-position),
-		transparent var(--cahier-margin-position),
-		transparent 100%
-	);
-	background-repeat: no-repeat;
+			to right,
+			transparent 0,
+			transparent calc(var(--cahier-margin-position) - 1px),
+			var(--cahier-margin-color) calc(var(--cahier-margin-position) - 1px),
+			var(--cahier-margin-color) var(--cahier-margin-position),
+			transparent var(--cahier-margin-position),
+			transparent 100%
+		),
+		repeating-linear-gradient(
+			to bottom,
+			transparent 0,
+			transparent calc(var(--cahier-line-height) - 1px),
+			var(--cahier-line-color) calc(var(--cahier-line-height) - 1px),
+			var(--cahier-line-color) var(--cahier-line-height)
+		);
+	background-repeat: no-repeat, repeat-y;
+	background-position: 0 0, 0 var(--cahier-content-offset, 0px);
 }
 
 /* ---- Texte : police manuscrite posée sur les lignes ---- */
