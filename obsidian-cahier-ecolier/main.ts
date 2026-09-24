@@ -13,7 +13,6 @@ interface CahierSettings {
 	marginColor: string;
 	textColor: string;
 	lineHeight: number; // px, distance between two ruled lines
-	baselineOffset: number; // px, distance from top of content to the first rule
 	marginPosition: number; // px, distance of the red margin from the left edge
 	paperWidth: number; // px, width of the paper sheet itself (wider than the text, narrower than the page)
 	paperSideMargin: number; // px, blank unruled margin on each side of the ruled lines
@@ -39,7 +38,6 @@ const DEFAULT_SETTINGS: CahierSettings = {
 	marginColor: "#e08585",
 	textColor: "#2b3a55",
 	lineHeight: 30,
-	baselineOffset: 24,
 	marginPosition: 48,
 	paperWidth: 820,
 	paperSideMargin: 20,
@@ -199,6 +197,9 @@ const coverField = StateField.define<DecorationSet>({
 export default class CahierEcolierPlugin extends Plugin {
 	settings: CahierSettings;
 	private lastConfKeys = new WeakMap<EditorView, string>();
+	private lastReadingCoverKey: string | null = null;
+	private mutationObserver: MutationObserver | null = null;
+	private mutationDebounce: number | null = null;
 
 	async onload() {
 		await this.loadSettings();
@@ -224,10 +225,38 @@ export default class CahierEcolierPlugin extends Plugin {
 				if (file === this.app.workspace.getActiveFile()) this.updateActiveFileFeatures();
 			})
 		);
-		this.app.workspace.onLayoutReady(() => this.updateActiveFileFeatures());
+		this.app.workspace.onLayoutReady(() => {
+			this.updateActiveFileFeatures();
+			// Filet de sécurité : au tout premier chargement, la vue de lecture
+			// restaurée peut ne pas encore avoir son DOM prêt au moment où
+			// "layout ready" se déclenche.
+			setTimeout(() => this.updateActiveFileFeatures(), 400);
+		});
+
+		// Passer en vue de lecture (ou y revenir) ne déclenche aucun des
+		// événements ci-dessus — c'est ce hook, appelé à chaque rendu de la
+		// vue de lecture, qui réinsère la couverture à ce moment-là.
+		this.registerMarkdownPostProcessor(() => this.updateActiveFileFeatures());
+
+		// Filet de sécurité final : la vue de lecture d'Obsidian peut
+		// recréer son propre DOM pendant le défilement (rendu virtualisé
+		// des sections), sans déclencher aucun des événements ci-dessus —
+		// ce qui laisse la couverture déjà insérée orpheline, détachée de
+		// l'arbre visible. Cet observateur la réinsère dès qu'il détecte
+		// que le DOM a changé, quelle qu'en soit la cause.
+		this.mutationObserver = new MutationObserver(() => {
+			if (this.mutationDebounce) window.clearTimeout(this.mutationDebounce);
+			this.mutationDebounce = window.setTimeout(() => {
+				this.mutationDebounce = null;
+				this.updateActiveFileFeatures();
+			}, 150);
+		});
+		this.mutationObserver.observe(document.body, { childList: true, subtree: true });
 	}
 
 	onunload() {
+		this.mutationObserver?.disconnect();
+		if (this.mutationDebounce) window.clearTimeout(this.mutationDebounce);
 		document.body.classList.remove(
 			"cahier-ecolier-enabled",
 			"cahier-ecolier-editor",
@@ -259,7 +288,6 @@ export default class CahierEcolierPlugin extends Plugin {
 		body.style.setProperty("--cahier-margin-color", s.marginColor);
 		body.style.setProperty("--cahier-text-color", s.textColor);
 		body.style.setProperty("--cahier-line-height", `${s.lineHeight}px`);
-		body.style.setProperty("--cahier-baseline-offset", `${s.baselineOffset}px`);
 		body.style.setProperty("--cahier-margin-position", `${s.marginPosition}px`);
 		body.style.setProperty("--cahier-paper-width", `${s.paperWidth}px`);
 		body.style.setProperty("--cahier-paper-side-margin", `${s.paperSideMargin}px`);
@@ -346,18 +374,32 @@ export default class CahierEcolierPlugin extends Plugin {
 		const existing = sizer.querySelector(":scope > .cahier-cover-page");
 		if (!conf.enabled) {
 			existing?.remove();
+			this.lastReadingCoverKey = null;
 			return;
 		}
+		const key = JSON.stringify(conf);
+		if (existing && key === this.lastReadingCoverKey) return;
+		this.lastReadingCoverKey = key;
 		const fresh = buildCoverEl(conf);
 		if (existing) {
 			existing.replaceWith(fresh);
 			return;
 		}
-		// Insère après le bloc de propriétés (Properties) rendu par Obsidian s'il y en a un,
-		// pour ne pas passer devant le frontmatter.
-		const metadata = sizer.querySelector(":scope > .metadata-container");
-		if (metadata) metadata.insertAdjacentElement("afterend", fresh);
-		else sizer.insertBefore(fresh, sizer.firstChild);
+		// Insère juste avant le premier bloc de contenu réel — pas avant le
+		// "pusher" d'Obsidian, ni le bandeau titre+propriétés (.mod-header),
+		// ni un éventuel bloc de frontmatter brut (.mod-frontmatter) : ces
+		// noms de classe varient selon la version, donc on saute tout ce qui
+		// n'est manifestement pas un paragraphe/titre/liste/etc. du texte.
+		const skipClasses = ["markdown-preview-pusher", "mod-header", "mod-frontmatter"];
+		let insertBeforeEl: Element | null = null;
+		for (const child of Array.from(sizer.children)) {
+			if (child === fresh) continue;
+			if (skipClasses.some((c) => child.classList.contains(c))) continue;
+			insertBeforeEl = child;
+			break;
+		}
+		if (insertBeforeEl) sizer.insertBefore(fresh, insertBeforeEl);
+		else sizer.appendChild(fresh);
 	}
 }
 
@@ -467,21 +509,6 @@ class CahierEcolierSettingTab extends PluginSettingTab {
 					.setValue(s.lineHeight)
 					.onChange(async (v) => {
 						s.lineHeight = v;
-						await this.plugin.saveSettings();
-						this.plugin.applyStyles();
-						this.display();
-					})
-			);
-
-		new Setting(containerEl)
-			.setName("Décalage de la première ligne")
-			.setDesc(`${s.baselineOffset}px`)
-			.addSlider((sl) =>
-				sl
-					.setLimits(0, 60, 1)
-					.setValue(s.baselineOffset)
-					.onChange(async (v) => {
-						s.baselineOffset = v;
 						await this.plugin.saveSettings();
 						this.plugin.applyStyles();
 						this.display();

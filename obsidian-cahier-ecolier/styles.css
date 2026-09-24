@@ -20,37 +20,27 @@
 	margin-left: auto !important;
 	margin-right: auto !important;
 	background-color: var(--cahier-paper);
-	background-image:
-		/* marge rouge verticale */
-		linear-gradient(
-			to right,
-			transparent 0,
-			transparent calc(var(--cahier-margin-position) - 1px),
-			var(--cahier-margin-color) calc(var(--cahier-margin-position) - 1px),
-			var(--cahier-margin-color) var(--cahier-margin-position),
-			transparent var(--cahier-margin-position),
-			transparent 100%
-		),
-		/* lignes bleues horizontales — marge blanche sans lignes de chaque côté */
-		repeating-linear-gradient(
-			to bottom,
-			transparent 0,
-			transparent calc(var(--cahier-line-height) - 1px),
-			var(--cahier-line-color) calc(var(--cahier-line-height) - 1px),
-			var(--cahier-line-color) var(--cahier-line-height)
-		);
-	background-repeat: no-repeat, repeat-y;
-	background-position: 0 0, var(--cahier-paper-side-margin) var(--cahier-baseline-offset);
-	background-size: 100% 100%, calc(100% - 2 * var(--cahier-paper-side-margin)) var(--cahier-line-height);
+	/* Seule la marge rouge verticale est peinte ici. Les lignes bleues
+	   horizontales sont portées par chaque ligne de texte elle-même (voir
+	   plus bas) : ça les garde alignées avec leur propre texte, même quand
+	   une couverture, un saut de page ou le frontmatter change la hauteur
+	   de ce qu'il y a au-dessus — un motif de fond unique sur tout le bloc
+	   se désynchronise dès que cette hauteur n'est pas un multiple exact
+	   de l'espacement des lignes. */
+	background-image: linear-gradient(
+		to right,
+		transparent 0,
+		transparent calc(var(--cahier-margin-position) - 1px),
+		var(--cahier-margin-color) calc(var(--cahier-margin-position) - 1px),
+		var(--cahier-margin-color) var(--cahier-margin-position),
+		transparent var(--cahier-margin-position),
+		transparent 100%
+	);
+	background-repeat: no-repeat;
 }
 
 .cahier-ecolier-editor.cahier-ecolier-enabled .cm-content {
 	padding-top: 0;
-	padding-left: calc(var(--cahier-margin-position) + 16px) !important;
-}
-
-.cahier-ecolier-reading.cahier-ecolier-enabled .markdown-preview-sizer {
-	padding-left: calc(var(--cahier-margin-position) + 16px) !important;
 }
 
 /* ---- Texte : police manuscrite posée sur les lignes ---- */
@@ -82,6 +72,10 @@
 	line-height: var(--cahier-line-height);
 	padding-top: 0;
 	padding-bottom: 0;
+	/* Le retrait de texte est posé ligne par ligne, pas sur .cm-content : les
+	   widgets de bloc (saut de page, couverture) restent ainsi sur toute la
+	   largeur du papier au lieu d'hériter de ce retrait. */
+	padding-left: calc(var(--cahier-margin-position) + 16px) !important;
 }
 
 .cahier-ecolier-reading.cahier-ecolier-enabled .markdown-preview-view p,
@@ -92,19 +86,56 @@
 	line-height: var(--cahier-line-height);
 }
 
+/* ---- Lignes bleues : une bordure par ligne, pas un motif de fond global ----
+   border-image peint un dégradé le long de la bordure — ça donne la marge
+   blanche sans lignes de chaque côté, sans dépendre d'une phase globale. */
+
+.cahier-ecolier-editor.cahier-ecolier-enabled .cm-line {
+	border-bottom: 1px solid var(--cahier-line-color);
+	border-image-slice: 1;
+	border-image-width: 0 0 1px 0;
+	border-image-source: linear-gradient(
+		to right,
+		transparent 0,
+		transparent var(--cahier-paper-side-margin),
+		var(--cahier-line-color) var(--cahier-paper-side-margin),
+		var(--cahier-line-color) calc(100% - var(--cahier-paper-side-margin)),
+		transparent calc(100% - var(--cahier-paper-side-margin)),
+		transparent 100%
+	);
+}
+
+.cahier-ecolier-reading.cahier-ecolier-enabled .markdown-preview-view p,
+.cahier-ecolier-reading.cahier-ecolier-enabled .markdown-preview-view li {
+	border-bottom: 1px solid var(--cahier-line-color);
+	border-image-slice: 1;
+	border-image-width: 0 0 1px 0;
+	border-image-source: linear-gradient(
+		to right,
+		transparent 0,
+		transparent var(--cahier-paper-side-margin),
+		var(--cahier-line-color) var(--cahier-paper-side-margin),
+		var(--cahier-line-color) calc(100% - var(--cahier-paper-side-margin)),
+		transparent calc(100% - var(--cahier-paper-side-margin)),
+		transparent 100%
+	);
+}
+
+
 /* ---- Sauts de page (éditeur uniquement) : espace + marges blanches entre feuilles ----
    Le widget compense le padding-left du texte pour retrouver toute la largeur du papier. */
 
 .cahier-page-gap {
 	height: calc(var(--cahier-page-margin) * 2 + var(--cahier-page-gap-size));
-	margin-left: calc(-1 * (var(--cahier-margin-position) + 16px));
-	width: calc(100% + var(--cahier-margin-position) + 16px);
+	/* La bande du milieu doit être opaque (pas transparent) : sinon elle laisse
+	   voir le fond ligné + la marge rouge de .cm-content en dessous, et le
+	   "vide" entre deux feuilles n'a plus l'air vide. */
 	background: linear-gradient(
 		to bottom,
 		var(--cahier-paper) 0,
 		var(--cahier-paper) var(--cahier-page-margin),
-		transparent var(--cahier-page-margin),
-		transparent calc(var(--cahier-page-margin) + var(--cahier-page-gap-size)),
+		var(--background-primary) var(--cahier-page-margin),
+		var(--background-primary) calc(var(--cahier-page-margin) + var(--cahier-page-gap-size)),
 		var(--cahier-paper) calc(var(--cahier-page-margin) + var(--cahier-page-gap-size)),
 		var(--cahier-paper) calc(var(--cahier-page-margin) * 2 + var(--cahier-page-gap-size))
 	);
@@ -114,8 +145,6 @@
 /* ---- Page de couverture (éditeur et vue de lecture) ---- */
 
 .cahier-cover-page {
-	margin-left: calc(-1 * (var(--cahier-margin-position) + 16px));
-	width: calc(100% + var(--cahier-margin-position) + 16px);
 	/* La hauteur est posée en style inline (JS) — fixe et connue à l'avance,
 	   pour que CodeMirror la mesure correctement pendant le défilement. */
 	margin-bottom: var(--cahier-page-margin, 24px);
