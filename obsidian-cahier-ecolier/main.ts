@@ -27,6 +27,7 @@ interface CahierSettings {
 
 	// Cover page — off by default, turned on per note via frontmatter (cahier-cover: true)
 	coverColor: string; // fallback colour when the note doesn't set cahier-cover-color
+	coverHeight: number; // px, fixed height — CodeMirror needs a stable, non-dynamic height to keep a block widget from misbehaving during scroll
 }
 
 const DEFAULT_SETTINGS: CahierSettings = {
@@ -50,6 +51,7 @@ const DEFAULT_SETTINGS: CahierSettings = {
 	pageGapSize: 40,
 
 	coverColor: "#274472",
+	coverHeight: 480,
 };
 
 const FONT_STACKS: Record<FontChoice, string> = {
@@ -132,6 +134,7 @@ interface CoverConf {
 	color: string;
 	image: string | null;
 	pos: number; // doc offset to insert at — after any frontmatter, so it isn't split across it
+	height: number; // px — fixed, so CodeMirror can measure the block reliably during scroll
 }
 
 const setCover = StateEffect.define<CoverConf>();
@@ -144,7 +147,8 @@ class CoverWidget extends WidgetType {
 		return (
 			other.conf.title === this.conf.title &&
 			other.conf.color === this.conf.color &&
-			other.conf.image === this.conf.image
+			other.conf.image === this.conf.image &&
+			other.conf.height === this.conf.height
 		);
 	}
 	toDOM(): HTMLElement {
@@ -158,6 +162,10 @@ class CoverWidget extends WidgetType {
 function buildCoverEl(conf: CoverConf): HTMLElement {
 	const div = document.createElement("div");
 	div.className = "cahier-cover-page";
+	// Hauteur fixe posée en style inline (pas en CSS aspect-ratio/vh) : CodeMirror
+	// a besoin de connaître la hauteur du widget de façon stable et synchrone pour
+	// bien le gérer pendant le défilement (virtualisation).
+	div.style.height = `${conf.height}px`;
 	if (conf.image) {
 		div.style.backgroundImage = `url("${conf.image.replace(/"/g, '\\"')}")`;
 	} else {
@@ -190,6 +198,7 @@ const coverField = StateField.define<DecorationSet>({
 
 export default class CahierEcolierPlugin extends Plugin {
 	settings: CahierSettings;
+	private lastConfKeys = new WeakMap<EditorView, string>();
 
 	async onload() {
 		await this.loadSettings();
@@ -307,9 +316,25 @@ export default class CahierEcolierPlugin extends Plugin {
 				coverPos = Math.min(line.to + 1, doc.length);
 			}
 		}
-		const coverConf: CoverConf = { enabled: coverEnabled, title, color, image, pos: coverPos };
+		const coverConf: CoverConf = {
+			enabled: coverEnabled,
+			title,
+			color,
+			image,
+			pos: coverPos,
+			height: this.settings.coverHeight,
+		};
 		const pagingConf: PagingConf = { enabled: paged, linesPerPage, startLine };
-		cm?.dispatch({ effects: [setCover.of(coverConf), setPaging.of(pagingConf)] });
+
+		if (cm) {
+			// Évite de redispatcher (et donc de reconstruire le widget) quand rien n'a
+			// changé — "layout-change" se déclenche pour toutes sortes de raisons.
+			const key = JSON.stringify([coverConf, pagingConf]);
+			if (this.lastConfKeys.get(cm) !== key) {
+				this.lastConfKeys.set(cm, key);
+				cm.dispatch({ effects: [setCover.of(coverConf), setPaging.of(pagingConf)] });
+			}
+		}
 
 		this.renderReadingCover(coverConf);
 	}
@@ -611,6 +636,21 @@ class CahierEcolierSettingTab extends PluginSettingTab {
 					await this.plugin.saveSettings();
 					this.plugin.applyStyles();
 				})
+			);
+
+		new Setting(containerEl)
+			.setName("Hauteur de la couverture")
+			.setDesc(`${s.coverHeight}px`)
+			.addSlider((sl) =>
+				sl
+					.setLimits(200, 900, 10)
+					.setValue(s.coverHeight)
+					.onChange(async (v) => {
+						s.coverHeight = v;
+						await this.plugin.saveSettings();
+						this.plugin.applyStyles();
+						this.display();
+					})
 			);
 
 		new Setting(containerEl).addButton((b) =>

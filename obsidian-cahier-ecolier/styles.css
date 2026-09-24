@@ -116,8 +116,8 @@
 .cahier-cover-page {
 	margin-left: calc(-1 * (var(--cahier-margin-position) + 16px));
 	width: calc(100% + var(--cahier-margin-position) + 16px);
-	aspect-ratio: 3 / 4;
-	max-height: 80vh;
+	/* La hauteur est posée en style inline (JS) — fixe et connue à l'avance,
+	   pour que CodeMirror la mesure correctement pendant le défilement. */
 	margin-bottom: var(--cahier-page-margin, 24px);
 	background-color: var(--cahier-paper);
 	background-size: cover;
