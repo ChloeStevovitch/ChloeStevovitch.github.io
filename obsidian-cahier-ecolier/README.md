@@ -6,6 +6,13 @@ cahier d'écolier. Tout est réglable en direct depuis les paramètres du
 plugin : couleurs, espacement des lignes, position de la marge, police,
 taille du texte.
 
+Par défaut, **aucune note ne l'a automatiquement** — tu choisis toi-même
+lesquelles, avec le bouton dans la barre latérale gauche (icône livre ouvert)
+qui bascule le cahier pour la note actuellement ouverte. Tu peux aussi
+changer ce comportement dans les paramètres ("Notes concernées par défaut")
+si tu préfères que toutes les notes l'aient sauf celles marquées
+`cahier: false`.
+
 ## Installation manuelle
 
 1. Copie tout le dossier `obsidian-cahier-ecolier` dans le dossier
@@ -36,12 +43,26 @@ installée sur ta machine.
 
 ## Pages et couverture (par note)
 
-Désactivées par défaut pour ne pas s'imposer à toutes tes notes — tu les
-actives note par note via le frontmatter (YAML en haut du fichier) :
+Désactivées par défaut. Le plus simple : ouvre la palette de commandes
+(Ctrl/Cmd+P) et lance :
+
+- **Activer / désactiver le cahier pour cette note** — bascule le look
+  cahier (même chose que le bouton de la barre latérale).
+- **Activer la pagination pour cette note** — découpe la note en feuilles
+  séparées par un espace, avec une marge blanche (sans lignes) en haut et
+  en bas de chaque feuille. Éditeur uniquement, pas la vue de lecture.
+- **Ajouter une page de couverture à cette note** — insère une couverture
+  avant le contenu (couleur par défaut depuis les paramètres), avec un
+  vrai saut de page avant que le texte commence. Sa hauteur correspond
+  toujours à celle d'une page (lignes par page × espacement des lignes).
+
+Ces commandes remplissent le frontmatter pour toi. Tu peux aussi l'écrire
+à la main si tu préfères :
 
 ```yaml
 ---
 title: "Mon histoire"
+cahier: true
 cahier-paged: true
 cahier-lines-per-page: 30
 cahier-cover: true
@@ -50,17 +71,12 @@ cahier-cover-image: "attachments/couverture.jpg"
 ---
 ```
 
-- `cahier-paged: true` — découpe la note en feuilles séparées par un espace,
-  avec une marge blanche (sans lignes) en haut et en bas de chaque feuille.
-  Ne s'applique qu'à l'éditeur (source / édition en direct), pas à la vue de
-  lecture. `cahier-lines-per-page` surcharge, pour cette note, le réglage
-  global "Lignes par page".
-- `cahier-cover: true` — ajoute une page de couverture avant le contenu, en
-  éditeur comme en vue de lecture. `cahier-cover-image` (un chemin d'image
-  du coffre, un lien `[[...]]` ou une URL) est prioritaire sur
-  `cahier-cover-color`. Le titre affiché est la propriété `title` du
-  frontmatter, sinon le nom du fichier.
+`cahier-lines-per-page` surcharge, pour cette note, le réglage global
+"Lignes par page". `cahier-cover-image` (un chemin d'image du coffre, un
+lien `[[...]]` ou une URL) est prioritaire sur `cahier-cover-color`. Le
+titre affiché sur la couverture est la propriété `title` du frontmatter,
+sinon le nom du fichier.
 
-Comme je ne peux pas prévisualiser Obsidian moi-même, ces deux réglages sont
-volontairement gardés simples pour une première version — dis-moi ce qu'il
-faut ajuster une fois testé en vrai (positions, tailles, comportement).
+Testé contre une vraie instance d'Obsidian (Electron piloté à distance) —
+alignement du texte sur les lignes, couverture, pagination et bascule par
+note vérifiés visuellement, pas seulement en théorie.

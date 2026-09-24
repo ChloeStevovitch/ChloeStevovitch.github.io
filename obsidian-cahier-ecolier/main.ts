@@ -8,6 +8,7 @@ interface CahierSettings {
 	enabled: boolean;
 	applyToEditor: boolean;
 	applyToReadingView: boolean;
+	defaultOnForAllNotes: boolean; // if false, a note needs `cahier: true` (frontmatter, or the ribbon button) to get the look
 	paperColor: string;
 	lineColor: string;
 	marginColor: string;
@@ -26,13 +27,13 @@ interface CahierSettings {
 
 	// Cover page — off by default, turned on per note via frontmatter (cahier-cover: true)
 	coverColor: string; // fallback colour when the note doesn't set cahier-cover-color
-	coverHeight: number; // px, fixed height — CodeMirror needs a stable, non-dynamic height to keep a block widget from misbehaving during scroll
 }
 
 const DEFAULT_SETTINGS: CahierSettings = {
 	enabled: true,
 	applyToEditor: true,
 	applyToReadingView: true,
+	defaultOnForAllNotes: false,
 	paperColor: "#faf5e9",
 	lineColor: "#a9c8e8",
 	marginColor: "#e08585",
@@ -49,7 +50,6 @@ const DEFAULT_SETTINGS: CahierSettings = {
 	pageGapSize: 40,
 
 	coverColor: "#274472",
-	coverHeight: 480,
 };
 
 const FONT_STACKS: Record<FontChoice, string> = {
@@ -132,7 +132,7 @@ interface CoverConf {
 	color: string;
 	image: string | null;
 	pos: number; // doc offset to insert at — after any frontmatter, so it isn't split across it
-	height: number; // px — fixed, so CodeMirror can measure the block reliably during scroll
+	height: number; // px — fixed, so CodeMirror can measure the block reliably during scroll; matches one page's height
 }
 
 const setCover = StateEffect.define<CoverConf>();
@@ -176,6 +176,12 @@ function buildCoverEl(conf: CoverConf): HTMLElement {
 	return div;
 }
 
+function buildCoverGapEl(): HTMLElement {
+	const div = document.createElement("div");
+	div.className = "cahier-page-gap cahier-cover-gap";
+	return div;
+}
+
 const coverField = StateField.define<DecorationSet>({
 	create() {
 		return Decoration.none;
@@ -184,8 +190,12 @@ const coverField = StateField.define<DecorationSet>({
 		for (const e of tr.effects) {
 			if (e.is(setCover)) {
 				if (!e.value.enabled) return Decoration.none;
+				// La couverture, puis un vrai "saut de page" juste après, avant le
+				// contenu — pas seulement une marge, pour rester cohérent avec les
+				// sauts de page entre les feuilles suivantes.
 				return Decoration.set([
-					Decoration.widget({ widget: new CoverWidget(e.value), side: -1, block: true }).range(e.value.pos),
+					Decoration.widget({ widget: new CoverWidget(e.value), side: -2, block: true }).range(e.value.pos),
+					Decoration.widget({ widget: new PageGapWidget(), side: -1, block: true }).range(e.value.pos),
 				]);
 			}
 		}
@@ -200,6 +210,7 @@ export default class CahierEcolierPlugin extends Plugin {
 	private lastReadingCoverKey: string | null = null;
 	private mutationObserver: MutationObserver | null = null;
 	private mutationDebounce: number | null = null;
+	private healInterval: number | null = null;
 
 	async onload() {
 		await this.loadSettings();
@@ -207,13 +218,43 @@ export default class CahierEcolierPlugin extends Plugin {
 		this.registerEditorExtension([pagingField, coverField]);
 		this.applyStyles();
 
+		this.addRibbonIcon("book-open", "Cahier d'écolier : activer/désactiver pour cette note", async () => {
+			await this.toggleNoteEnabled();
+		});
+
 		this.addCommand({
 			id: "toggle-cahier-ecolier",
-			name: "Activer / désactiver le cahier d'écolier",
+			name: "Activer / désactiver le cahier d'écolier (tout le plugin)",
 			callback: async () => {
 				this.settings.enabled = !this.settings.enabled;
 				await this.saveSettings();
 				this.applyStyles();
+			},
+		});
+
+		this.addCommand({
+			id: "toggle-cahier-note",
+			name: "Activer / désactiver le cahier pour cette note",
+			callback: async () => this.toggleNoteEnabled(),
+		});
+
+		this.addCommand({
+			id: "enable-cahier-paged",
+			name: "Activer la pagination pour cette note",
+			callback: async () => {
+				await this.setFrontmatterFlags({ cahier: true, "cahier-paged": true });
+			},
+		});
+
+		this.addCommand({
+			id: "enable-cahier-cover",
+			name: "Ajouter une page de couverture à cette note",
+			callback: async () => {
+				await this.setFrontmatterFlags({ cahier: true, "cahier-cover": true }, (fm) => {
+					if (!fm["cahier-cover-color"] && !fm["cahier-cover-image"]) {
+						fm["cahier-cover-color"] = this.settings.coverColor;
+					}
+				});
 			},
 		});
 
@@ -238,12 +279,11 @@ export default class CahierEcolierPlugin extends Plugin {
 		// vue de lecture, qui réinsère la couverture à ce moment-là.
 		this.registerMarkdownPostProcessor(() => this.updateActiveFileFeatures());
 
-		// Filet de sécurité final : la vue de lecture d'Obsidian peut
-		// recréer son propre DOM pendant le défilement (rendu virtualisé
-		// des sections), sans déclencher aucun des événements ci-dessus —
-		// ce qui laisse la couverture déjà insérée orpheline, détachée de
-		// l'arbre visible. Cet observateur la réinsère dès qu'il détecte
-		// que le DOM a changé, quelle qu'en soit la cause.
+		// Filet de sécurité supplémentaire : la vue de lecture d'Obsidian peut
+		// recréer son propre DOM pendant le défilement (rendu virtualisé des
+		// sections), sans déclencher aucun des événements ci-dessus — ce qui
+		// laisse la couverture déjà insérée orpheline, détachée de l'arbre
+		// visible. Cet observateur la réinsère dès qu'il détecte un changement.
 		this.mutationObserver = new MutationObserver(() => {
 			if (this.mutationDebounce) window.clearTimeout(this.mutationDebounce);
 			this.mutationDebounce = window.setTimeout(() => {
@@ -252,11 +292,16 @@ export default class CahierEcolierPlugin extends Plugin {
 			}, 150);
 		});
 		this.mutationObserver.observe(document.body, { childList: true, subtree: true });
+
+		// Dernier filet, au cas où même l'observateur rate un changement : un
+		// contrôle périodique bon marché (la fonction se dédoublonne elle-même).
+		this.healInterval = window.setInterval(() => this.updateActiveFileFeatures(), 800);
 	}
 
 	onunload() {
 		this.mutationObserver?.disconnect();
 		if (this.mutationDebounce) window.clearTimeout(this.mutationDebounce);
+		if (this.healInterval) window.clearInterval(this.healInterval);
 		document.body.classList.remove(
 			"cahier-ecolier-enabled",
 			"cahier-ecolier-editor",
@@ -264,7 +309,7 @@ export default class CahierEcolierPlugin extends Plugin {
 			"cahier-ecolier-paged",
 			"cahier-ecolier-cover"
 		);
-		document.querySelectorAll(".cahier-cover-page").forEach((el) => el.remove());
+		document.querySelectorAll(".cahier-cover-page, .cahier-cover-gap").forEach((el) => el.remove());
 	}
 
 	async loadSettings() {
@@ -275,13 +320,33 @@ export default class CahierEcolierPlugin extends Plugin {
 		await this.saveData(this.settings);
 	}
 
+	private async setFrontmatterFlags(
+		flags: Record<string, unknown>,
+		extra?: (fm: Record<string, unknown>) => void
+	) {
+		const file = this.app.workspace.getActiveFile();
+		if (!file) return;
+		await this.app.fileManager.processFrontMatter(file, (fm) => {
+			Object.assign(fm, flags);
+			extra?.(fm);
+		});
+		this.updateActiveFileFeatures();
+	}
+
+	private async toggleNoteEnabled() {
+		const file = this.app.workspace.getActiveFile();
+		if (!file) return;
+		const cache = this.app.metadataCache.getFileCache(file)?.frontmatter;
+		const current = typeof cache?.["cahier"] === "boolean" ? (cache["cahier"] as boolean) : this.settings.defaultOnForAllNotes;
+		await this.app.fileManager.processFrontMatter(file, (fm) => {
+			fm["cahier"] = !current;
+		});
+		this.updateActiveFileFeatures();
+	}
+
 	applyStyles() {
 		const body = document.body;
 		const s = this.settings;
-
-		body.classList.toggle("cahier-ecolier-enabled", s.enabled);
-		body.classList.toggle("cahier-ecolier-editor", s.enabled && s.applyToEditor);
-		body.classList.toggle("cahier-ecolier-reading", s.enabled && s.applyToReadingView);
 
 		body.style.setProperty("--cahier-paper", s.paperColor);
 		body.style.setProperty("--cahier-line-color", s.lineColor);
@@ -316,18 +381,37 @@ export default class CahierEcolierPlugin extends Plugin {
 	}
 
 	updateActiveFileFeatures() {
-		if (!this.settings.enabled) return;
+		const s = this.settings;
+		if (!s.enabled) {
+			document.body.classList.remove(
+				"cahier-ecolier-enabled",
+				"cahier-ecolier-editor",
+				"cahier-ecolier-reading",
+				"cahier-ecolier-paged",
+				"cahier-ecolier-cover"
+			);
+			return;
+		}
+
 		const file = this.app.workspace.getActiveFile();
 		const fm = file ? this.app.metadataCache.getFileCache(file)?.frontmatter : undefined;
 
-		const coverEnabled = !!fm?.["cahier-cover"];
+		const noteOverride = fm?.["cahier"];
+		const noteEnabled = typeof noteOverride === "boolean" ? noteOverride : s.defaultOnForAllNotes;
+		const overallEnabled = s.enabled && noteEnabled;
+
+		document.body.classList.toggle("cahier-ecolier-enabled", overallEnabled);
+		document.body.classList.toggle("cahier-ecolier-editor", overallEnabled && s.applyToEditor);
+		document.body.classList.toggle("cahier-ecolier-reading", overallEnabled && s.applyToReadingView);
+
+		const coverEnabled = overallEnabled && !!fm?.["cahier-cover"];
 		const title = (fm?.title as string) || file?.basename || "";
-		const color = (fm?.["cahier-cover-color"] as string) || this.settings.coverColor;
+		const color = (fm?.["cahier-cover-color"] as string) || s.coverColor;
 		const imageRaw = fm?.["cahier-cover-image"] as string | undefined;
 		const image = imageRaw ? this.resolveImagePath(imageRaw) : null;
 
-		const paged = !!fm?.["cahier-paged"];
-		const linesPerPage = Number(fm?.["cahier-lines-per-page"]) || this.settings.linesPerPage;
+		const paged = overallEnabled && !!fm?.["cahier-paged"];
+		const linesPerPage = Number(fm?.["cahier-lines-per-page"]) || s.linesPerPage;
 
 		document.body.classList.toggle("cahier-ecolier-cover", coverEnabled);
 		document.body.classList.toggle("cahier-ecolier-paged", paged);
@@ -350,7 +434,8 @@ export default class CahierEcolierPlugin extends Plugin {
 			color,
 			image,
 			pos: coverPos,
-			height: this.settings.coverHeight,
+			// La couverture fait la taille d'une page (mêmes lignes/page × même espacement).
+			height: linesPerPage * s.lineHeight,
 		};
 		const pagingConf: PagingConf = { enabled: paged, linesPerPage, startLine };
 
@@ -371,18 +456,23 @@ export default class CahierEcolierPlugin extends Plugin {
 		const mdView = this.app.workspace.getActiveViewOfType(MarkdownView);
 		const sizer = mdView?.contentEl?.querySelector(".markdown-preview-sizer") as HTMLElement | null;
 		if (!sizer) return;
-		const existing = sizer.querySelector(":scope > .cahier-cover-page");
+		const existingCover = sizer.querySelector(":scope > .cahier-cover-page");
+		const existingGap = sizer.querySelector(":scope > .cahier-cover-gap");
 		if (!conf.enabled) {
-			existing?.remove();
+			existingCover?.remove();
+			existingGap?.remove();
 			this.lastReadingCoverKey = null;
 			return;
 		}
 		const key = JSON.stringify(conf);
-		if (existing && key === this.lastReadingCoverKey) return;
+		if (existingCover && existingGap && key === this.lastReadingCoverKey) return;
 		this.lastReadingCoverKey = key;
-		const fresh = buildCoverEl(conf);
-		if (existing) {
-			existing.replaceWith(fresh);
+		existingGap?.remove();
+		const freshCover = buildCoverEl(conf);
+		const freshGap = buildCoverGapEl();
+		if (existingCover) {
+			existingCover.replaceWith(freshCover);
+			freshCover.insertAdjacentElement("afterend", freshGap);
 			return;
 		}
 		// Insère juste avant le premier bloc de contenu réel — pas avant le
@@ -393,13 +483,17 @@ export default class CahierEcolierPlugin extends Plugin {
 		const skipClasses = ["markdown-preview-pusher", "mod-header", "mod-frontmatter"];
 		let insertBeforeEl: Element | null = null;
 		for (const child of Array.from(sizer.children)) {
-			if (child === fresh) continue;
 			if (skipClasses.some((c) => child.classList.contains(c))) continue;
 			insertBeforeEl = child;
 			break;
 		}
-		if (insertBeforeEl) sizer.insertBefore(fresh, insertBeforeEl);
-		else sizer.appendChild(fresh);
+		if (insertBeforeEl) {
+			sizer.insertBefore(freshGap, insertBeforeEl);
+			sizer.insertBefore(freshCover, freshGap);
+		} else {
+			sizer.appendChild(freshCover);
+			sizer.appendChild(freshGap);
+		}
 	}
 }
 
@@ -422,11 +516,24 @@ class CahierEcolierSettingTab extends PluginSettingTab {
 		});
 
 		new Setting(containerEl)
-			.setName("Activer")
-			.setDesc("Bascule l'habillage cahier d'écolier.")
+			.setName("Activer (tout le plugin)")
+			.setDesc("Interrupteur général. Une fois activé, chaque note décide individuellement si elle utilise le cahier — voir ci-dessous.")
 			.addToggle((t) =>
 				t.setValue(s.enabled).onChange(async (v) => {
 					s.enabled = v;
+					await this.plugin.saveSettings();
+					this.plugin.applyStyles();
+				})
+			);
+
+		new Setting(containerEl)
+			.setName("Notes concernées par défaut")
+			.setDesc(
+				"Désactivé : seules les notes marquées (bouton dans la barre latérale, ou `cahier: true` dans le frontmatter) ont le look cahier. Activé : toutes les notes l'ont, sauf celles marquées `cahier: false`."
+			)
+			.addToggle((t) =>
+				t.setValue(s.defaultOnForAllNotes).onChange(async (v) => {
+					s.defaultOnForAllNotes = v;
 					await this.plugin.saveSettings();
 					this.plugin.applyStyles();
 				})
@@ -599,7 +706,7 @@ class CahierEcolierSettingTab extends PluginSettingTab {
 
 		containerEl.createEl("h3", { text: "Pages (par note)" });
 		containerEl.createEl("p", {
-			text: "Désactivé par défaut. Pour découper une note en feuilles séparées par un espace, ajoute `cahier-paged: true` dans son frontmatter (optionnellement `cahier-lines-per-page: 30` pour surcharger la valeur ci-dessous pour cette note). Ne s'applique qu'à l'éditeur, pas à la vue de lecture.",
+			text: "Désactivé par défaut. Pour découper une note en feuilles séparées par un espace, utilise la commande « Activer la pagination pour cette note » (ou ajoute `cahier-paged: true` dans le frontmatter, avec `cahier-lines-per-page: 30` en option pour surcharger la valeur ci-dessous pour cette note). Ne s'applique qu'à l'éditeur, pas à la vue de lecture.",
 			cls: "setting-item-description",
 		});
 
@@ -650,7 +757,7 @@ class CahierEcolierSettingTab extends PluginSettingTab {
 
 		containerEl.createEl("h3", { text: "Page de couverture (par note)" });
 		containerEl.createEl("p", {
-			text: "Désactivée par défaut. Pour ajouter une couverture avant le contenu, ajoute `cahier-cover: true` dans le frontmatter de la note, avec `cahier-cover-color: \"#274472\"` (une couleur) ou `cahier-cover-image: \"chemin/vers/image.jpg\"` (une image, prioritaire sur la couleur). Le titre affiché est la propriété `title` du frontmatter, sinon le nom du fichier.",
+			text: "Désactivée par défaut. Utilise la commande « Ajouter une page de couverture à cette note », ou ajoute `cahier-cover: true` dans le frontmatter, avec `cahier-cover-color: \"#274472\"` (une couleur) ou `cahier-cover-image: \"chemin/vers/image.jpg\"` (une image, prioritaire sur la couleur). Le titre affiché est la propriété `title` du frontmatter, sinon le nom du fichier. La couverture fait la même hauteur qu'une page (lignes par page × espacement des lignes), avec un saut de page avant le contenu.",
 			cls: "setting-item-description",
 		});
 
@@ -663,21 +770,6 @@ class CahierEcolierSettingTab extends PluginSettingTab {
 					await this.plugin.saveSettings();
 					this.plugin.applyStyles();
 				})
-			);
-
-		new Setting(containerEl)
-			.setName("Hauteur de la couverture")
-			.setDesc(`${s.coverHeight}px`)
-			.addSlider((sl) =>
-				sl
-					.setLimits(200, 900, 10)
-					.setValue(s.coverHeight)
-					.onChange(async (v) => {
-						s.coverHeight = v;
-						await this.plugin.saveSettings();
-						this.plugin.applyStyles();
-						this.display();
-					})
 			);
 
 		new Setting(containerEl).addButton((b) =>

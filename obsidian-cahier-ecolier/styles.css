@@ -46,10 +46,22 @@
 /* ---- Texte : police manuscrite posée sur les lignes ---- */
 
 .cahier-ecolier-editor.cahier-ecolier-enabled .cm-content,
-.cahier-ecolier-editor.cahier-ecolier-enabled .cm-line,
 .cahier-ecolier-reading.cahier-ecolier-enabled .markdown-preview-view {
 	font-family: var(--cahier-font-family);
+	color: var(--cahier-text-color);
+}
+
+/* Les titres (HyperMD-header en édition, h1-h6 en lecture) gardent leur
+   propre taille/graisse — seuls le texte normal et les listes/citations
+   sont forcés à la taille du cahier, sinon les titres perdent tout relief
+   visuel (ils deviennent juste "en gras", plus "grands"). */
+.cahier-ecolier-editor.cahier-ecolier-enabled .cm-line:not(.HyperMD-header) {
 	font-size: var(--cahier-font-size);
+	color: var(--cahier-text-color);
+}
+
+.cahier-ecolier-editor.cahier-ecolier-enabled .cm-line.HyperMD-header {
+	font-family: var(--cahier-font-family);
 	color: var(--cahier-text-color);
 }
 
@@ -69,7 +81,6 @@
 }
 
 .cahier-ecolier-editor.cahier-ecolier-enabled .cm-line {
-	line-height: var(--cahier-line-height);
 	padding-top: 0;
 	padding-bottom: 0;
 	/* Le retrait de texte est posé ligne par ligne, pas sur .cm-content : les
@@ -78,12 +89,31 @@
 	padding-left: calc(var(--cahier-margin-position) + 16px) !important;
 }
 
+.cahier-ecolier-editor.cahier-ecolier-enabled .cm-line:not(.HyperMD-header) {
+	/* padding-top + line-height réduit d'autant : la hauteur totale de la
+	   ligne (donc la position de la bordure/ligne bleue) ne change pas,
+	   mais le texte descend légèrement pour vraiment "reposer" sur la ligne
+	   au lieu de flotter au-dessus. */
+	padding-top: 8px;
+	line-height: calc(var(--cahier-line-height) - 8px);
+}
+
 .cahier-ecolier-reading.cahier-ecolier-enabled .markdown-preview-view p,
 .cahier-ecolier-reading.cahier-ecolier-enabled .markdown-preview-view li,
 .cahier-ecolier-reading.cahier-ecolier-enabled .markdown-preview-view blockquote,
 .cahier-ecolier-reading.cahier-ecolier-enabled .markdown-preview-view td,
 .cahier-ecolier-reading.cahier-ecolier-enabled .markdown-preview-view th {
-	line-height: var(--cahier-line-height);
+	padding-top: 8px;
+	line-height: calc(var(--cahier-line-height) - 8px);
+	box-sizing: border-box;
+}
+
+/* ---- Pas de papier derrière les propriétés (frontmatter) ---- */
+
+.cahier-ecolier-editor.cahier-ecolier-enabled .cm-content .metadata-container,
+.cahier-ecolier-reading.cahier-ecolier-enabled .markdown-preview-view .mod-header,
+.cahier-ecolier-reading.cahier-ecolier-enabled .markdown-preview-view .mod-frontmatter {
+	background-color: var(--background-primary);
 }
 
 /* ---- Lignes bleues : une bordure par ligne, pas un motif de fond global ----
@@ -146,8 +176,9 @@
 
 .cahier-cover-page {
 	/* La hauteur est posée en style inline (JS) — fixe et connue à l'avance,
-	   pour que CodeMirror la mesure correctement pendant le défilement. */
-	margin-bottom: var(--cahier-page-margin, 24px);
+	   pour que CodeMirror la mesure correctement pendant le défilement.
+	   L'espace après la couverture est un vrai saut de page (.cahier-page-gap
+	   inséré juste après), pas une simple marge. */
 	background-color: var(--cahier-paper);
 	background-size: cover;
 	background-position: center;
