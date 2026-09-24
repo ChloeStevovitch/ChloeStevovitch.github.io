@@ -1,10 +1,12 @@
 # Cahier d'écolier
 
-Plugin Obsidian qui habille l'éditeur (et, si tu veux, la vue de lecture) en
-papier ligné bleu à marge rouge, avec une police manuscrite — l'ambiance d'un
-cahier d'écolier. Tout est réglable en direct depuis les paramètres du
-plugin : couleurs, espacement des lignes, position de la marge, police,
-taille du texte.
+Plugin Obsidian qui habille l'éditeur (Live Preview / source, celui où tu
+écris) en papier ligné bleu à marge rouge, avec une police manuscrite —
+l'ambiance d'un cahier d'écolier, directement pendant que tu tapes. La vue
+de lecture d'Obsidian n'est pas touchée par le plugin — un seul mode plutôt
+que d'essayer de synchroniser deux affichages différents. Tout est réglable
+en direct depuis les paramètres du plugin : couleurs, espacement des lignes,
+position de la marge, police, taille du texte.
 
 Par défaut, **aucune note ne l'a automatiquement** — tu choisis toi-même
 lesquelles, avec le bouton dans la barre latérale gauche (icône livre ouvert)
@@ -50,11 +52,15 @@ Désactivées par défaut. Le plus simple : ouvre la palette de commandes
   cahier (même chose que le bouton de la barre latérale).
 - **Activer la pagination pour cette note** — découpe la note en feuilles
   séparées par un espace, avec une marge blanche (sans lignes) en haut et
-  en bas de chaque feuille. Éditeur uniquement, pas la vue de lecture.
-- **Ajouter une page de couverture à cette note** — insère une couverture
-  avant le contenu (couleur par défaut depuis les paramètres), avec un
-  vrai saut de page avant que le texte commence. Sa hauteur correspond
-  toujours à celle d'une page (lignes par page × espacement des lignes).
+  en bas de chaque feuille.
+- **Ajouter une page de couverture à cette note (couleur)** — insère une
+  couverture avant le contenu (couleur par défaut depuis les paramètres),
+  avec un vrai saut de page avant que le texte commence. Sa hauteur
+  correspond toujours à celle d'une page (lignes par page × espacement
+  des lignes).
+- **Choisir une image de couverture pour cette note (parcourir le coffre)**
+  — même chose, mais ouvre un sélecteur listant les images du coffre
+  (png/jpg/jpeg/gif/bmp/svg/webp/avif) au lieu d'une couleur.
 
 Ces commandes remplissent le frontmatter pour toi. Tu peux aussi l'écrire
 à la main si tu préfères :

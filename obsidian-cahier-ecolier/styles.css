@@ -1,4 +1,6 @@
-/* Cahier d'écolier — papier ligné bleu, marge rouge, police manuscrite. */
+/* Cahier d'écolier — papier ligné bleu, marge rouge, police manuscrite.
+   S'applique uniquement à l'éditeur (Live Preview / source) — la vue de
+   lecture d'Obsidian n'est pas touchée par le plugin. */
 
 @font-face {
 	font-family: "Cahier Ecolier Patrick Hand";
@@ -9,17 +11,17 @@
 }
 
 /* ---- Papier : feuille centrée, plus large que le texte, moins large que la page ----
-   La ligne rouge et les lignes bleues sont peintes sur .cm-content /
-   .markdown-preview-sizer (pas sur le conteneur qui défile), ce qui les
-   limite à la largeur du "papier" réglée par --cahier-paper-width. Au-delà,
-   le fond reste celui d'Obsidian — l'effet d'une feuille posée sur la page. */
+   La ligne rouge est peinte sur .cm-content (pas .cm-scroller, le conteneur
+   qui défile), ce qui la limite à la largeur du "papier" réglée par
+   --cahier-paper-width. Au-delà, le fond reste celui d'Obsidian — l'effet
+   d'une feuille posée sur la page. */
 
-.cahier-ecolier-editor.cahier-ecolier-enabled .cm-content,
-.cahier-ecolier-reading.cahier-ecolier-enabled .markdown-preview-sizer {
+.cahier-ecolier-enabled .cm-content {
 	max-width: var(--cahier-paper-width) !important;
 	margin-left: auto !important;
 	margin-right: auto !important;
 	background-color: var(--cahier-paper);
+	padding-top: 0;
 	/* Seule la marge rouge verticale est peinte ici. Les lignes bleues
 	   horizontales sont portées par chaque ligne de texte elle-même (voir
 	   plus bas) : ça les garde alignées avec leur propre texte, même quand
@@ -39,48 +41,27 @@
 	background-repeat: no-repeat;
 }
 
-.cahier-ecolier-editor.cahier-ecolier-enabled .cm-content {
-	padding-top: 0;
-}
-
 /* ---- Texte : police manuscrite posée sur les lignes ---- */
 
-.cahier-ecolier-editor.cahier-ecolier-enabled .cm-content,
-.cahier-ecolier-reading.cahier-ecolier-enabled .markdown-preview-view {
+.cahier-ecolier-enabled .cm-content {
 	font-family: var(--cahier-font-family);
 	color: var(--cahier-text-color);
 }
 
-/* Les titres (HyperMD-header en édition, h1-h6 en lecture) gardent leur
-   propre taille/graisse — seuls le texte normal et les listes/citations
-   sont forcés à la taille du cahier, sinon les titres perdent tout relief
-   visuel (ils deviennent juste "en gras", plus "grands"). */
-.cahier-ecolier-editor.cahier-ecolier-enabled .cm-line:not(.HyperMD-header) {
+/* Les titres (HyperMD-header) gardent leur propre taille/graisse — seul le
+   texte normal est forcé à la taille du cahier, sinon les titres perdent
+   tout relief visuel (ils deviennent juste "en gras", plus "grands"). */
+.cahier-ecolier-enabled .cm-line:not(.HyperMD-header) {
 	font-size: var(--cahier-font-size);
 	color: var(--cahier-text-color);
 }
 
-.cahier-ecolier-editor.cahier-ecolier-enabled .cm-line.HyperMD-header {
+.cahier-ecolier-enabled .cm-line.HyperMD-header {
 	font-family: var(--cahier-font-family);
 	color: var(--cahier-text-color);
 }
 
-.cahier-ecolier-editor.cahier-ecolier-enabled .cm-line span,
-.cahier-ecolier-reading.cahier-ecolier-enabled .markdown-preview-view p,
-.cahier-ecolier-reading.cahier-ecolier-enabled .markdown-preview-view li,
-.cahier-ecolier-reading.cahier-ecolier-enabled .markdown-preview-view h1,
-.cahier-ecolier-reading.cahier-ecolier-enabled .markdown-preview-view h2,
-.cahier-ecolier-reading.cahier-ecolier-enabled .markdown-preview-view h3,
-.cahier-ecolier-reading.cahier-ecolier-enabled .markdown-preview-view h4,
-.cahier-ecolier-reading.cahier-ecolier-enabled .markdown-preview-view h5,
-.cahier-ecolier-reading.cahier-ecolier-enabled .markdown-preview-view h6,
-.cahier-ecolier-reading.cahier-ecolier-enabled .markdown-preview-view blockquote,
-.cahier-ecolier-reading.cahier-ecolier-enabled .markdown-preview-view td,
-.cahier-ecolier-reading.cahier-ecolier-enabled .markdown-preview-view th {
-	color: var(--cahier-text-color);
-}
-
-.cahier-ecolier-editor.cahier-ecolier-enabled .cm-line {
+.cahier-ecolier-enabled .cm-line {
 	padding-top: 0;
 	padding-bottom: 0;
 	/* Le retrait de texte est posé ligne par ligne, pas sur .cm-content : les
@@ -89,7 +70,7 @@
 	padding-left: calc(var(--cahier-margin-position) + 16px) !important;
 }
 
-.cahier-ecolier-editor.cahier-ecolier-enabled .cm-line:not(.HyperMD-header) {
+.cahier-ecolier-enabled .cm-line:not(.HyperMD-header) {
 	/* padding-top + line-height réduit d'autant : la hauteur totale de la
 	   ligne (donc la position de la bordure/ligne bleue) ne change pas,
 	   mais le texte descend légèrement pour vraiment "reposer" sur la ligne
@@ -98,21 +79,9 @@
 	line-height: calc(var(--cahier-line-height) - 8px);
 }
 
-.cahier-ecolier-reading.cahier-ecolier-enabled .markdown-preview-view p,
-.cahier-ecolier-reading.cahier-ecolier-enabled .markdown-preview-view li,
-.cahier-ecolier-reading.cahier-ecolier-enabled .markdown-preview-view blockquote,
-.cahier-ecolier-reading.cahier-ecolier-enabled .markdown-preview-view td,
-.cahier-ecolier-reading.cahier-ecolier-enabled .markdown-preview-view th {
-	padding-top: 8px;
-	line-height: calc(var(--cahier-line-height) - 8px);
-	box-sizing: border-box;
-}
-
 /* ---- Pas de papier derrière les propriétés (frontmatter) ---- */
 
-.cahier-ecolier-editor.cahier-ecolier-enabled .cm-content .metadata-container,
-.cahier-ecolier-reading.cahier-ecolier-enabled .markdown-preview-view .mod-header,
-.cahier-ecolier-reading.cahier-ecolier-enabled .markdown-preview-view .mod-frontmatter {
+.cahier-ecolier-enabled .cm-content .metadata-container {
 	background-color: var(--background-primary);
 }
 
@@ -120,7 +89,7 @@
    border-image peint un dégradé le long de la bordure — ça donne la marge
    blanche sans lignes de chaque côté, sans dépendre d'une phase globale. */
 
-.cahier-ecolier-editor.cahier-ecolier-enabled .cm-line {
+.cahier-ecolier-enabled .cm-line {
 	border-bottom: 1px solid var(--cahier-line-color);
 	border-image-slice: 1;
 	border-image-width: 0 0 1px 0;
@@ -135,25 +104,7 @@
 	);
 }
 
-.cahier-ecolier-reading.cahier-ecolier-enabled .markdown-preview-view p,
-.cahier-ecolier-reading.cahier-ecolier-enabled .markdown-preview-view li {
-	border-bottom: 1px solid var(--cahier-line-color);
-	border-image-slice: 1;
-	border-image-width: 0 0 1px 0;
-	border-image-source: linear-gradient(
-		to right,
-		transparent 0,
-		transparent var(--cahier-paper-side-margin),
-		var(--cahier-line-color) var(--cahier-paper-side-margin),
-		var(--cahier-line-color) calc(100% - var(--cahier-paper-side-margin)),
-		transparent calc(100% - var(--cahier-paper-side-margin)),
-		transparent 100%
-	);
-}
-
-
-/* ---- Sauts de page (éditeur uniquement) : espace + marges blanches entre feuilles ----
-   Le widget compense le padding-left du texte pour retrouver toute la largeur du papier. */
+/* ---- Sauts de page : espace + marges blanches entre feuilles ---- */
 
 .cahier-page-gap {
 	height: calc(var(--cahier-page-margin) * 2 + var(--cahier-page-gap-size));
@@ -172,7 +123,7 @@
 	pointer-events: none;
 }
 
-/* ---- Page de couverture (éditeur et vue de lecture) ---- */
+/* ---- Page de couverture ---- */
 
 .cahier-cover-page {
 	/* La hauteur est posée en style inline (JS) — fixe et connue à l'avance,

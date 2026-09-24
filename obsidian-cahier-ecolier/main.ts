@@ -1,4 +1,4 @@
-import { App, MarkdownView, Plugin, PluginSettingTab, Setting, TFile } from "obsidian";
+import { App, FuzzySuggestModal, MarkdownView, Plugin, PluginSettingTab, Setting, TFile } from "obsidian";
 import { Decoration, DecorationSet, EditorView, WidgetType } from "@codemirror/view";
 import { StateEffect, StateField, Text } from "@codemirror/state";
 
@@ -6,8 +6,6 @@ type FontChoice = "patrick-hand" | "system-cursive";
 
 interface CahierSettings {
 	enabled: boolean;
-	applyToEditor: boolean;
-	applyToReadingView: boolean;
 	defaultOnForAllNotes: boolean; // if false, a note needs `cahier: true` (frontmatter, or the ribbon button) to get the look
 	paperColor: string;
 	lineColor: string;
@@ -31,8 +29,6 @@ interface CahierSettings {
 
 const DEFAULT_SETTINGS: CahierSettings = {
 	enabled: true,
-	applyToEditor: true,
-	applyToReadingView: true,
 	defaultOnForAllNotes: false,
 	paperColor: "#faf5e9",
 	lineColor: "#a9c8e8",
@@ -57,7 +53,25 @@ const FONT_STACKS: Record<FontChoice, string> = {
 	"system-cursive": `"Segoe Print", "Bradley Hand", "Comic Sans MS", cursive`,
 };
 
-// ---- Sauts de page (éditeur uniquement — CodeMirror 6) ----
+const IMAGE_EXTENSIONS = new Set(["png", "jpg", "jpeg", "gif", "bmp", "svg", "webp", "avif"]);
+
+class ImagePickerModal extends FuzzySuggestModal<TFile> {
+	constructor(app: App, private onPick: (file: TFile) => void) {
+		super(app);
+		this.setPlaceholder("Choisir une image pour la couverture…");
+	}
+	getItems(): TFile[] {
+		return this.app.vault.getFiles().filter((f) => IMAGE_EXTENSIONS.has(f.extension.toLowerCase()));
+	}
+	getItemText(file: TFile): string {
+		return file.path;
+	}
+	onChooseItem(file: TFile): void {
+		this.onPick(file);
+	}
+}
+
+// ---- Sauts de page (CodeMirror 6) ----
 
 interface PagingConf {
 	enabled: boolean;
@@ -124,7 +138,7 @@ const pagingField = StateField.define<{ conf: PagingConf; deco: DecorationSet }>
 	provide: (f) => EditorView.decorations.from(f, (v) => v.deco),
 });
 
-// ---- Page de couverture (éditeur — CodeMirror 6, et vue de lecture — DOM direct) ----
+// ---- Page de couverture (CodeMirror 6) ----
 
 interface CoverConf {
 	enabled: boolean;
@@ -176,12 +190,6 @@ function buildCoverEl(conf: CoverConf): HTMLElement {
 	return div;
 }
 
-function buildCoverGapEl(): HTMLElement {
-	const div = document.createElement("div");
-	div.className = "cahier-page-gap cahier-cover-gap";
-	return div;
-}
-
 const coverField = StateField.define<DecorationSet>({
 	create() {
 		return Decoration.none;
@@ -207,10 +215,6 @@ const coverField = StateField.define<DecorationSet>({
 export default class CahierEcolierPlugin extends Plugin {
 	settings: CahierSettings;
 	private lastConfKeys = new WeakMap<EditorView, string>();
-	private lastReadingCoverKey: string | null = null;
-	private mutationObserver: MutationObserver | null = null;
-	private mutationDebounce: number | null = null;
-	private healInterval: number | null = null;
 
 	async onload() {
 		await this.loadSettings();
@@ -248,13 +252,23 @@ export default class CahierEcolierPlugin extends Plugin {
 
 		this.addCommand({
 			id: "enable-cahier-cover",
-			name: "Ajouter une page de couverture à cette note",
+			name: "Ajouter une page de couverture à cette note (couleur)",
 			callback: async () => {
 				await this.setFrontmatterFlags({ cahier: true, "cahier-cover": true }, (fm) => {
 					if (!fm["cahier-cover-color"] && !fm["cahier-cover-image"]) {
 						fm["cahier-cover-color"] = this.settings.coverColor;
 					}
 				});
+			},
+		});
+
+		this.addCommand({
+			id: "pick-cahier-cover-image",
+			name: "Choisir une image de couverture pour cette note (parcourir le coffre)",
+			callback: () => {
+				new ImagePickerModal(this.app, async (file) => {
+					await this.setFrontmatterFlags({ cahier: true, "cahier-cover": true, "cahier-cover-image": file.path });
+				}).open();
 			},
 		});
 
@@ -266,50 +280,11 @@ export default class CahierEcolierPlugin extends Plugin {
 				if (file === this.app.workspace.getActiveFile()) this.updateActiveFileFeatures();
 			})
 		);
-		this.app.workspace.onLayoutReady(() => {
-			this.updateActiveFileFeatures();
-			// Filet de sécurité : au tout premier chargement, la vue de lecture
-			// restaurée peut ne pas encore avoir son DOM prêt au moment où
-			// "layout ready" se déclenche.
-			setTimeout(() => this.updateActiveFileFeatures(), 400);
-		});
-
-		// Passer en vue de lecture (ou y revenir) ne déclenche aucun des
-		// événements ci-dessus — c'est ce hook, appelé à chaque rendu de la
-		// vue de lecture, qui réinsère la couverture à ce moment-là.
-		this.registerMarkdownPostProcessor(() => this.updateActiveFileFeatures());
-
-		// Filet de sécurité supplémentaire : la vue de lecture d'Obsidian peut
-		// recréer son propre DOM pendant le défilement (rendu virtualisé des
-		// sections), sans déclencher aucun des événements ci-dessus — ce qui
-		// laisse la couverture déjà insérée orpheline, détachée de l'arbre
-		// visible. Cet observateur la réinsère dès qu'il détecte un changement.
-		this.mutationObserver = new MutationObserver(() => {
-			if (this.mutationDebounce) window.clearTimeout(this.mutationDebounce);
-			this.mutationDebounce = window.setTimeout(() => {
-				this.mutationDebounce = null;
-				this.updateActiveFileFeatures();
-			}, 150);
-		});
-		this.mutationObserver.observe(document.body, { childList: true, subtree: true });
-
-		// Dernier filet, au cas où même l'observateur rate un changement : un
-		// contrôle périodique bon marché (la fonction se dédoublonne elle-même).
-		this.healInterval = window.setInterval(() => this.updateActiveFileFeatures(), 800);
+		this.app.workspace.onLayoutReady(() => this.updateActiveFileFeatures());
 	}
 
 	onunload() {
-		this.mutationObserver?.disconnect();
-		if (this.mutationDebounce) window.clearTimeout(this.mutationDebounce);
-		if (this.healInterval) window.clearInterval(this.healInterval);
-		document.body.classList.remove(
-			"cahier-ecolier-enabled",
-			"cahier-ecolier-editor",
-			"cahier-ecolier-reading",
-			"cahier-ecolier-paged",
-			"cahier-ecolier-cover"
-		);
-		document.querySelectorAll(".cahier-cover-page, .cahier-cover-gap").forEach((el) => el.remove());
+		document.body.classList.remove("cahier-ecolier-enabled", "cahier-ecolier-paged", "cahier-ecolier-cover");
 	}
 
 	async loadSettings() {
@@ -383,13 +358,7 @@ export default class CahierEcolierPlugin extends Plugin {
 	updateActiveFileFeatures() {
 		const s = this.settings;
 		if (!s.enabled) {
-			document.body.classList.remove(
-				"cahier-ecolier-enabled",
-				"cahier-ecolier-editor",
-				"cahier-ecolier-reading",
-				"cahier-ecolier-paged",
-				"cahier-ecolier-cover"
-			);
+			document.body.classList.remove("cahier-ecolier-enabled", "cahier-ecolier-paged", "cahier-ecolier-cover");
 			return;
 		}
 
@@ -401,8 +370,6 @@ export default class CahierEcolierPlugin extends Plugin {
 		const overallEnabled = s.enabled && noteEnabled;
 
 		document.body.classList.toggle("cahier-ecolier-enabled", overallEnabled);
-		document.body.classList.toggle("cahier-ecolier-editor", overallEnabled && s.applyToEditor);
-		document.body.classList.toggle("cahier-ecolier-reading", overallEnabled && s.applyToReadingView);
 
 		const coverEnabled = overallEnabled && !!fm?.["cahier-cover"];
 		const title = (fm?.title as string) || file?.basename || "";
@@ -417,17 +384,18 @@ export default class CahierEcolierPlugin extends Plugin {
 		document.body.classList.toggle("cahier-ecolier-paged", paged);
 
 		const cm = this.getCm();
+		if (!cm) return;
+
 		let coverPos = 0;
 		let startLine = 0;
-		if (cm) {
-			const doc = cm.state.doc;
-			const fmEndLine = frontmatterEndLine(doc);
-			startLine = fmEndLine;
-			if (fmEndLine > 0) {
-				const line = doc.line(fmEndLine);
-				coverPos = Math.min(line.to + 1, doc.length);
-			}
+		const doc = cm.state.doc;
+		const fmEndLine = frontmatterEndLine(doc);
+		startLine = fmEndLine;
+		if (fmEndLine > 0) {
+			const line = doc.line(fmEndLine);
+			coverPos = Math.min(line.to + 1, doc.length);
 		}
+
 		const coverConf: CoverConf = {
 			enabled: coverEnabled,
 			title,
@@ -439,60 +407,12 @@ export default class CahierEcolierPlugin extends Plugin {
 		};
 		const pagingConf: PagingConf = { enabled: paged, linesPerPage, startLine };
 
-		if (cm) {
-			// Évite de redispatcher (et donc de reconstruire le widget) quand rien n'a
-			// changé — "layout-change" se déclenche pour toutes sortes de raisons.
-			const key = JSON.stringify([coverConf, pagingConf]);
-			if (this.lastConfKeys.get(cm) !== key) {
-				this.lastConfKeys.set(cm, key);
-				cm.dispatch({ effects: [setCover.of(coverConf), setPaging.of(pagingConf)] });
-			}
-		}
-
-		this.renderReadingCover(coverConf);
-	}
-
-	private renderReadingCover(conf: CoverConf) {
-		const mdView = this.app.workspace.getActiveViewOfType(MarkdownView);
-		const sizer = mdView?.contentEl?.querySelector(".markdown-preview-sizer") as HTMLElement | null;
-		if (!sizer) return;
-		const existingCover = sizer.querySelector(":scope > .cahier-cover-page");
-		const existingGap = sizer.querySelector(":scope > .cahier-cover-gap");
-		if (!conf.enabled) {
-			existingCover?.remove();
-			existingGap?.remove();
-			this.lastReadingCoverKey = null;
-			return;
-		}
-		const key = JSON.stringify(conf);
-		if (existingCover && existingGap && key === this.lastReadingCoverKey) return;
-		this.lastReadingCoverKey = key;
-		existingGap?.remove();
-		const freshCover = buildCoverEl(conf);
-		const freshGap = buildCoverGapEl();
-		if (existingCover) {
-			existingCover.replaceWith(freshCover);
-			freshCover.insertAdjacentElement("afterend", freshGap);
-			return;
-		}
-		// Insère juste avant le premier bloc de contenu réel — pas avant le
-		// "pusher" d'Obsidian, ni le bandeau titre+propriétés (.mod-header),
-		// ni un éventuel bloc de frontmatter brut (.mod-frontmatter) : ces
-		// noms de classe varient selon la version, donc on saute tout ce qui
-		// n'est manifestement pas un paragraphe/titre/liste/etc. du texte.
-		const skipClasses = ["markdown-preview-pusher", "mod-header", "mod-frontmatter"];
-		let insertBeforeEl: Element | null = null;
-		for (const child of Array.from(sizer.children)) {
-			if (skipClasses.some((c) => child.classList.contains(c))) continue;
-			insertBeforeEl = child;
-			break;
-		}
-		if (insertBeforeEl) {
-			sizer.insertBefore(freshGap, insertBeforeEl);
-			sizer.insertBefore(freshCover, freshGap);
-		} else {
-			sizer.appendChild(freshCover);
-			sizer.appendChild(freshGap);
+		// Évite de redispatcher (et donc de reconstruire le widget) quand rien n'a
+		// changé — "layout-change" se déclenche pour toutes sortes de raisons.
+		const key = JSON.stringify([coverConf, pagingConf]);
+		if (this.lastConfKeys.get(cm) !== key) {
+			this.lastConfKeys.set(cm, key);
+			cm.dispatch({ effects: [setCover.of(coverConf), setPaging.of(pagingConf)] });
 		}
 	}
 }
@@ -512,7 +432,7 @@ class CahierEcolierSettingTab extends PluginSettingTab {
 
 		containerEl.createEl("h2", { text: "Cahier d'écolier" });
 		containerEl.createEl("p", {
-			text: "Papier ligné bleu à marge rouge et police manuscrite, pour retrouver l'ambiance d'un cahier d'écolier.",
+			text: "Papier ligné bleu à marge rouge et police manuscrite, pour retrouver l'ambiance d'un cahier d'écolier — directement dans l'éditeur, en écrivant. La vue de lecture d'Obsidian n'est pas touchée par le plugin.",
 		});
 
 		new Setting(containerEl)
@@ -534,26 +454,6 @@ class CahierEcolierSettingTab extends PluginSettingTab {
 			.addToggle((t) =>
 				t.setValue(s.defaultOnForAllNotes).onChange(async (v) => {
 					s.defaultOnForAllNotes = v;
-					await this.plugin.saveSettings();
-					this.plugin.applyStyles();
-				})
-			);
-
-		new Setting(containerEl)
-			.setName("Appliquer à l'éditeur")
-			.addToggle((t) =>
-				t.setValue(s.applyToEditor).onChange(async (v) => {
-					s.applyToEditor = v;
-					await this.plugin.saveSettings();
-					this.plugin.applyStyles();
-				})
-			);
-
-		new Setting(containerEl)
-			.setName("Appliquer à la vue de lecture")
-			.addToggle((t) =>
-				t.setValue(s.applyToReadingView).onChange(async (v) => {
-					s.applyToReadingView = v;
 					await this.plugin.saveSettings();
 					this.plugin.applyStyles();
 				})
@@ -706,7 +606,7 @@ class CahierEcolierSettingTab extends PluginSettingTab {
 
 		containerEl.createEl("h3", { text: "Pages (par note)" });
 		containerEl.createEl("p", {
-			text: "Désactivé par défaut. Pour découper une note en feuilles séparées par un espace, utilise la commande « Activer la pagination pour cette note » (ou ajoute `cahier-paged: true` dans le frontmatter, avec `cahier-lines-per-page: 30` en option pour surcharger la valeur ci-dessous pour cette note). Ne s'applique qu'à l'éditeur, pas à la vue de lecture.",
+			text: "Désactivé par défaut. Pour découper une note en feuilles séparées par un espace, utilise la commande « Activer la pagination pour cette note » (ou ajoute `cahier-paged: true` dans le frontmatter, avec `cahier-lines-per-page: 30` en option pour surcharger la valeur ci-dessous pour cette note).",
 			cls: "setting-item-description",
 		});
 
@@ -757,7 +657,7 @@ class CahierEcolierSettingTab extends PluginSettingTab {
 
 		containerEl.createEl("h3", { text: "Page de couverture (par note)" });
 		containerEl.createEl("p", {
-			text: "Désactivée par défaut. Utilise la commande « Ajouter une page de couverture à cette note », ou ajoute `cahier-cover: true` dans le frontmatter, avec `cahier-cover-color: \"#274472\"` (une couleur) ou `cahier-cover-image: \"chemin/vers/image.jpg\"` (une image, prioritaire sur la couleur). Le titre affiché est la propriété `title` du frontmatter, sinon le nom du fichier. La couverture fait la même hauteur qu'une page (lignes par page × espacement des lignes), avec un saut de page avant le contenu.",
+			text: "Désactivée par défaut. Utilise la commande « Ajouter une page de couverture à cette note » (couleur) ou « Choisir une image de couverture pour cette note » (parcourt ton coffre), ou ajoute `cahier-cover: true` dans le frontmatter à la main, avec `cahier-cover-color: \"#274472\"` ou `cahier-cover-image: \"chemin/vers/image.jpg\"` (prioritaire sur la couleur). Le titre affiché est la propriété `title` du frontmatter, sinon le nom du fichier. Sa hauteur correspond à celle d'une page (lignes par page × espacement des lignes), avec un saut de page avant le contenu.",
 			cls: "setting-item-description",
 		});
 
