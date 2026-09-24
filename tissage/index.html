@@ -150,6 +150,10 @@
       <label>Épaisseur du fond (mm) <input type="number" id="zBase" min="0" max="20" step="0.05"></label>
       <label>Épaisseur des bandes (mm) <input type="number" id="zBand" min="0.05" max="20" step="0.05"></label>
       <label>Relief du tissage (mm) <input type="number" id="zWeave" min="0" max="20" step="0.05"></label>
+      <label>Mélange aux croisements <select id="mix"><option value="layers">Couches superposées</option><option value="dither">Trame de lignes</option></select></label>
+      <label id="layerHL">Hauteur de couche (mm) <input type="number" id="layerH" min="0.04" max="1" step="0.02"></label>
+      <label id="ditherWL">Largeur de trame (mm) <input type="number" id="ditherW" min="0.1" max="5" step="0.05"></label>
+      <p class="hint" id="mixHint"></p>
       <p class="hint" id="mmHint"></p>
       <div class="exports"><button class="btn" data-fmt="3mf">3MF</button></div>
     </section>
@@ -168,9 +172,10 @@ const DEFAULTS = {
   hC: ['#3f9e74', '#f39bc9', '#f4c84e', '#b8a6ea'],
   vC: ['#7f9ce6', '#f4c84e', '#b8a6ea', '#5b7bd5'],
   op: 100, weave: true, flip: false, tile: false, mosaic: false,
-  scale: 1, mmW: 100, zBase: 0.4, zBand: 0.4, zWeave: 0.2
+  scale: 1, mmW: 100, zBase: 0.4, zBand: 0.4, zWeave: 0.2,
+  mix: 'layers', layerH: 0.08, ditherW: 0.4
 };
-const MM = ['mmW', 'zBase', 'zBand', 'zWeave'];
+const MM = ['mmW', 'zBase', 'zBand', 'zWeave', 'layerH', 'ditherW'];
 let S;
 try { S = Object.assign({}, DEFAULTS, JSON.parse(localStorage.getItem('tissage') || '{}')); } catch { S = { ...DEFAULTS }; }
 S.hC = [...S.hC]; S.vC = [...S.vC];
@@ -184,7 +189,7 @@ function syncInputs() {
   SLIDERS.forEach(k => { $(k).value = S[k]; $(k + 'N').value = S[k]; });
   $('bg').value = S.bg; $('bgT').checked = S.bgT; $('weave').checked = S.weave; $('flip').checked = S.flip;
   $('tile').checked = S.tile; $('mosaic').checked = S.mosaic;
-  $('scale').value = S.scale; MM.forEach(k => $(k).value = S[k]);
+  $('scale').value = S.scale; $('mix').value = S.mix;MM.forEach(k => $(k).value = S[k]);
   renderSwatches('hC'); renderSwatches('vC');
 }
 function renderSwatches(key) {
@@ -241,7 +246,7 @@ function buildModel() {
     let hTop = S.weave ? (h.i + v.i) % 2 === 0 : false;
     if (S.flip) hTop = !hTop;
     const [under, over] = hTop ? [v.color, h.color] : [h.color, v.color];
-    cross.push({ ...r, c: under, a: 1, k: 'under' }, { ...r, c: over, a, k: 'over' });
+    cross.push({ ...r, c: under, a: 1, k: 'under' }, { ...r, c: over, a, k: 'over', u: under, od: hTop ? 'h' : 'v' });
   }
   return { W, H, LW, LH, rot, rects: base.concat(cross) };
 }
@@ -372,11 +377,37 @@ function build3MF(m) {
     return parts.get(name).mesh;
   };
   if (zb > 0) addPrism(part('Fond', S.bg), [[0, 0], [m.W, 0], [m.W, m.H], [0, m.H]].map(toMM), 0, zb);
+  const box = (c, x, y, w, h, z0, z1) => {
+    if (w <= 0 || h <= 0 || z1 - z0 <= 1e-6) return;
+    const corners = [[x, y], [x + w, y], [x + w, y + h], [x, y + h]].map(p => toCanvasPt(m, p[0], p[1]));
+    addPrism(part('Bande ' + c, c), clipToCanvas(corners, m.W, m.H).map(toMM), z0, z1);
+  };
+  const zTop = zb + hb + (S.weave ? hw : 0);
   for (const r of m.rects) {
-    if (r.k === 'under') continue; // caché sous la bande du dessus
-    const corners = [[r.x, r.y], [r.x + r.w, r.y], [r.x + r.w, r.y + r.h], [r.x, r.y + r.h]].map(p => toCanvasPt(m, p[0], p[1]));
-    const poly = clipToCanvas(corners, m.W, m.H).map(toMM);
-    addPrism(part('Bande ' + r.c, r.c), poly, zb, zb + hb + (r.k === 'over' && S.weave ? hw : 0));
+    if (r.k === 'under') continue; // traité avec la bande du dessus
+    if (r.k !== 'over') { box(r.c, r.x, r.y, r.w, r.h, zb, zb + hb); continue; }
+    const a = r.a;
+    if (a >= 1) { box(r.c, r.x, r.y, r.w, r.h, zb, zTop); continue; }
+    if (a <= 0) { box(r.u, r.x, r.y, r.w, r.h, zb, zTop); continue; }
+    if (S.mix === 'layers') {
+      // Couches : la couleur du dessous, puis une fine épaisseur de la couleur du dessus.
+      // La part du dessus suit l'opacité, arrondie à la hauteur de couche.
+      const H = zTop - zb, lh = Math.max(0.01, +S.layerH);
+      let split = Math.round(H * (1 - a) / lh) * lh;
+      split = Math.min(Math.max(split, 0), H);
+      box(r.u, r.x, r.y, r.w, r.h, zb, zb + split);
+      box(r.c, r.x, r.y, r.w, r.h, zb + split, zTop);
+    } else {
+      // Trame : lignes alternées des deux couleurs, parallèles à la bande du dessus.
+      // La ligne la plus fine fait la largeur de trame ; les proportions suivent l'opacité.
+      const wpx = Math.max(0.05, +S.ditherW) / s, P = wpx / Math.min(a, 1 - a), ow = a * P;
+      const horiz = r.od === 'h', len = horiz ? r.h : r.w, o0 = horiz ? r.y : r.x;
+      for (let d = 0; d < len; d += P) {
+        const o1 = Math.min(d + ow, len), u1 = Math.min(d + P, len);
+        if (horiz) { box(r.c, r.x, o0 + d, r.w, o1 - d, zb, zTop); box(r.u, r.x, o0 + o1, r.w, u1 - o1, zb, zTop); }
+        else { box(r.c, o0 + d, r.y, o1 - d, r.h, zb, zTop); box(r.u, o0 + o1, r.y, u1 - o1, r.h, zb, zTop); }
+      }
+    }
   }
   const f = x => +x.toFixed(4);
   const list = [...parts.entries()].filter(([, p]) => p.mesh.t.length);
@@ -441,7 +472,14 @@ function update() {
       : 'La taille suit l\'épaisseur, l\'espacement et le nombre de couleurs. Rotation désactivée pour garder le raccord.';
   } else $('tileHint').textContent = '';
   ['W', 'H', 'rot', 'rotN'].forEach(id => $(id).disabled = S.tile);
-  const mmH = +S.mmW * S.H / S.W, zTot = +S.zBase + +S.zBand + (S.weave ? +S.zWeave : 0);
+  $('layerHL').style.display = S.mix === 'layers' ? '' : 'none';
+  $('ditherWL').style.display = S.mix === 'dither' ? '' : 'none';
+  $('mixHint').textContent = S.op >= 100
+    ? 'Le mélange s\'applique quand l\'opacité aux croisements est sous 100 %.'
+    : S.mix === 'layers'
+      ? 'La couleur du dessous est imprimée d\'abord, puis une fine couche de la couleur du dessus (plus fine si l\'opacité est basse) : elle laisse transparaître celle du dessous. Règle la même hauteur de couche dans le trancheur.'
+      : 'Lignes alternées des deux couleurs, dont les proportions suivent l\'opacité. Mets au moins la largeur de ta buse (0,4 mm en général).';
+  const mmH = +S.mmW * S.H / S.W,zTot = +S.zBase + +S.zBand + (S.weave ? +S.zWeave : 0);
   $('mmHint').textContent = `Objet : ${(+S.mmW).toFixed(1)} × ${mmH.toFixed(1)} mm, ${zTot.toFixed(2)} mm d'épaisseur max. `
     + `Une pièce par couleur pour l'impression multicolore${+S.zBase > 0 ? '' : ' (sans fond : les bandes doivent se toucher)'}.`;
   renderPreview(buildModel());
@@ -483,6 +521,7 @@ $('bgT').onchange = e => { S.bgT = e.target.checked; update(); };
 $('weave').onchange = e => { S.weave = e.target.checked; update(); };
 $('flip').onchange = e => { S.flip = e.target.checked; update(); };
 $('scale').onchange = e => { S.scale = +e.target.value; update(); };
+$('mix').onchange = e => { S.mix = e.target.value; update(); };
 MM.forEach(k => $(k).addEventListener('input', e => {
   const el = e.target, v = +el.value;
   if (el.value === '' || isNaN(v) || v < +el.min || v > +el.max) return;
