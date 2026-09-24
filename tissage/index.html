@@ -147,7 +147,8 @@
     <section class="card">
       <h2>Impression 3D (3MF)</h2>
       <label>Largeur de l'objet (mm) <input type="number" id="mmW" min="5" max="1000" step="1"></label>
-      <label>Épaisseur du fond (mm) <input type="number" id="zBase" min="0" max="20" step="0.05"></label>
+      <label>Couche de liaison <select id="baseMode"><option value="full">Pleine</option><option value="bands">Sous les bandes (ajourée)</option><option value="none">Aucune</option></select></label>
+      <label id="zBaseL">Épaisseur de la liaison (mm) <input type="number" id="zBase" min="0.05" max="20" step="0.05"></label>
       <label>Épaisseur des bandes (mm) <input type="number" id="zBand" min="0.05" max="20" step="0.05"></label>
       <label>Relief du tissage (mm) <input type="number" id="zWeave" min="0" max="20" step="0.05"></label>
       <label>Mélange aux croisements <select id="mix"><option value="layers">Couches superposées</option><option value="dither">Trame de lignes</option></select></label>
@@ -173,12 +174,13 @@ const DEFAULTS = {
   vC: ['#7f9ce6', '#f4c84e', '#b8a6ea', '#5b7bd5'],
   op: 100, weave: true, flip: false, tile: false, mosaic: false,
   scale: 1, mmW: 100, zBase: 0.4, zBand: 0.4, zWeave: 0.2,
-  mix: 'layers', layerH: 0.08, ditherW: 0.4
+  mix: 'layers', layerH: 0.08, ditherW: 0.4, baseMode: 'full'
 };
 const MM = ['mmW', 'zBase', 'zBand', 'zWeave', 'layerH', 'ditherW'];
 let S;
 try { S = Object.assign({}, DEFAULTS, JSON.parse(localStorage.getItem('tissage') || '{}')); } catch { S = { ...DEFAULTS }; }
 S.hC = [...S.hC]; S.vC = [...S.vC];
+if (!(+S.zBase >= 0.05)) S.zBase = DEFAULTS.zBase; // anciens réglages sans couche de liaison
 
 const $ = id => document.getElementById(id);
 const SLIDERS = ['rot','hT','hG','hO','vT','vG','vO','op'];
@@ -189,7 +191,7 @@ function syncInputs() {
   SLIDERS.forEach(k => { $(k).value = S[k]; $(k + 'N').value = S[k]; });
   $('bg').value = S.bg; $('bgT').checked = S.bgT; $('weave').checked = S.weave; $('flip').checked = S.flip;
   $('tile').checked = S.tile; $('mosaic').checked = S.mosaic;
-  $('scale').value = S.scale; $('mix').value = S.mix;MM.forEach(k => $(k).value = S[k]);
+  $('scale').value = S.scale; $('mix').value = S.mix; $('baseMode').value = S.baseMode; MM.forEach(k => $(k).value = S[k]);
   renderSwatches('hC'); renderSwatches('vC');
 }
 function renderSwatches(key) {
@@ -369,19 +371,22 @@ function addPrism(mesh, poly, z0, z1) {
   }
 }
 function build3MF(m) {
-  const s = +S.mmW / m.W, zb = Math.max(0, +S.zBase), hb = Math.max(0.01, +S.zBand), hw = Math.max(0, +S.zWeave);
+  const s = +S.mmW / m.W, zb = S.baseMode === 'none' ? 0 : Math.max(0.05, +S.zBase),hb = Math.max(0.01, +S.zBand), hw = Math.max(0, +S.zWeave);
   const toMM = p => [p[0] * s, (m.H - p[1]) * s];
   const parts = new Map(); // nom -> { color, mesh }
   const part = (name, color) => {
     if (!parts.has(name)) parts.set(name, { color, mesh: { v: [], t: [] } });
     return parts.get(name).mesh;
   };
-  if (zb > 0) addPrism(part('Fond', S.bg), [[0, 0], [m.W, 0], [m.W, m.H], [0, m.H]].map(toMM), 0, zb);
-  const box = (c, x, y, w, h, z0, z1) => {
+  const box = (c, x, y, w, h, z0, z1, name) => {
     if (w <= 0 || h <= 0 || z1 - z0 <= 1e-6) return;
     const corners = [[x, y], [x + w, y], [x + w, y + h], [x, y + h]].map(p => toCanvasPt(m, p[0], p[1]));
-    addPrism(part('Bande ' + c, c), clipToCanvas(corners, m.W, m.H).map(toMM), z0, z1);
+    addPrism(part(name || 'Bande ' + c, c), clipToCanvas(corners, m.W, m.H).map(toMM), z0, z1);
   };
+  // Couche de liaison : une seule pièce sous tout le motif, qui tient les couleurs ensemble.
+  const LINK = 'Couche de liaison';
+  if (zb > 0 && S.baseMode === 'full') addPrism(part(LINK, S.bg), [[0, 0], [m.W, 0], [m.W, m.H], [0, m.H]].map(toMM), 0, zb);
+  if (zb > 0 && S.baseMode === 'bands') for (const r of m.rects) if (r.k !== 'under') box(S.bg, r.x, r.y, r.w, r.h, 0, zb, LINK);
   const zTop = zb + hb + (S.weave ? hw : 0);
   for (const r of m.rects) {
     if (r.k === 'under') continue; // traité avec la bande du dessus
@@ -420,15 +425,15 @@ function build3MF(m) {
     return oid;
   });
   const mats = list.map(([name, p]) => `<base name="${name}" displaycolor="${p.color.toUpperCase()}FF"/>`).join('');
-  const parent = id;
+  // Une pièce = un objet placé à ses coordonnées réelles : les trancheurs proposent alors
+  // de les charger comme un seul objet en plusieurs pièces, en gardant leurs positions.
   const model = `<?xml version="1.0" encoding="UTF-8"?>
 <model unit="millimeter" xml:lang="fr-FR" xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02">
 <metadata name="Title">Quadrillage tissé</metadata>
 <resources>
 <basematerials id="1">${mats}</basematerials>
-${xml}<object id="${parent}" type="model" name="Quadrillage tissé"><components>${objs.map(o => `<component objectid="${o}"/>`).join('')}</components></object>
-</resources>
-<build><item objectid="${parent}"/></build>
+${xml}</resources>
+<build>${objs.map(o => `<item objectid="${o}"/>`).join('')}</build>
 </model>`;
   const zip = new JSZip();
   zip.file('[Content_Types].xml', '<?xml version="1.0" encoding="UTF-8"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="model" ContentType="application/vnd.ms-package.3dmanufacturing-3dmodel+xml"/></Types>');
@@ -479,9 +484,12 @@ function update() {
     : S.mix === 'layers'
       ? 'La couleur du dessous est imprimée d\'abord, puis une fine couche de la couleur du dessus (plus fine si l\'opacité est basse) : elle laisse transparaître celle du dessous. Règle la même hauteur de couche dans le trancheur.'
       : 'Lignes alternées des deux couleurs, dont les proportions suivent l\'opacité. Mets au moins la largeur de ta buse (0,4 mm en général).';
-  const mmH = +S.mmW * S.H / S.W,zTot = +S.zBase + +S.zBand + (S.weave ? +S.zWeave : 0);
+  $('zBaseL').style.display = S.baseMode === 'none' ? 'none' : '';
+  const zb = S.baseMode === 'none' ? 0 : Math.max(0.05, +S.zBase);
+  const mmH = +S.mmW * S.H / S.W, zTot = zb + +S.zBand + (S.weave ? +S.zWeave : 0);
   $('mmHint').textContent = `Objet : ${(+S.mmW).toFixed(1)} × ${mmH.toFixed(1)} mm, ${zTot.toFixed(2)} mm d'épaisseur max. `
-    + `Une pièce par couleur pour l'impression multicolore${+S.zBase > 0 ? '' : ' (sans fond : les bandes doivent se toucher)'}.`;
+    + (S.baseMode === 'none' ? 'Sans couche de liaison, les couleurs risquent de se détacher. ' : 'La couche de liaison (couleur du fond) tient toutes les couleurs ensemble. ')
+    + "À l'import dans Bambu Studio, réponds « Oui » pour charger un seul objet en plusieurs pièces.";
   renderPreview(buildModel());
   try { localStorage.setItem('tissage', JSON.stringify(S)); } catch {}
 }
@@ -522,6 +530,7 @@ $('weave').onchange = e => { S.weave = e.target.checked; update(); };
 $('flip').onchange = e => { S.flip = e.target.checked; update(); };
 $('scale').onchange = e => { S.scale = +e.target.value; update(); };
 $('mix').onchange = e => { S.mix = e.target.value; update(); };
+$('baseMode').onchange = e => { S.baseMode = e.target.value; update(); };
 MM.forEach(k => $(k).addEventListener('input', e => {
   const el = e.target, v = +el.value;
   if (el.value === '' || isNaN(v) || v < +el.min || v > +el.max) return;
