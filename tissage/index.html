@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Quadrillage tissé</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style>
   :root {
     --bg: #f3eee8; --light: #ffffff; --dark: #d9d0c5;
@@ -16,7 +17,9 @@
   }
   * { box-sizing: border-box; }
   body { margin: 0; min-height: 100vh; background: var(--bg); color: var(--ink); font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
-  header { background: var(--bar); color: var(--on-bar); padding: 14px 16px; font-weight: 700; font-size: 1.1rem; }
+  header { background: var(--bar); color: var(--on-bar); padding: 8px 16px; min-height: 50px; font-weight: 700; font-size: 1.1rem; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  #reset { border: none; border-radius: 12px; padding: 8px 14px; font: inherit; font-size: .85rem; font-weight: 600; cursor: pointer; background: rgba(255,255,255,.45); color: var(--on-bar); box-shadow: 3px 3px 6px rgba(0,0,0,.12), -2px -2px 5px rgba(255,255,255,.6); }
+  #reset:active { box-shadow: inset 2px 2px 5px rgba(0,0,0,.15), inset -2px -2px 5px rgba(255,255,255,.6); }
   .app { display: grid; grid-template-columns: 360px 1fr; min-height: calc(100vh - 50px); }
   aside { padding: 24px 20px; overflow-y: auto; max-height: calc(100vh - 50px); }
   .sub { color: var(--mute); font-size: .85rem; line-height: 1.5; margin: 0 4px 20px; }
@@ -88,7 +91,7 @@
 </style>
 </head>
 <body>
-<header>Quadrillage tissé</header>
+<header><span>Quadrillage tissé</span><button id="reset" title="Revenir aux réglages par défaut">Réinitialiser</button></header>
 <div class="app">
   <aside>
     <p class="sub">Bandes horizontales et verticales qui passent dessus / dessous en alternance.</p>
@@ -139,7 +142,16 @@
         <button class="btn" data-fmt="pdf">PDF</button>
         <button class="btn" data-fmt="svg">SVG</button>
       </div>
-      <div class="exports"><button class="btn ghost" id="reset">Réinitialiser</button></div>
+    </section>
+
+    <section class="card">
+      <h2>Impression 3D (3MF)</h2>
+      <label>Largeur de l'objet (mm) <input type="number" id="mmW" min="5" max="1000" step="1"></label>
+      <label>Épaisseur du fond (mm) <input type="number" id="zBase" min="0" max="20" step="0.05"></label>
+      <label>Épaisseur des bandes (mm) <input type="number" id="zBand" min="0.05" max="20" step="0.05"></label>
+      <label>Relief du tissage (mm) <input type="number" id="zWeave" min="0" max="20" step="0.05"></label>
+      <p class="hint" id="mmHint"></p>
+      <div class="exports"><button class="btn" data-fmt="3mf">3MF</button></div>
     </section>
   </aside>
 
@@ -155,8 +167,10 @@ const DEFAULTS = {
   hT: 90, hG: 150, hO: 60, vT: 90, vG: 150, vO: 60,
   hC: ['#3f9e74', '#f39bc9', '#f4c84e', '#b8a6ea'],
   vC: ['#7f9ce6', '#f4c84e', '#b8a6ea', '#5b7bd5'],
-  op: 100, weave: true, flip: false, tile: false, mosaic: false
+  op: 100, weave: true, flip: false, tile: false, mosaic: false,
+  scale: 1, mmW: 100, zBase: 0.4, zBand: 0.4, zWeave: 0.2
 };
+const MM = ['mmW', 'zBase', 'zBand', 'zWeave'];
 let S;
 try { S = Object.assign({}, DEFAULTS, JSON.parse(localStorage.getItem('tissage') || '{}')); } catch { S = { ...DEFAULTS }; }
 S.hC = [...S.hC]; S.vC = [...S.vC];
@@ -170,6 +184,7 @@ function syncInputs() {
   SLIDERS.forEach(k => { $(k).value = S[k]; $(k + 'N').value = S[k]; });
   $('bg').value = S.bg; $('bgT').checked = S.bgT; $('weave').checked = S.weave; $('flip').checked = S.flip;
   $('tile').checked = S.tile; $('mosaic').checked = S.mosaic;
+  $('scale').value = S.scale; MM.forEach(k => $(k).value = S[k]);
   renderSwatches('hC'); renderSwatches('vC');
 }
 function renderSwatches(key) {
@@ -226,7 +241,7 @@ function buildModel() {
     let hTop = S.weave ? (h.i + v.i) % 2 === 0 : false;
     if (S.flip) hTop = !hTop;
     const [under, over] = hTop ? [v.color, h.color] : [h.color, v.color];
-    cross.push({ ...r, c: under, a: 1 }, { ...r, c: over, a });
+    cross.push({ ...r, c: under, a: 1, k: 'under' }, { ...r, c: over, a, k: 'over' });
   }
   return { W, H, LW, LH, rot, rects: base.concat(cross) };
 }
@@ -304,6 +319,93 @@ ${rects}
 </svg>`;
 }
 
+/* Rendu 3MF : un objet en plusieurs pièces (fond + une pièce par couleur),
+   pour pouvoir attribuer un filament à chaque pièce dans le trancheur. */
+function toCanvasPt(m, x, y) {
+  if (!m.rot) return [x, y];
+  const t = m.rot * Math.PI / 180, c = Math.cos(t), s = Math.sin(t);
+  const dx = x - m.LW / 2, dy = y - m.LH / 2;
+  return [c * dx - s * dy + m.W / 2, s * dx + c * dy + m.H / 2];
+}
+function clipToCanvas(pts, W, H) {
+  const edges = [p => p[0] >= 0, p => p[0] <= W, p => p[1] >= 0, p => p[1] <= H];
+  const inter = [
+    (a, b) => { const t = (0 - a[0]) / (b[0] - a[0]); return [0, a[1] + t * (b[1] - a[1])]; },
+    (a, b) => { const t = (W - a[0]) / (b[0] - a[0]); return [W, a[1] + t * (b[1] - a[1])]; },
+    (a, b) => { const t = (0 - a[1]) / (b[1] - a[1]); return [a[0] + t * (b[0] - a[0]), 0]; },
+    (a, b) => { const t = (H - a[1]) / (b[1] - a[1]); return [a[0] + t * (b[0] - a[0]), H]; }
+  ];
+  for (let e = 0; e < 4 && pts.length; e++) {
+    const out = [];
+    for (let i = 0; i < pts.length; i++) {
+      const a = pts[i], b = pts[(i + 1) % pts.length], ina = edges[e](a), inb = edges[e](b);
+      if (ina) out.push(a);
+      if (ina !== inb) out.push(inter[e](a, b));
+    }
+    pts = out;
+  }
+  return pts;
+}
+function addPrism(mesh, poly, z0, z1) {
+  let area = 0;
+  for (let i = 0; i < poly.length; i++) { const a = poly[i], b = poly[(i + 1) % poly.length]; area += a[0] * b[1] - b[0] * a[1]; }
+  if (Math.abs(area) < 1e-6 || poly.length < 3) return;
+  if (area < 0) poly = poly.slice().reverse();
+  const n = poly.length, o = mesh.v.length;
+  poly.forEach(p => mesh.v.push([p[0], p[1], z0]));
+  poly.forEach(p => mesh.v.push([p[0], p[1], z1]));
+  for (let i = 1; i < n - 1; i++) {
+    mesh.t.push([o, o + i + 1, o + i]);                 // dessous
+    mesh.t.push([o + n, o + n + i, o + n + i + 1]);     // dessus
+  }
+  for (let i = 0; i < n; i++) {
+    const j = (i + 1) % n;
+    mesh.t.push([o + i, o + j, o + n + j], [o + i, o + n + j, o + n + i]);
+  }
+}
+function build3MF(m) {
+  const s = +S.mmW / m.W, zb = Math.max(0, +S.zBase), hb = Math.max(0.01, +S.zBand), hw = Math.max(0, +S.zWeave);
+  const toMM = p => [p[0] * s, (m.H - p[1]) * s];
+  const parts = new Map(); // nom -> { color, mesh }
+  const part = (name, color) => {
+    if (!parts.has(name)) parts.set(name, { color, mesh: { v: [], t: [] } });
+    return parts.get(name).mesh;
+  };
+  if (zb > 0) addPrism(part('Fond', S.bg), [[0, 0], [m.W, 0], [m.W, m.H], [0, m.H]].map(toMM), 0, zb);
+  for (const r of m.rects) {
+    if (r.k === 'under') continue; // caché sous la bande du dessus
+    const corners = [[r.x, r.y], [r.x + r.w, r.y], [r.x + r.w, r.y + r.h], [r.x, r.y + r.h]].map(p => toCanvasPt(m, p[0], p[1]));
+    const poly = clipToCanvas(corners, m.W, m.H).map(toMM);
+    addPrism(part('Bande ' + r.c, r.c), poly, zb, zb + hb + (r.k === 'over' && S.weave ? hw : 0));
+  }
+  const f = x => +x.toFixed(4);
+  const list = [...parts.entries()].filter(([, p]) => p.mesh.t.length);
+  let id = 2, xml = '';
+  const objs = list.map(([name, p]) => {
+    const oid = id++;
+    const verts = p.mesh.v.map(v => `<vertex x="${f(v[0])}" y="${f(v[1])}" z="${f(v[2])}"/>`).join('');
+    const tris = p.mesh.t.map(t => `<triangle v1="${t[0]}" v2="${t[1]}" v3="${t[2]}"/>`).join('');
+    xml += `<object id="${oid}" type="model" name="${name}" pid="1" pindex="${oid - 2}"><mesh><vertices>${verts}</vertices><triangles>${tris}</triangles></mesh></object>\n`;
+    return oid;
+  });
+  const mats = list.map(([name, p]) => `<base name="${name}" displaycolor="${p.color.toUpperCase()}FF"/>`).join('');
+  const parent = id;
+  const model = `<?xml version="1.0" encoding="UTF-8"?>
+<model unit="millimeter" xml:lang="fr-FR" xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02">
+<metadata name="Title">Quadrillage tissé</metadata>
+<resources>
+<basematerials id="1">${mats}</basematerials>
+${xml}<object id="${parent}" type="model" name="Quadrillage tissé"><components>${objs.map(o => `<component objectid="${o}"/>`).join('')}</components></object>
+</resources>
+<build><item objectid="${parent}"/></build>
+</model>`;
+  const zip = new JSZip();
+  zip.file('[Content_Types].xml', '<?xml version="1.0" encoding="UTF-8"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="model" ContentType="application/vnd.ms-package.3dmanufacturing-3dmodel+xml"/></Types>');
+  zip.file('_rels/.rels', '<?xml version="1.0" encoding="UTF-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Target="/3D/3dmodel.model" Id="rel0" Type="http://schemas.microsoft.com/3dmanufacturing/2013/01/3dmodel"/></Relationships>');
+  zip.file('3D/3dmodel.model', model);
+  return zip.generateAsync({ type: 'blob', compression: 'DEFLATE', mimeType: 'application/vnd.ms-package.3dmanufacturing-3dmodel+xml' });
+}
+
 function download(url, name) {
   const l = document.createElement('a'); l.href = url; l.download = name; document.body.append(l); l.click(); l.remove();
 }
@@ -313,6 +415,9 @@ function exportAs(fmt) {
     renderCanvas(m, scale).toBlob(b => { const u = URL.createObjectURL(b); download(u, 'quadrillage.png'); setTimeout(() => URL.revokeObjectURL(u), 2000); }, 'image/png');
   } else if (fmt === 'jpeg') {
     renderCanvas(m, scale, true).toBlob(b => { const u = URL.createObjectURL(b); download(u, 'quadrillage.jpg'); setTimeout(() => URL.revokeObjectURL(u), 2000); }, 'image/jpeg', 0.95);
+  } else if (fmt === '3mf') {
+    if (!window.JSZip) { alert('La librairie ZIP n\'a pas pu être chargée.'); return; }
+    build3MF(m).then(b => { const u = URL.createObjectURL(b); download(u, 'quadrillage.3mf'); setTimeout(() => URL.revokeObjectURL(u), 2000); });
   } else if (fmt === 'svg') {
     const u = URL.createObjectURL(new Blob([renderSVG(m)], { type: 'image/svg+xml' }));
     download(u, 'quadrillage.svg'); setTimeout(() => URL.revokeObjectURL(u), 2000);
@@ -336,6 +441,9 @@ function update() {
       : 'La taille suit l\'épaisseur, l\'espacement et le nombre de couleurs. Rotation désactivée pour garder le raccord.';
   } else $('tileHint').textContent = '';
   ['W', 'H', 'rot', 'rotN'].forEach(id => $(id).disabled = S.tile);
+  const mmH = +S.mmW * S.H / S.W, zTot = +S.zBase + +S.zBand + (S.weave ? +S.zWeave : 0);
+  $('mmHint').textContent = `Objet : ${(+S.mmW).toFixed(1)} × ${mmH.toFixed(1)} mm, ${zTot.toFixed(2)} mm d'épaisseur max. `
+    + `Une pièce par couleur pour l'impression multicolore${+S.zBase > 0 ? '' : ' (sans fond : les bandes doivent se toucher)'}.`;
   renderPreview(buildModel());
   try { localStorage.setItem('tissage', JSON.stringify(S)); } catch {}
 }
@@ -374,7 +482,13 @@ $('bg').oninput = e => { S.bg = e.target.value; update(); };
 $('bgT').onchange = e => { S.bgT = e.target.checked; update(); };
 $('weave').onchange = e => { S.weave = e.target.checked; update(); };
 $('flip').onchange = e => { S.flip = e.target.checked; update(); };
-$('tile').onchange = e => { S.tile = e.target.checked; update(); };
+$('scale').onchange = e => { S.scale = +e.target.value; update(); };
+MM.forEach(k => $(k).addEventListener('input', e => {
+  const el = e.target, v = +el.value;
+  if (el.value === '' || isNaN(v) || v < +el.min || v > +el.max) return;
+  S[k] = v; update();
+}));
+$('tile').onchange =e => { S.tile = e.target.checked; update(); };
 $('mosaic').onchange = e => { S.mosaic = e.target.checked; update(); };
 document.querySelectorAll('[data-fmt]').forEach(b => b.onclick = () => exportAs(b.dataset.fmt));
 $('reset').onclick = () => { S = { ...DEFAULTS, hC: [...DEFAULTS.hC], vC: [...DEFAULTS.vC] }; syncInputs(); update(); };
