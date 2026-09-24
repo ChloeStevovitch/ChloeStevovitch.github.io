@@ -147,13 +147,13 @@
     <section class="card">
       <h2>Impression 3D (3MF)</h2>
       <label>Largeur de l'objet (mm) <input type="number" id="mmW" min="5" max="1000" step="1"></label>
+      <label>Hauteur de couche (mm) <input type="number" id="layerH" min="0.04" max="1" step="0.02"></label>
       <label>Couche de liaison <select id="baseMode"><option value="full">Pleine</option><option value="bands">Sous les bandes (ajourée)</option><option value="none">Aucune</option></select></label>
       <label id="zBaseL">Épaisseur de la liaison (mm) <input type="number" id="zBase" min="0.05" max="20" step="0.05"></label>
       <label>Épaisseur des bandes (mm) <input type="number" id="zBand" min="0.05" max="20" step="0.05"></label>
       <label>Relief du tissage (mm) <input type="number" id="zWeave" min="0" max="20" step="0.05"></label>
       <label>Mélange aux croisements <select id="mix"><option value="layers">Couches superposées</option><option value="dither">Trame de lignes</option></select></label>
-      <label id="layerHL">Hauteur de couche (mm) <input type="number" id="layerH" min="0.04" max="1" step="0.02"></label>
-      <label id="ditherWL">Largeur de trame (mm) <input type="number" id="ditherW" min="0.1" max="5" step="0.05"></label>
+      <label id="ditherWL">Largeur de trame (mm) <input type="number" id="ditherW" min="0.4" max="5" step="0.1"></label>
       <p class="hint" id="mixHint"></p>
       <p class="hint" id="mmHint"></p>
       <div class="exports"><button class="btn" data-fmt="3mf">3MF</button></div>
@@ -174,13 +174,15 @@ const DEFAULTS = {
   vC: ['#7f9ce6', '#f4c84e', '#b8a6ea', '#5b7bd5'],
   op: 100, weave: true, flip: false, tile: false, mosaic: false,
   scale: 1, mmW: 100, zBase: 0.4, zBand: 0.4, zWeave: 0.2,
-  mix: 'layers', layerH: 0.08, ditherW: 0.4, baseMode: 'full'
+  mix: 'layers', layerH: 0.2, ditherW: 0.8, baseMode: 'full'
 };
 const MM = ['mmW', 'zBase', 'zBand', 'zWeave', 'layerH', 'ditherW'];
 let S;
 try { S = Object.assign({}, DEFAULTS, JSON.parse(localStorage.getItem('tissage') || '{}')); } catch { S = { ...DEFAULTS }; }
 S.hC = [...S.hC]; S.vC = [...S.vC];
 if (!(+S.zBase >= 0.05)) S.zBase = DEFAULTS.zBase; // anciens réglages sans couche de liaison
+if (+S.layerH < 0.1) S.layerH = DEFAULTS.layerH;     // ancienne valeur par défaut (0,08)
+if (+S.ditherW < 0.8) S.ditherW = DEFAULTS.ditherW;   // lignes trop fines pour la buse
 
 const $ = id => document.getElementById(id);
 const SLIDERS = ['rot','hT','hG','hO','vT','vG','vO','op'];
@@ -370,8 +372,20 @@ function addPrism(mesh, poly, z0, z1) {
     mesh.t.push([o + i, o + j, o + n + j], [o + i, o + n + j, o + n + i]);
   }
 }
+/* Épaisseurs arrondies à un nombre entier de couches : sinon le trancheur coupe
+   une couche au milieu d'une pièce et signale un problème de hauteur de couche. */
+function zHeights() {
+  const lh = Math.max(0.04, +S.layerH || 0.2);
+  const q = (v, min) => Math.max(min, Math.round(v / lh)) * lh;
+  return {
+    lh,
+    zb: S.baseMode === 'none' ? 0 : q(+S.zBase, 1),
+    hb: q(+S.zBand, 1),
+    hw: S.weave ? q(+S.zWeave, 0) : 0
+  };
+}
 function build3MF(m) {
-  const s = +S.mmW / m.W, zb = S.baseMode === 'none' ? 0 : Math.max(0.05, +S.zBase),hb = Math.max(0.01, +S.zBand), hw = Math.max(0, +S.zWeave);
+  const { lh, zb, hb, hw } = zHeights(), s = +S.mmW / m.W;
   const toMM = p => [p[0] * s, (m.H - p[1]) * s];
   const parts = new Map(); // nom -> { color, mesh }
   const part = (name, color) => {
@@ -387,7 +401,7 @@ function build3MF(m) {
   const LINK = 'Couche de liaison';
   if (zb > 0 && S.baseMode === 'full') addPrism(part(LINK, S.bg), [[0, 0], [m.W, 0], [m.W, m.H], [0, m.H]].map(toMM), 0, zb);
   if (zb > 0 && S.baseMode === 'bands') for (const r of m.rects) if (r.k !== 'under') box(S.bg, r.x, r.y, r.w, r.h, 0, zb, LINK);
-  const zTop = zb + hb + (S.weave ? hw : 0);
+  const zTop = zb + hb + hw;
   for (const r of m.rects) {
     if (r.k === 'under') continue; // traité avec la bande du dessus
     if (r.k !== 'over') { box(r.c, r.x, r.y, r.w, r.h, zb, zb + hb); continue; }
@@ -397,9 +411,9 @@ function build3MF(m) {
     if (S.mix === 'layers') {
       // Couches : la couleur du dessous, puis une fine épaisseur de la couleur du dessus.
       // La part du dessus suit l'opacité, arrondie à la hauteur de couche.
-      const H = zTop - zb, lh = Math.max(0.01, +S.layerH);
-      let split = Math.round(H * (1 - a) / lh) * lh;
-      split = Math.min(Math.max(split, 0), H);
+      const H = zTop - zb;
+      // au moins une couche de chaque couleur
+      const n = Math.round(H / lh), split = Math.min(Math.max(Math.round(n * (1 - a)), 1), n - 1) * lh;
       box(r.u, r.x, r.y, r.w, r.h, zb, zb + split);
       box(r.c, r.x, r.y, r.w, r.h, zb + split, zTop);
     } else {
@@ -477,17 +491,18 @@ function update() {
       : 'La taille suit l\'épaisseur, l\'espacement et le nombre de couleurs. Rotation désactivée pour garder le raccord.';
   } else $('tileHint').textContent = '';
   ['W', 'H', 'rot', 'rotN'].forEach(id => $(id).disabled = S.tile);
-  $('layerHL').style.display = S.mix === 'layers' ? '' : 'none';
   $('ditherWL').style.display = S.mix === 'dither' ? '' : 'none';
   $('mixHint').textContent = S.op >= 100
     ? 'Le mélange s\'applique quand l\'opacité aux croisements est sous 100 %.'
     : S.mix === 'layers'
-      ? 'La couleur du dessous est imprimée d\'abord, puis une fine couche de la couleur du dessus (plus fine si l\'opacité est basse) : elle laisse transparaître celle du dessous. Règle la même hauteur de couche dans le trancheur.'
-      : 'Lignes alternées des deux couleurs, dont les proportions suivent l\'opacité. Mets au moins la largeur de ta buse (0,4 mm en général).';
+      ? 'La couleur du dessous est imprimée d\'abord, puis une fine couche de la couleur du dessus (plus fine si l\'opacité est basse) : elle laisse transparaître celle du dessous. '
+      : 'Lignes alternées des deux couleurs, dont les proportions suivent l\'opacité. Mets au moins 2 fois la largeur de ta buse (0,8 mm pour une buse de 0,4), sinon les lignes s\'impriment mal.';
   $('zBaseL').style.display = S.baseMode === 'none' ? 'none' : '';
-  const zb = S.baseMode === 'none' ? 0 : Math.max(0.05, +S.zBase);
-  const mmH = +S.mmW * S.H / S.W, zTot = zb + +S.zBand + (S.weave ? +S.zWeave : 0);
-  $('mmHint').textContent = `Objet : ${(+S.mmW).toFixed(1)} × ${mmH.toFixed(1)} mm, ${zTot.toFixed(2)} mm d'épaisseur max. `
+  const z = zHeights(), f2 = v => v.toFixed(2).replace('.', ',');
+  const mmH = +S.mmW * S.H / S.W, zTot = z.zb + z.hb + z.hw;
+  $('mmHint').textContent = `Objet : ${(+S.mmW).toFixed(1)} × ${mmH.toFixed(1)} mm, ${f2(zTot)} mm d'épaisseur max. `
+    + `Épaisseurs arrondies à la couche : liaison ${f2(z.zb)}, bandes ${f2(z.hb)}, relief ${f2(z.hw)} mm. `
+    + `Dans le trancheur, mets ${f2(z.lh)} mm en hauteur de couche ET en hauteur de première couche. `
     + (S.baseMode === 'none' ? 'Sans couche de liaison, les couleurs risquent de se détacher. ' : 'La couche de liaison (couleur du fond) tient toutes les couleurs ensemble. ')
     + "À l'import dans Bambu Studio, réponds « Oui » pour charger un seul objet en plusieurs pièces.";
   renderPreview(buildModel());
