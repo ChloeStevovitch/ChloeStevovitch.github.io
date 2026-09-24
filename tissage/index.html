@@ -151,7 +151,8 @@
       <label>Couche de liaison <select id="baseMode"><option value="full">Pleine</option><option value="bands">Sous les bandes (ajourée)</option><option value="none">Aucune</option></select></label>
       <label id="zBaseL">Épaisseur de la liaison (mm) <input type="number" id="zBase" min="0.05" max="20" step="0.05"></label>
       <label>Épaisseur des bandes (mm) <input type="number" id="zBand" min="0.05" max="20" step="0.05"></label>
-      <label>Relief du tissage (mm) <input type="number" id="zWeave" min="0" max="20" step="0.05"></label>
+      <label>Orientation <select id="orient"><option value="down">Motif contre le plateau</option><option value="up">Motif vers le haut</option></select></label>
+      <label id="zWeaveL">Relief du tissage (mm) <input type="number" id="zWeave" min="0" max="20" step="0.05"></label>
       <label>Mélange aux croisements <select id="mix"><option value="layers">Couches superposées</option><option value="dither">Trame de lignes</option></select></label>
       <label id="ditherWL">Largeur de trame (mm) <input type="number" id="ditherW" min="0.4" max="5" step="0.1"></label>
       <p class="hint" id="mixHint"></p>
@@ -174,7 +175,7 @@ const DEFAULTS = {
   vC: ['#7f9ce6', '#f4c84e', '#b8a6ea', '#5b7bd5'],
   op: 100, weave: true, flip: false, tile: false, mosaic: false,
   scale: 1, mmW: 100, zBase: 0.4, zBand: 0.4, zWeave: 0.2,
-  mix: 'layers', layerH: 0.2, ditherW: 0.8, baseMode: 'full'
+  mix: 'layers', layerH: 0.2, ditherW: 0.8, baseMode: 'full', orient: 'down'
 };
 const MM = ['mmW', 'zBase', 'zBand', 'zWeave', 'layerH', 'ditherW'];
 let S;
@@ -193,7 +194,7 @@ function syncInputs() {
   SLIDERS.forEach(k => { $(k).value = S[k]; $(k + 'N').value = S[k]; });
   $('bg').value = S.bg; $('bgT').checked = S.bgT; $('weave').checked = S.weave; $('flip').checked = S.flip;
   $('tile').checked = S.tile; $('mosaic').checked = S.mosaic;
-  $('scale').value = S.scale; $('mix').value = S.mix; $('baseMode').value = S.baseMode; MM.forEach(k => $(k).value = S[k]);
+  $('scale').value = S.scale; $('mix').value = S.mix; $('baseMode').value = S.baseMode; $('orient').value = S.orient; MM.forEach(k => $(k).value = S[k]);
   renderSwatches('hC'); renderSwatches('vC');
 }
 function renderSwatches(key) {
@@ -381,7 +382,7 @@ function zHeights() {
     lh,
     zb: S.baseMode === 'none' ? 0 : q(+S.zBase, 1),
     hb: q(+S.zBand, 1),
-    hw: S.weave ? q(+S.zWeave, 0) : 0
+    hw: S.weave && S.orient !== 'down' ? q(+S.zWeave, 0) : 0 // pas de relief si la face visible est sur le plateau
   };
 }
 function build3MF(m) {
@@ -427,6 +428,12 @@ function build3MF(m) {
         else { box(r.c, o0 + d, r.y, o1 - d, r.h, zb, zTop); box(r.u, o0 + o1, r.y, u1 - o1, r.h, zb, zTop); }
       }
     }
+  }
+  // Motif contre le plateau : on retourne la pièce (demi-tour autour de l'axe Y).
+  // C'est une rotation, pas un miroir : le motif se lit à l'endroit une fois la pièce retournée.
+  if (S.orient === 'down') {
+    const zMax = zTop, wMM = +S.mmW;
+    for (const p of parts.values()) p.mesh.v = p.mesh.v.map(v => [wMM - v[0], v[1], zMax - v[2]]);
   }
   const f = x => +x.toFixed(4);
   const list = [...parts.entries()].filter(([, p]) => p.mesh.t.length);
@@ -498,11 +505,15 @@ function update() {
       ? 'La couleur du dessous est imprimée d\'abord, puis une fine couche de la couleur du dessus (plus fine si l\'opacité est basse) : elle laisse transparaître celle du dessous. '
       : 'Lignes alternées des deux couleurs, dont les proportions suivent l\'opacité. Mets au moins 2 fois la largeur de ta buse (0,8 mm pour une buse de 0,4), sinon les lignes s\'impriment mal.';
   $('zBaseL').style.display = S.baseMode === 'none' ? 'none' : '';
+  $('zWeaveL').style.display = S.orient === 'down' ? 'none' : '';
   const z = zHeights(), f2 = v => v.toFixed(2).replace('.', ',');
   const mmH = +S.mmW * S.H / S.W, zTot = z.zb + z.hb + z.hw;
   $('mmHint').textContent = `Objet : ${(+S.mmW).toFixed(1)} × ${mmH.toFixed(1)} mm, ${f2(zTot)} mm d'épaisseur max. `
     + `Épaisseurs arrondies à la couche : liaison ${f2(z.zb)}, bandes ${f2(z.hb)}, relief ${f2(z.hw)} mm. `
     + `Dans le trancheur, mets ${f2(z.lh)} mm en hauteur de couche ET en hauteur de première couche. `
+    + (S.orient === 'down'
+      ? 'Face visible imprimée contre le plateau (lisse, couleurs nettes) ; la liaison est au dos. Pas de relief dans ce sens. '
+      : 'Face visible vers le haut ; la liaison est dessous. ')
     + (S.baseMode === 'none' ? 'Sans couche de liaison, les couleurs risquent de se détacher. ' : 'La couche de liaison (couleur du fond) tient toutes les couleurs ensemble. ')
     + "À l'import dans Bambu Studio, réponds « Oui » pour charger un seul objet en plusieurs pièces.";
   renderPreview(buildModel());
@@ -546,6 +557,7 @@ $('flip').onchange = e => { S.flip = e.target.checked; update(); };
 $('scale').onchange = e => { S.scale = +e.target.value; update(); };
 $('mix').onchange = e => { S.mix = e.target.value; update(); };
 $('baseMode').onchange = e => { S.baseMode = e.target.value; update(); };
+$('orient').onchange = e => { S.orient = e.target.value; update(); };
 MM.forEach(k => $(k).addEventListener('input', e => {
   const el = e.target, v = +el.value;
   if (el.value === '' || isNaN(v) || v < +el.min || v > +el.max) return;
