@@ -90,16 +90,6 @@ interface PagingConf {
 
 const setPaging = StateEffect.define<PagingConf>();
 
-// Le frontmatter (--- ... ---) ne doit compter ni pour la pagination ni
-// porter la couverture : elle doit s'afficher juste après.
-function frontmatterEndLine(doc: Text): number {
-	if (doc.lines < 1 || doc.line(1).text.trim() !== "---") return 0;
-	for (let ln = 2; ln <= doc.lines; ln++) {
-		if (doc.line(ln).text.trim() === "---") return ln;
-	}
-	return 0;
-}
-
 // Première ligne non vide à partir de `fromLine` (1-indexé) — sert à poser la
 // couverture juste avant le vrai contenu plutôt qu'avant la ligne blanche que
 // beaucoup de notes laissent après le frontmatter (sinon cette ligne vide
@@ -305,8 +295,6 @@ const fillerField = StateField.define<DecorationSet>({
 export default class CahierEcolierPlugin extends Plugin {
 	settings: CahierSettings;
 	private lastConfKeys = new WeakMap<EditorView, string>();
-	private resizeHandler: (() => void) | null = null;
-	private resizeDebounce: number | null = null;
 	private editorResizeObserver: ResizeObserver | null = null;
 	private observedScroller: HTMLElement | null = null;
 
@@ -380,22 +368,9 @@ export default class CahierEcolierPlugin extends Plugin {
 			// avoir sa taille définitive (panneaux en cours de mise en place).
 			setTimeout(() => this.updateActiveFileFeatures(), 400);
 		});
-
-		// La couverture prend toute la hauteur visible : la recalculer si la
-		// fenêtre (ou un panneau latéral) change de taille.
-		this.resizeHandler = () => {
-			if (this.resizeDebounce) window.clearTimeout(this.resizeDebounce);
-			this.resizeDebounce = window.setTimeout(() => {
-				this.resizeDebounce = null;
-				this.updateActiveFileFeatures();
-			}, 200);
-		};
-		window.addEventListener("resize", this.resizeHandler);
 	}
 
 	onunload() {
-		if (this.resizeHandler) window.removeEventListener("resize", this.resizeHandler);
-		if (this.resizeDebounce) window.clearTimeout(this.resizeDebounce);
 		this.editorResizeObserver?.disconnect();
 		document.body.classList.remove("cahier-ecolier-enabled", "cahier-ecolier-paged", "cahier-ecolier-cover");
 	}
@@ -472,11 +447,10 @@ export default class CahierEcolierPlugin extends Plugin {
 		this.editorResizeObserver.observe(target);
 	}
 
-	private resolveImagePath(raw: string): string {
+	private resolveImagePath(file: TFile, raw: string): string {
 		const clean = raw.replace(/^!?\[\[/, "").replace(/\]\]$/, "").split("|")[0];
 		if (/^https?:\/\//.test(clean)) return clean;
-		const activePath = this.app.workspace.getActiveFile()?.path || "";
-		const dest = this.app.metadataCache.getFirstLinkpathDest(clean, activePath);
+		const dest = this.app.metadataCache.getFirstLinkpathDest(clean, file.path);
 		if (dest instanceof TFile) return this.app.vault.adapter.getResourcePath(dest.path);
 		return clean;
 	}
@@ -489,19 +463,19 @@ export default class CahierEcolierPlugin extends Plugin {
 		}
 
 		const file = this.app.workspace.getActiveFile();
-		const fm = file ? this.app.metadataCache.getFileCache(file)?.frontmatter : undefined;
+		const cache = file ? this.app.metadataCache.getFileCache(file) : undefined;
+		const fm = cache?.frontmatter;
 
 		const noteOverride = fm?.["cahier"];
-		const noteEnabled = typeof noteOverride === "boolean" ? noteOverride : s.defaultOnForAllNotes;
-		const overallEnabled = s.enabled && noteEnabled;
+		// s.enabled is already true here (early return above), so the note's own
+		// override is what decides.
+		const overallEnabled = typeof noteOverride === "boolean" ? noteOverride : s.defaultOnForAllNotes;
 
 		document.body.classList.toggle("cahier-ecolier-enabled", overallEnabled);
 
 		const coverEnabled = overallEnabled && !!fm?.["cahier-cover"];
 		const title = (fm?.title as string) || file?.basename || "";
 		const color = (fm?.["cahier-cover-color"] as string) || s.coverColor;
-		const imageRaw = fm?.["cahier-cover-image"] as string | undefined;
-		const image = imageRaw ? this.resolveImagePath(imageRaw) : null;
 		const fitRaw = fm?.["cahier-cover-fit"] as string | undefined;
 		const fit: CoverFit = fitRaw === "contain" || fitRaw === "stretch" ? fitRaw : s.coverFit;
 
@@ -515,19 +489,30 @@ export default class CahierEcolierPlugin extends Plugin {
 		if (!cm) return;
 		this.ensureResizeObserver(cm);
 
-		const doc = cm.state.doc;
-		const fmEndLine = frontmatterEndLine(doc);
-		const startLine = fmEndLine;
+		// Ligne (1-indexée, comme CM6) où se termine le frontmatter — seulement
+		// utile pour placer la couverture ou compter les pages, donc pas besoin
+		// de la connaître (ni de résoudre l'image de couverture, plus bas) pour
+		// une note qui n'utilise ni l'une ni l'autre.
+		const startLine =
+			coverEnabled || paged ? (cache?.frontmatterPosition ? cache.frontmatterPosition.end.line + 1 : 0) : 0;
 
-		// La couverture se pose juste avant la première ligne non vide qui suit
-		// le frontmatter — pas juste après le frontmatter lui-même — sinon la
-		// ligne blanche qu'Obsidian y laisse souvent s'affiche comme un espace
-		// en trop, en plus du saut de page.
-		const searchFrom = fmEndLine > 0 ? fmEndLine + 1 : 1;
-		const contentStartLine = firstNonBlankLine(doc, searchFrom);
-		const hiddenLines: number[] = [];
-		for (let ln = searchFrom; ln < contentStartLine; ln++) hiddenLines.push(ln);
-		const coverPos = contentStartLine <= doc.lines ? doc.line(contentStartLine).from : doc.length;
+		let coverPos = 0;
+		let hiddenLines: number[] = [];
+		let image: string | null = null;
+		if (coverEnabled) {
+			const doc = cm.state.doc;
+			// La couverture se pose juste avant la première ligne non vide qui suit
+			// le frontmatter — pas juste après le frontmatter lui-même — sinon la
+			// ligne blanche qu'Obsidian y laisse souvent s'affiche comme un espace
+			// en trop, en plus du saut de page.
+			const searchFrom = startLine > 0 ? startLine + 1 : 1;
+			const contentStartLine = firstNonBlankLine(doc, searchFrom);
+			for (let ln = searchFrom; ln < contentStartLine; ln++) hiddenLines.push(ln);
+			coverPos = contentStartLine <= doc.lines ? doc.line(contentStartLine).from : doc.length;
+
+			const imageRaw = fm?.["cahier-cover-image"] as string | undefined;
+			if (file && imageRaw) image = this.resolveImagePath(file, imageRaw);
+		}
 
 		const coverConf: CoverConf = {
 			enabled: coverEnabled,
@@ -566,6 +551,60 @@ class CahierEcolierSettingTab extends PluginSettingTab {
 		this.plugin = plugin;
 	}
 
+	// Chaque réglage sauvegarde puis réapplique les styles de la même façon ;
+	// ces trois aides ne font que ça, pour ne garder au site d'appel que ce
+	// qui varie vraiment (nom, description, limites, accesseurs).
+
+	private addToggleSetting(containerEl: HTMLElement, name: string, desc: string, getValue: () => boolean, setValue: (v: boolean) => void) {
+		new Setting(containerEl)
+			.setName(name)
+			.setDesc(desc)
+			.addToggle((t) =>
+				t.setValue(getValue()).onChange(async (v) => {
+					setValue(v);
+					await this.plugin.saveSettings();
+					this.plugin.applyStyles();
+				})
+			);
+	}
+
+	private addColorSetting(containerEl: HTMLElement, name: string, desc: string | undefined, getValue: () => string, setValue: (v: string) => void) {
+		const setting = new Setting(containerEl).setName(name);
+		if (desc) setting.setDesc(desc);
+		setting.addColorPicker((c) =>
+			c.setValue(getValue()).onChange(async (v) => {
+				setValue(v);
+				await this.plugin.saveSettings();
+				this.plugin.applyStyles();
+			})
+		);
+	}
+
+	private addSliderSetting(
+		containerEl: HTMLElement,
+		name: string,
+		desc: (v: number) => string,
+		limits: [min: number, max: number, step: number],
+		getValue: () => number,
+		setValue: (v: number) => void
+	) {
+		new Setting(containerEl)
+			.setName(name)
+			.setDesc(desc(getValue()))
+			.addSlider((sl) =>
+				sl
+					.setLimits(...limits)
+					.setValue(getValue())
+					.onChange(async (v) => {
+						setValue(v);
+						await this.plugin.saveSettings();
+						this.plugin.applyStyles();
+						// Réaffiche pour mettre à jour la valeur en px affichée dans setDesc.
+						this.display();
+					})
+			);
+	}
+
 	display(): void {
 		const { containerEl } = this;
 		containerEl.empty();
@@ -576,71 +615,28 @@ class CahierEcolierSettingTab extends PluginSettingTab {
 			text: "Papier ligné bleu à marge rouge et police manuscrite, pour retrouver l'ambiance d'un cahier d'écolier — directement dans l'éditeur, en écrivant. La vue de lecture d'Obsidian n'est pas touchée par le plugin.",
 		});
 
-		new Setting(containerEl)
-			.setName("Activer (tout le plugin)")
-			.setDesc("Interrupteur général. Une fois activé, chaque note décide individuellement si elle utilise le cahier — voir ci-dessous.")
-			.addToggle((t) =>
-				t.setValue(s.enabled).onChange(async (v) => {
-					s.enabled = v;
-					await this.plugin.saveSettings();
-					this.plugin.applyStyles();
-				})
-			);
+		this.addToggleSetting(
+			containerEl,
+			"Activer (tout le plugin)",
+			"Interrupteur général. Une fois activé, chaque note décide individuellement si elle utilise le cahier — voir ci-dessous.",
+			() => s.enabled,
+			(v) => (s.enabled = v)
+		);
 
-		new Setting(containerEl)
-			.setName("Notes concernées par défaut")
-			.setDesc(
-				"Désactivé : seules les notes marquées (bouton dans la barre latérale, ou `cahier: true` dans le frontmatter) ont le look cahier. Activé : toutes les notes l'ont, sauf celles marquées `cahier: false`."
-			)
-			.addToggle((t) =>
-				t.setValue(s.defaultOnForAllNotes).onChange(async (v) => {
-					s.defaultOnForAllNotes = v;
-					await this.plugin.saveSettings();
-					this.plugin.applyStyles();
-				})
-			);
+		this.addToggleSetting(
+			containerEl,
+			"Notes concernées par défaut",
+			"Désactivé : seules les notes marquées (bouton dans la barre latérale, ou `cahier: true` dans le frontmatter) ont le look cahier. Activé : toutes les notes l'ont, sauf celles marquées `cahier: false`.",
+			() => s.defaultOnForAllNotes,
+			(v) => (s.defaultOnForAllNotes = v)
+		);
 
 		containerEl.createEl("h3", { text: "Couleurs" });
 
-		new Setting(containerEl)
-			.setName("Couleur du papier")
-			.addColorPicker((c) =>
-				c.setValue(s.paperColor).onChange(async (v) => {
-					s.paperColor = v;
-					await this.plugin.saveSettings();
-					this.plugin.applyStyles();
-				})
-			);
-
-		new Setting(containerEl)
-			.setName("Couleur des lignes")
-			.addColorPicker((c) =>
-				c.setValue(s.lineColor).onChange(async (v) => {
-					s.lineColor = v;
-					await this.plugin.saveSettings();
-					this.plugin.applyStyles();
-				})
-			);
-
-		new Setting(containerEl)
-			.setName("Couleur de la marge")
-			.addColorPicker((c) =>
-				c.setValue(s.marginColor).onChange(async (v) => {
-					s.marginColor = v;
-					await this.plugin.saveSettings();
-					this.plugin.applyStyles();
-				})
-			);
-
-		new Setting(containerEl)
-			.setName("Couleur du texte")
-			.addColorPicker((c) =>
-				c.setValue(s.textColor).onChange(async (v) => {
-					s.textColor = v;
-					await this.plugin.saveSettings();
-					this.plugin.applyStyles();
-				})
-			);
+		this.addColorSetting(containerEl, "Couleur du papier", undefined, () => s.paperColor, (v) => (s.paperColor = v));
+		this.addColorSetting(containerEl, "Couleur des lignes", undefined, () => s.lineColor, (v) => (s.lineColor = v));
+		this.addColorSetting(containerEl, "Couleur de la marge", undefined, () => s.marginColor, (v) => (s.marginColor = v));
+		this.addColorSetting(containerEl, "Couleur du texte", undefined, () => s.textColor, (v) => (s.textColor = v));
 
 		containerEl.createEl("h3", { text: "Grille" });
 		containerEl.createEl("p", {
@@ -648,35 +644,23 @@ class CahierEcolierSettingTab extends PluginSettingTab {
 			cls: "setting-item-description",
 		});
 
-		new Setting(containerEl)
-			.setName("Espacement des lignes")
-			.setDesc(`${s.lineHeight}px`)
-			.addSlider((sl) =>
-				sl
-					.setLimits(20, 48, 1)
-					.setValue(s.lineHeight)
-					.onChange(async (v) => {
-						s.lineHeight = v;
-						await this.plugin.saveSettings();
-						this.plugin.applyStyles();
-						this.display();
-					})
-			);
+		this.addSliderSetting(
+			containerEl,
+			"Espacement des lignes",
+			(v) => `${v}px`,
+			[20, 48, 1],
+			() => s.lineHeight,
+			(v) => (s.lineHeight = v)
+		);
 
-		new Setting(containerEl)
-			.setName("Position de la marge rouge")
-			.setDesc(`${s.marginPosition}px depuis le bord gauche`)
-			.addSlider((sl) =>
-				sl
-					.setLimits(0, 160, 1)
-					.setValue(s.marginPosition)
-					.onChange(async (v) => {
-						s.marginPosition = v;
-						await this.plugin.saveSettings();
-						this.plugin.applyStyles();
-						this.display();
-					})
-			);
+		this.addSliderSetting(
+			containerEl,
+			"Position de la marge rouge",
+			(v) => `${v}px depuis le bord gauche`,
+			[0, 160, 1],
+			() => s.marginPosition,
+			(v) => (s.marginPosition = v)
+		);
 
 		containerEl.createEl("h3", { text: "Papier" });
 		containerEl.createEl("p", {
@@ -684,35 +668,23 @@ class CahierEcolierSettingTab extends PluginSettingTab {
 			cls: "setting-item-description",
 		});
 
-		new Setting(containerEl)
-			.setName("Largeur du papier")
-			.setDesc(`${s.paperWidth}px`)
-			.addSlider((sl) =>
-				sl
-					.setLimits(400, 1400, 10)
-					.setValue(s.paperWidth)
-					.onChange(async (v) => {
-						s.paperWidth = v;
-						await this.plugin.saveSettings();
-						this.plugin.applyStyles();
-						this.display();
-					})
-			);
+		this.addSliderSetting(
+			containerEl,
+			"Largeur du papier",
+			(v) => `${v}px`,
+			[400, 1400, 10],
+			() => s.paperWidth,
+			(v) => (s.paperWidth = v)
+		);
 
-		new Setting(containerEl)
-			.setName("Marge blanche (sans lignes)")
-			.setDesc(`${s.paperSideMargin}px de chaque côté des lignes bleues`)
-			.addSlider((sl) =>
-				sl
-					.setLimits(0, 120, 1)
-					.setValue(s.paperSideMargin)
-					.onChange(async (v) => {
-						s.paperSideMargin = v;
-						await this.plugin.saveSettings();
-						this.plugin.applyStyles();
-						this.display();
-					})
-			);
+		this.addSliderSetting(
+			containerEl,
+			"Marge blanche (sans lignes)",
+			(v) => `${v}px de chaque côté des lignes bleues`,
+			[0, 120, 1],
+			() => s.paperSideMargin,
+			(v) => (s.paperSideMargin = v)
+		);
 
 		containerEl.createEl("h3", { text: "Texte" });
 
@@ -730,20 +702,14 @@ class CahierEcolierSettingTab extends PluginSettingTab {
 					})
 			);
 
-		new Setting(containerEl)
-			.setName("Taille du texte")
-			.setDesc(`${s.fontSize}px`)
-			.addSlider((sl) =>
-				sl
-					.setLimits(14, 24, 1)
-					.setValue(s.fontSize)
-					.onChange(async (v) => {
-						s.fontSize = v;
-						await this.plugin.saveSettings();
-						this.plugin.applyStyles();
-						this.display();
-					})
-			);
+		this.addSliderSetting(
+			containerEl,
+			"Taille du texte",
+			(v) => `${v}px`,
+			[14, 24, 1],
+			() => s.fontSize,
+			(v) => (s.fontSize = v)
+		);
 
 		containerEl.createEl("h3", { text: "Pages (par note)" });
 		containerEl.createEl("p", {
@@ -751,50 +717,32 @@ class CahierEcolierSettingTab extends PluginSettingTab {
 			cls: "setting-item-description",
 		});
 
-		new Setting(containerEl)
-			.setName("Lignes par page")
-			.setDesc(`${s.linesPerPage} lignes`)
-			.addSlider((sl) =>
-				sl
-					.setLimits(10, 60, 1)
-					.setValue(s.linesPerPage)
-					.onChange(async (v) => {
-						s.linesPerPage = v;
-						await this.plugin.saveSettings();
-						this.plugin.applyStyles();
-						this.display();
-					})
-			);
+		this.addSliderSetting(
+			containerEl,
+			"Lignes par page",
+			(v) => `${v} lignes`,
+			[10, 60, 1],
+			() => s.linesPerPage,
+			(v) => (s.linesPerPage = v)
+		);
 
-		new Setting(containerEl)
-			.setName("Marge blanche haut/bas de chaque feuille")
-			.setDesc(`${s.pageMargin}px`)
-			.addSlider((sl) =>
-				sl
-					.setLimits(0, 80, 1)
-					.setValue(s.pageMargin)
-					.onChange(async (v) => {
-						s.pageMargin = v;
-						await this.plugin.saveSettings();
-						this.plugin.applyStyles();
-						this.display();
-					})
-			);
+		this.addSliderSetting(
+			containerEl,
+			"Marge blanche haut/bas de chaque feuille",
+			(v) => `${v}px`,
+			[0, 80, 1],
+			() => s.pageMargin,
+			(v) => (s.pageMargin = v)
+		);
 
-		new Setting(containerEl)
-			.setName("Espace entre les feuilles")
-			.setDesc(`${s.pageGapSize}px`)
-			.addSlider((sl) =>
-				sl
-					.setLimits(0, 160, 1)
-					.setValue(s.pageGapSize)
-					.onChange(async (v) => {
-						s.pageGapSize = v;
-						await this.plugin.saveSettings();
-						this.plugin.applyStyles();
-						this.display();
-					})
-			);
+		this.addSliderSetting(
+			containerEl,
+			"Espace entre les feuilles",
+			(v) => `${v}px`,
+			[0, 160, 1],
+			() => s.pageGapSize,
+			(v) => (s.pageGapSize = v)
+		);
 
 		containerEl.createEl("h3", { text: "Page de couverture (par note)" });
 		containerEl.createEl("p", {
@@ -802,16 +750,13 @@ class CahierEcolierSettingTab extends PluginSettingTab {
 			cls: "setting-item-description",
 		});
 
-		new Setting(containerEl)
-			.setName("Couleur de couverture par défaut")
-			.setDesc("Utilisée si la note ne précise pas cahier-cover-color.")
-			.addColorPicker((c) =>
-				c.setValue(s.coverColor).onChange(async (v) => {
-					s.coverColor = v;
-					await this.plugin.saveSettings();
-					this.plugin.applyStyles();
-				})
-			);
+		this.addColorSetting(
+			containerEl,
+			"Couleur de couverture par défaut",
+			"Utilisée si la note ne précise pas cahier-cover-color.",
+			() => s.coverColor,
+			(v) => (s.coverColor = v)
+		);
 
 		new Setting(containerEl)
 			.setName("Ajustement d'image par défaut")

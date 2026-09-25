@@ -10,6 +10,33 @@
 	font-display: swap;
 }
 
+/* Motifs partagés entre .cm-content et .cahier-trailing-lines (le remplissage
+   après la dernière ligne) : un seul endroit à ajuster si la géométrie de la
+   marge rouge ou des marges blanches change. */
+body {
+	--cahier-margin-gradient: linear-gradient(
+		to right,
+		transparent 0,
+		transparent calc(var(--cahier-margin-position) - 1px),
+		var(--cahier-margin-color) calc(var(--cahier-margin-position) - 1px),
+		var(--cahier-margin-color) var(--cahier-margin-position),
+		transparent var(--cahier-margin-position),
+		transparent 100%
+	);
+	/* Masque horizontal qui arrête un motif à --cahier-paper-side-margin de
+	   chaque bord — la même étendue que la bordure de chaque .cm-line
+	   (border-image-source plus bas). */
+	--cahier-side-mask: linear-gradient(
+		to right,
+		transparent 0,
+		transparent var(--cahier-paper-side-margin),
+		black var(--cahier-paper-side-margin),
+		black calc(100% - var(--cahier-paper-side-margin)),
+		transparent calc(100% - var(--cahier-paper-side-margin)),
+		transparent 100%
+	);
+}
+
 /* ---- Papier : feuille centrée, plus large que le texte, moins large que la page ----
    La ligne rouge est peinte sur .cm-content (pas .cm-scroller, le conteneur
    qui défile), ce qui la limite à la largeur du "papier" réglée par
@@ -28,15 +55,7 @@
 	   ligne — jamais d'un motif de fond posé sur tout .cm-content : ça
 	   donnait deux lignes bleues légèrement décalées dès qu'un titre avait
 	   décalé la grille des vraies lignes. */
-	background-image: linear-gradient(
-		to right,
-		transparent 0,
-		transparent calc(var(--cahier-margin-position) - 1px),
-		var(--cahier-margin-color) calc(var(--cahier-margin-position) - 1px),
-		var(--cahier-margin-color) var(--cahier-margin-position),
-		transparent var(--cahier-margin-position),
-		transparent 100%
-	);
+	background-image: var(--cahier-margin-gradient);
 }
 
 /* ---- Texte : police manuscrite posée sur les lignes ---- */
@@ -175,15 +194,7 @@
 
 .cahier-trailing-lines {
 	background-color: var(--cahier-paper);
-	background-image: linear-gradient(
-			to right,
-			transparent 0,
-			transparent calc(var(--cahier-margin-position) - 1px),
-			var(--cahier-margin-color) calc(var(--cahier-margin-position) - 1px),
-			var(--cahier-margin-color) var(--cahier-margin-position),
-			transparent var(--cahier-margin-position),
-			transparent 100%
-		),
+	background-image: var(--cahier-margin-gradient),
 		repeating-linear-gradient(
 			to bottom,
 			transparent 0,
@@ -198,22 +209,6 @@
 	   vraies lignes sont plus courtes. Un masque plutôt qu'un second dégradé :
 	   la marge rouge (déjà dans la bande visible, plus loin du bord que
 	   paper-side-margin) reste intacte. */
-	-webkit-mask-image: linear-gradient(
-		to right,
-		transparent 0,
-		transparent var(--cahier-paper-side-margin),
-		black var(--cahier-paper-side-margin),
-		black calc(100% - var(--cahier-paper-side-margin)),
-		transparent calc(100% - var(--cahier-paper-side-margin)),
-		transparent 100%
-	);
-	mask-image: linear-gradient(
-		to right,
-		transparent 0,
-		transparent var(--cahier-paper-side-margin),
-		black var(--cahier-paper-side-margin),
-		black calc(100% - var(--cahier-paper-side-margin)),
-		transparent calc(100% - var(--cahier-paper-side-margin)),
-		transparent 100%
-	);
+	-webkit-mask-image: var(--cahier-side-mask);
+	mask-image: var(--cahier-side-mask);
 }
