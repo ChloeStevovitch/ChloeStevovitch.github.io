@@ -192,4 +192,28 @@
 			var(--cahier-line-color) var(--cahier-line-height)
 		);
 	background-repeat: no-repeat, repeat-y;
+	/* Les lignes bleues horizontales doivent s'arrêter à --cahier-paper-side-margin
+	   de chaque bord, comme la bordure de chaque .cm-line (border-image-source
+	   plus haut) — sinon elles font toute la largeur du papier alors que les
+	   vraies lignes sont plus courtes. Un masque plutôt qu'un second dégradé :
+	   la marge rouge (déjà dans la bande visible, plus loin du bord que
+	   paper-side-margin) reste intacte. */
+	-webkit-mask-image: linear-gradient(
+		to right,
+		transparent 0,
+		transparent var(--cahier-paper-side-margin),
+		black var(--cahier-paper-side-margin),
+		black calc(100% - var(--cahier-paper-side-margin)),
+		transparent calc(100% - var(--cahier-paper-side-margin)),
+		transparent 100%
+	);
+	mask-image: linear-gradient(
+		to right,
+		transparent 0,
+		transparent var(--cahier-paper-side-margin),
+		black var(--cahier-paper-side-margin),
+		black calc(100% - var(--cahier-paper-side-margin)),
+		transparent calc(100% - var(--cahier-paper-side-margin)),
+		transparent 100%
+	);
 }

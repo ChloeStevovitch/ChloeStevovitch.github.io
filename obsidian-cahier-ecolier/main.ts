@@ -3,6 +3,7 @@ import { Decoration, DecorationSet, EditorView, WidgetType } from "@codemirror/v
 import { StateEffect, StateField, Text } from "@codemirror/state";
 
 type FontChoice = "patrick-hand" | "system-cursive";
+type CoverFit = "cover" | "contain" | "stretch";
 
 interface CahierSettings {
 	enabled: boolean;
@@ -25,6 +26,7 @@ interface CahierSettings {
 
 	// Cover page — off by default, turned on per note via frontmatter (cahier-cover: true)
 	coverColor: string; // fallback colour when the note doesn't set cahier-cover-color
+	coverFit: CoverFit; // fallback when the note doesn't set cahier-cover-fit — how the cover image fills the page
 }
 
 const DEFAULT_SETTINGS: CahierSettings = {
@@ -46,6 +48,13 @@ const DEFAULT_SETTINGS: CahierSettings = {
 	pageGapSize: 40,
 
 	coverColor: "#274472",
+	coverFit: "cover",
+};
+
+const COVER_FIT_CSS: Record<CoverFit, string> = {
+	cover: "cover",
+	contain: "contain",
+	stretch: "100% 100%",
 };
 
 const FONT_STACKS: Record<FontChoice, string> = {
@@ -155,6 +164,7 @@ interface CoverConf {
 	title: string;
 	color: string;
 	image: string | null;
+	fit: CoverFit; // only relevant when image is set: how the image fills the cover
 	pos: number; // doc offset to insert at — after any frontmatter, so it isn't split across it
 	height: number; // px — fixed, so CodeMirror can measure the block reliably during scroll; matches one page's height
 	hiddenLines: number[]; // 1-indexed blank lines (between frontmatter and pos) collapsed to 0 height
@@ -171,6 +181,7 @@ class CoverWidget extends WidgetType {
 			other.conf.title === this.conf.title &&
 			other.conf.color === this.conf.color &&
 			other.conf.image === this.conf.image &&
+			other.conf.fit === this.conf.fit &&
 			other.conf.height === this.conf.height
 		);
 	}
@@ -191,6 +202,7 @@ function buildCoverEl(conf: CoverConf): HTMLElement {
 	div.style.height = `${conf.height}px`;
 	if (conf.image) {
 		div.style.backgroundImage = `url("${conf.image.replace(/"/g, '\\"')}")`;
+		div.style.backgroundSize = COVER_FIT_CSS[conf.fit];
 	} else {
 		div.style.backgroundColor = conf.color;
 		// Le titre n'est superposé que sur une couverture de couleur — une
@@ -490,6 +502,8 @@ export default class CahierEcolierPlugin extends Plugin {
 		const color = (fm?.["cahier-cover-color"] as string) || s.coverColor;
 		const imageRaw = fm?.["cahier-cover-image"] as string | undefined;
 		const image = imageRaw ? this.resolveImagePath(imageRaw) : null;
+		const fitRaw = fm?.["cahier-cover-fit"] as string | undefined;
+		const fit: CoverFit = fitRaw === "contain" || fitRaw === "stretch" ? fitRaw : s.coverFit;
 
 		const paged = overallEnabled && !!fm?.["cahier-paged"];
 		const linesPerPage = Number(fm?.["cahier-lines-per-page"]) || s.linesPerPage;
@@ -520,6 +534,7 @@ export default class CahierEcolierPlugin extends Plugin {
 			title,
 			color,
 			image,
+			fit,
 			pos: coverPos,
 			// La couverture prend toute la hauteur visible de l'éditeur (l'écran
 			// au premier affichage), pas seulement la hauteur d'une page de texte.
@@ -783,7 +798,7 @@ class CahierEcolierSettingTab extends PluginSettingTab {
 
 		containerEl.createEl("h3", { text: "Page de couverture (par note)" });
 		containerEl.createEl("p", {
-			text: "Désactivée par défaut. Utilise la commande « Ajouter une page de couverture à cette note » (couleur) ou « Choisir une image de couverture pour cette note » (parcourt ton coffre), ou ajoute `cahier-cover: true` dans le frontmatter à la main, avec `cahier-cover-color: \"#274472\"` ou `cahier-cover-image: \"chemin/vers/image.jpg\"` (prioritaire sur la couleur). Le titre affiché est la propriété `title` du frontmatter, sinon le nom du fichier. Sa hauteur correspond à celle d'une page (lignes par page × espacement des lignes), avec un saut de page avant le contenu.",
+			text: "Désactivée par défaut. Utilise la commande « Ajouter une page de couverture à cette note » (couleur) ou « Choisir une image de couverture pour cette note » (parcourt ton coffre), ou ajoute `cahier-cover: true` dans le frontmatter à la main, avec `cahier-cover-color: \"#274472\"` ou `cahier-cover-image: \"chemin/vers/image.jpg\"` (prioritaire sur la couleur). Le titre affiché est la propriété `title` du frontmatter, sinon le nom du fichier. Sa hauteur correspond à celle d'une page (lignes par page × espacement des lignes), avec un saut de page avant le contenu. Pour une couverture-image, `cahier-cover-fit` règle son ajustement : `cover` (remplit en rognant), `contain` (image entière, marges visibles) ou `stretch` (étirée pour remplir exactement).",
 			cls: "setting-item-description",
 		});
 
@@ -796,6 +811,22 @@ class CahierEcolierSettingTab extends PluginSettingTab {
 					await this.plugin.saveSettings();
 					this.plugin.applyStyles();
 				})
+			);
+
+		new Setting(containerEl)
+			.setName("Ajustement d'image par défaut")
+			.setDesc("Utilisé si la note ne précise pas cahier-cover-fit.")
+			.addDropdown((d) =>
+				d
+					.addOption("cover", "Cover (remplit, rogne l'image)")
+					.addOption("contain", "Contain (image entière, marges)")
+					.addOption("stretch", "Stretch (étirée pour remplir)")
+					.setValue(s.coverFit)
+					.onChange(async (v) => {
+						s.coverFit = v as CoverFit;
+						await this.plugin.saveSettings();
+						this.plugin.applyStyles();
+					})
 			);
 
 		new Setting(containerEl).addButton((b) =>

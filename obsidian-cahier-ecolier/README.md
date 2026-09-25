@@ -74,6 +74,7 @@ cahier-lines-per-page: 30
 cahier-cover: true
 cahier-cover-color: "#274472"
 cahier-cover-image: "attachments/couverture.jpg"
+cahier-cover-fit: contain
 ---
 ```
 
@@ -81,7 +82,10 @@ cahier-cover-image: "attachments/couverture.jpg"
 "Lignes par page". `cahier-cover-image` (un chemin d'image du coffre, un
 lien `[[...]]` ou une URL) est prioritaire sur `cahier-cover-color`. Le
 titre affiché sur la couverture est la propriété `title` du frontmatter,
-sinon le nom du fichier.
+sinon le nom du fichier (une couverture-image n'affiche pas de titre).
+`cahier-cover-fit` règle l'ajustement d'une couverture-image : `cover`
+(par défaut, remplit en rognant), `contain` (image entière, marges
+visibles) ou `stretch` (étirée pour remplir exactement).
 
 Testé contre une vraie instance d'Obsidian (Electron piloté à distance) —
 alignement du texte sur les lignes, couverture, pagination et bascule par
