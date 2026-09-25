@@ -22,34 +22,21 @@
 	margin-right: auto !important;
 	background-color: var(--cahier-paper);
 	padding-top: 0;
-	/* Deux couches : la marge rouge verticale (sur toute la hauteur), et des
-	   lignes bleues horizontales "préremplies" — dessinées partout, même là
-	   où il n'y a pas encore de texte, pour qu'une page ressemble à une
-	   vraie feuille de papier ligné plutôt qu'à des lignes qui s'arrêtent
-	   net après le dernier mot écrit. --cahier-content-offset (calculé en
-	   JS) décale ce motif pour qu'il commence juste après la couverture et
-	   son saut de page, pas depuis le tout début de .cm-content. Ça reste
-	   aligné avec le vrai texte tant qu'aucun titre (plus grand) n'a encore
-	   décalé les lignes réelles portées par chaque .cm-line — au-delà,
-	   léger décalage assumé plutôt que des lignes qui s'arrêtent. */
+	/* Seule la marge rouge verticale est peinte ici. Les lignes bleues
+	   horizontales viennent uniquement de la bordure de chaque .cm-line
+	   (plus bas) et du widget .cahier-trailing-lines après la dernière
+	   ligne — jamais d'un motif de fond posé sur tout .cm-content : ça
+	   donnait deux lignes bleues légèrement décalées dès qu'un titre avait
+	   décalé la grille des vraies lignes. */
 	background-image: linear-gradient(
-			to right,
-			transparent 0,
-			transparent calc(var(--cahier-margin-position) - 1px),
-			var(--cahier-margin-color) calc(var(--cahier-margin-position) - 1px),
-			var(--cahier-margin-color) var(--cahier-margin-position),
-			transparent var(--cahier-margin-position),
-			transparent 100%
-		),
-		repeating-linear-gradient(
-			to bottom,
-			transparent 0,
-			transparent calc(var(--cahier-line-height) - 1px),
-			var(--cahier-line-color) calc(var(--cahier-line-height) - 1px),
-			var(--cahier-line-color) var(--cahier-line-height)
-		);
-	background-repeat: no-repeat, repeat-y;
-	background-position: 0 0, 0 var(--cahier-content-offset, 0px);
+		to right,
+		transparent 0,
+		transparent calc(var(--cahier-margin-position) - 1px),
+		var(--cahier-margin-color) calc(var(--cahier-margin-position) - 1px),
+		var(--cahier-margin-color) var(--cahier-margin-position),
+		transparent var(--cahier-margin-position),
+		transparent 100%
+	);
 }
 
 /* ---- Texte : police manuscrite posée sur les lignes ---- */
@@ -120,6 +107,18 @@
 	);
 }
 
+/* Ligne vide juste après le frontmatter (Obsidian en laisse souvent une) :
+   aplatie à 0 quand une couverture est active, pour ne pas ajouter un espace
+   en plus du saut de page déjà posé entre la couverture et le texte. */
+.cahier-ecolier-enabled .cm-line.cahier-hidden-blank-line {
+	height: 0 !important;
+	min-height: 0 !important;
+	padding: 0 !important;
+	border: none !important;
+	overflow: hidden !important;
+	line-height: 0 !important;
+}
+
 /* ---- Sauts de page : espace + marges blanches entre feuilles ---- */
 
 .cahier-page-gap {
@@ -167,4 +166,30 @@
 	color: #fff;
 	text-shadow: 0 2px 6px rgba(0, 0, 0, 0.55);
 	background: linear-gradient(to top, rgba(0, 0, 0, 0.4), transparent);
+}
+
+/* ---- Lignes préremplies après la dernière ligne du document ----
+   Un widget de bloc ancré à la fin du document, jamais posé derrière du
+   texte réel : contrairement à un fond sur .cm-content, il ne peut donc
+   jamais dessiner une ligne en double avec la bordure d'une vraie .cm-line. */
+
+.cahier-trailing-lines {
+	background-color: var(--cahier-paper);
+	background-image: linear-gradient(
+			to right,
+			transparent 0,
+			transparent calc(var(--cahier-margin-position) - 1px),
+			var(--cahier-margin-color) calc(var(--cahier-margin-position) - 1px),
+			var(--cahier-margin-color) var(--cahier-margin-position),
+			transparent var(--cahier-margin-position),
+			transparent 100%
+		),
+		repeating-linear-gradient(
+			to bottom,
+			transparent 0,
+			transparent calc(var(--cahier-line-height) - 1px),
+			var(--cahier-line-color) calc(var(--cahier-line-height) - 1px),
+			var(--cahier-line-color) var(--cahier-line-height)
+		);
+	background-repeat: no-repeat, repeat-y;
 }

@@ -91,6 +91,16 @@ function frontmatterEndLine(doc: Text): number {
 	return 0;
 }
 
+// Première ligne non vide à partir de `fromLine` (1-indexé) — sert à poser la
+// couverture juste avant le vrai contenu plutôt qu'avant la ligne blanche que
+// beaucoup de notes laissent après le frontmatter (sinon cette ligne vide
+// s'affiche comme un espace supplémentaire entre le saut de page et le texte).
+function firstNonBlankLine(doc: Text, fromLine: number): number {
+	let ln = fromLine;
+	while (ln <= doc.lines && doc.line(ln).text.trim() === "") ln++;
+	return ln;
+}
+
 class PageGapWidget extends WidgetType {
 	eq(): boolean {
 		return true;
@@ -147,6 +157,7 @@ interface CoverConf {
 	image: string | null;
 	pos: number; // doc offset to insert at — after any frontmatter, so it isn't split across it
 	height: number; // px — fixed, so CodeMirror can measure the block reliably during scroll; matches one page's height
+	hiddenLines: number[]; // 1-indexed blank lines (between frontmatter and pos) collapsed to 0 height
 }
 
 const setCover = StateEffect.define<CoverConf>();
@@ -203,9 +214,74 @@ const coverField = StateField.define<DecorationSet>({
 				// La couverture, puis un vrai "saut de page" juste après, avant le
 				// contenu — pas seulement une marge, pour rester cohérent avec les
 				// sauts de page entre les feuilles suivantes.
-				return Decoration.set([
+				const decos = [
 					Decoration.widget({ widget: new CoverWidget(e.value), side: -2, block: true }).range(e.value.pos),
 					Decoration.widget({ widget: new PageGapWidget(), side: -1, block: true }).range(e.value.pos),
+				];
+				// Les lignes vides entre le frontmatter et le vrai contenu (très
+				// courantes — Obsidian en laisse une après les propriétés) sont
+				// aplaties à 0 : sinon elles s'affichent comme un espace de plus,
+				// en trop du saut de page, entre la couverture et le texte.
+				for (const ln of e.value.hiddenLines) {
+					if (ln < 1 || ln > tr.state.doc.lines) continue;
+					decos.push(Decoration.line({ attributes: { class: "cahier-hidden-blank-line" } }).range(tr.state.doc.line(ln).from));
+				}
+				return Decoration.set(decos, true);
+			}
+		}
+		return deco.map(tr.changes);
+	},
+	provide: (f) => EditorView.decorations.from(f),
+});
+
+// ---- Lignes préremplies après la dernière ligne du document ----
+//
+// Chaque .cm-line (même vide) porte déjà sa propre ligne bleue (voir
+// styles.css) : au milieu du document, les lignes ne manquent donc jamais.
+// Le seul endroit qui reste blanc est APRÈS la toute dernière ligne réelle,
+// là où CodeMirror n'affiche plus rien. Un widget dédié, ancré à la fin du
+// document, y prolonge le quadrillage — sans jamais chevaucher une vraie
+// ligne (ce que faisait l'ancien fond en dégradé posé sur tout .cm-content,
+// et qui donnait deux lignes légèrement décalées dès qu'un titre avait
+// décalé les lignes réelles).
+
+interface FillerConf {
+	enabled: boolean;
+	height: number;
+}
+
+const setFiller = StateEffect.define<FillerConf>();
+
+class TrailingLinesWidget extends WidgetType {
+	constructor(private height: number) {
+		super();
+	}
+	eq(other: TrailingLinesWidget): boolean {
+		return other.height === this.height;
+	}
+	toDOM(): HTMLElement {
+		const div = document.createElement("div");
+		div.className = "cahier-trailing-lines";
+		div.style.height = `${this.height}px`;
+		return div;
+	}
+	ignoreEvent(): boolean {
+		return true;
+	}
+}
+
+const fillerField = StateField.define<DecorationSet>({
+	create() {
+		return Decoration.none;
+	},
+	update(deco, tr) {
+		for (const e of tr.effects) {
+			if (e.is(setFiller)) {
+				if (!e.value.enabled || e.value.height <= 0) return Decoration.none;
+				return Decoration.set([
+					Decoration.widget({ widget: new TrailingLinesWidget(e.value.height), side: 1, block: true }).range(
+						tr.state.doc.length
+					),
 				]);
 			}
 		}
@@ -225,7 +301,7 @@ export default class CahierEcolierPlugin extends Plugin {
 	async onload() {
 		await this.loadSettings();
 		this.addSettingTab(new CahierEcolierSettingTab(this.app, this));
-		this.registerEditorExtension([pagingField, coverField]);
+		this.registerEditorExtension([pagingField, coverField, fillerField]);
 		this.applyStyles();
 
 		this.addRibbonIcon("book-open", "Cahier d'écolier : activer/désactiver pour cette note", async () => {
@@ -360,9 +436,6 @@ export default class CahierEcolierPlugin extends Plugin {
 		body.style.setProperty("--cahier-font-size", `${s.fontSize}px`);
 		body.style.setProperty("--cahier-page-margin", `${s.pageMargin}px`);
 		body.style.setProperty("--cahier-page-gap-size", `${s.pageGapSize}px`);
-		if (!body.style.getPropertyValue("--cahier-content-offset")) {
-			body.style.setProperty("--cahier-content-offset", "0px");
-		}
 
 		this.updateActiveFileFeatures();
 	}
@@ -428,15 +501,19 @@ export default class CahierEcolierPlugin extends Plugin {
 		if (!cm) return;
 		this.ensureResizeObserver(cm);
 
-		let coverPos = 0;
-		let startLine = 0;
 		const doc = cm.state.doc;
 		const fmEndLine = frontmatterEndLine(doc);
-		startLine = fmEndLine;
-		if (fmEndLine > 0) {
-			const line = doc.line(fmEndLine);
-			coverPos = Math.min(line.to + 1, doc.length);
-		}
+		const startLine = fmEndLine;
+
+		// La couverture se pose juste avant la première ligne non vide qui suit
+		// le frontmatter — pas juste après le frontmatter lui-même — sinon la
+		// ligne blanche qu'Obsidian y laisse souvent s'affiche comme un espace
+		// en trop, en plus du saut de page.
+		const searchFrom = fmEndLine > 0 ? fmEndLine + 1 : 1;
+		const contentStartLine = firstNonBlankLine(doc, searchFrom);
+		const hiddenLines: number[] = [];
+		for (let ln = searchFrom; ln < contentStartLine; ln++) hiddenLines.push(ln);
+		const coverPos = contentStartLine <= doc.lines ? doc.line(contentStartLine).from : doc.length;
 
 		const coverConf: CoverConf = {
 			enabled: coverEnabled,
@@ -447,23 +524,21 @@ export default class CahierEcolierPlugin extends Plugin {
 			// La couverture prend toute la hauteur visible de l'éditeur (l'écran
 			// au premier affichage), pas seulement la hauteur d'une page de texte.
 			height: Math.max(cm.scrollDOM.clientHeight || 0, linesPerPage * s.lineHeight),
+			hiddenLines,
 		};
 		const pagingConf: PagingConf = { enabled: paged, linesPerPage, startLine };
-
-		// Décalage du motif de lignes de fond (voir styles.css) pour qu'il
-		// commence juste après la couverture + son saut de page, plutôt qu'au
-		// tout début de .cm-content — sinon les lignes "préremplies" se
-		// dessineraient par-dessus la couverture elle-même.
-		const gapHeight = s.pageMargin * 2 + s.pageGapSize;
-		const contentOffset = coverEnabled ? coverConf.height + gapHeight : 0;
-		document.body.style.setProperty("--cahier-content-offset", `${contentOffset}px`);
+		// Une page de lignes préremplies après la dernière ligne réelle — voir
+		// fillerField. Ancré à la fin du document, jamais sur une vraie ligne :
+		// aucun risque de double ligne, même après un titre qui a décalé la
+		// grille des lignes réelles.
+		const fillerConf: FillerConf = { enabled: overallEnabled, height: linesPerPage * s.lineHeight };
 
 		// Évite de redispatcher (et donc de reconstruire le widget) quand rien n'a
 		// changé — "layout-change" se déclenche pour toutes sortes de raisons.
-		const key = JSON.stringify([coverConf, pagingConf]);
+		const key = JSON.stringify([coverConf, pagingConf, fillerConf]);
 		if (this.lastConfKeys.get(cm) !== key) {
 			this.lastConfKeys.set(cm, key);
-			cm.dispatch({ effects: [setCover.of(coverConf), setPaging.of(pagingConf)] });
+			cm.dispatch({ effects: [setCover.of(coverConf), setPaging.of(pagingConf), setFiller.of(fillerConf)] });
 		}
 	}
 }
