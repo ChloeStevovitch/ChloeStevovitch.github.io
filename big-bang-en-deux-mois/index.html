@@ -83,6 +83,7 @@
 		transition: opacity 0.1s;
 	}
 	#tip b { display: block; }
+	.note { color: var(--muted); font-size: 13px; margin: 10px 4px 0; }
 	.controls { display: flex; flex-wrap: wrap; gap: 8px 24px; align-items: center; margin: 14px 4px 0; color: var(--muted); font-size: 14px; }
 	select { font: inherit; color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 4px 8px; max-width: 100%; }
 	.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-top: 20px; }
@@ -114,7 +115,7 @@
 <body>
 <main>
 	<h1>Du Big Bang à aujourd'hui en deux mois</h1>
-	<p class="lead">Les deux mois qui vont du 1<sup>er</sup> août au 1<sup>er</sup> octobre 2026 (axe horizontal) sont étirés sur toute l'histoire de l'Univers (axe vertical, logarithmique) : le 1<sup>er</sup> août est le Big Bang, le 1<sup>er</sup> octobre est aujourd'hui. Survole ou touche la courbe pour voir à quelle époque correspond chaque jour.</p>
+	<p class="lead">Les deux mois qui vont du 1<sup>er</sup> août au 1<sup>er</sup> octobre 2026 (axe horizontal) sont étirés sur toute l'histoire de l'Univers (axe vertical) selon une courbe logarithmique : le 1<sup>er</sup> août est le Big Bang, le 1<sup>er</sup> octobre est aujourd'hui. Survole ou touche la courbe pour voir à quelle époque correspond chaque jour.</p>
 
 	<div class="panel">
 		<div class="chart-wrap">
@@ -123,7 +124,14 @@
 			</svg>
 			<div id="tip"></div>
 		</div>
+		<p class="note" id="linear-note">Axe vertical linéaire : tout ce qui s'est passé depuis l'apparition des humains tient dans l'épaisseur du trait, en haut. Les points du 29 août et du 14 septembre y sont donc collés contre « aujourd'hui » — passe l'axe en échelle logarithmique pour les voir se séparer.</p>
 		<div class="controls">
+			<label>Axe vertical :
+				<select id="yscale">
+					<option value="linear" selected>linéaire</option>
+					<option value="log">logarithmique</option>
+				</select>
+			</label>
 			<label>Point d'arrivée (le 1<sup>er</sup> octobre) :
 				<select id="lmin">
 					<option value="0.0416667">il y a 1 heure</option>
@@ -132,7 +140,7 @@
 					<option value="365.2425">il y a 1 an</option>
 				</select>
 			</label>
-			<span>Une échelle logarithmique ne peut pas atteindre « il y a 0 seconde » : il faut fixer une ancienneté minimale.</span>
+			<span>La courbe est logarithmique : elle ne peut pas atteindre « il y a 0 seconde », il faut fixer une ancienneté minimale.</span>
 		</div>
 	</div>
 
@@ -207,6 +215,7 @@
 	].map(([years, name, wiki]) => ({ days: years * YEAR, name, url: "https://fr.wikipedia.org/wiki/" + encodeURIComponent(wiki.replace(/ /g, "_")) }));
 
 	let LMIN = 1;
+	let LINEAR = true; // axe vertical linéaire (la courbe, elle, reste logarithmique)
 	const frac = (lookDays) => (Math.log10(LMAX) - Math.log10(lookDays)) / (Math.log10(LMAX) - Math.log10(LMIN));
 	const lookback = (days) => {
 		const t = Math.min(Math.max(days / SPAN, 0), 1);
@@ -258,12 +267,20 @@
 		const iw = W - M.l - M.r, ih = H - M.t - M.b;
 		svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
 		const x = (days) => M.l + (days / SPAN) * iw;
-		const y = (lookDays) => M.t + frac(lookDays) * ih;
+		// Axe vertical : aujourd'hui en haut, Big Bang en bas. Linéaire (par
+		// défaut) : position proportionnelle à l'ancienneté. Logarithmique :
+		// proportionnelle à son logarithme.
+		const y = (lookDays) => (LINEAR ? M.t + (lookDays / LMAX) * ih : M.t + (1 - frac(lookDays)) * ih);
 
 		// Graduations de Y.
 		const grid = el("g", { class: "grid" });
 		const ticks = el("g", { class: "tick" });
-		const yTicks = [
+		const linearTicks = [
+			[13.8e9 * YEAR, "Big Bang", "Big Bang"],
+			...[12, 10, 8, 6, 4, 2].map((g) => [g * 1e9 * YEAR, `il y a ${g} Md ans`, `${g} Md ans`]),
+			[0, "aujourd'hui", "aujourd'hui"],
+		];
+		const yTicks = LINEAR ? linearTicks : [
 			[13.8e9 * YEAR, "Big Bang", "Big Bang"],
 			[1e9 * YEAR, "1 milliard d'années", "1 Md ans"],
 			[1e8 * YEAR, "100 millions d'années", "100 M ans"],
@@ -300,7 +317,7 @@
 		el("text", { class: "axis-title", x: M.l + iw / 2, y: H - 12, "text-anchor": "middle" }).textContent = "Temps réel (2026)";
 		if (!narrow) {
 			el("text", { class: "axis-title", x: 18, y: M.t + ih / 2, transform: `rotate(-90 18 ${M.t + ih / 2})`, "text-anchor": "middle" }).textContent =
-				"Temps historique (ancienneté, échelle log)";
+				LINEAR ? "Temps historique (du Big Bang à aujourd'hui)" : "Temps historique (ancienneté, échelle log)";
 		}
 
 		// Repères historiques le long de la courbe (cliquables).
@@ -323,14 +340,21 @@
 		// Dates demandées : sur le graphique, et en cartes.
 		const cards = document.getElementById("cards");
 		cards.innerHTML = "";
-		for (const m of MARKERS) {
+		MARKERS.forEach((m, i) => {
 			const days = (m.date - START) / DAY;
 			const L = lookback(days);
 			const g = el("g", { class: `marker${m.end ? " end" : ""}` });
 			el("line", { x1: x(days), x2: x(days), y1: y(L), y2: H - M.b }, g);
 			el("line", { x1: M.l, x2: x(days), y1: y(L), y2: y(L) }, g);
 			el("circle", { cx: x(days), cy: y(L), r: 6 }, g);
-			el("text", { x: x(days) + (m.end ? -9 : 9), y: y(L) - 10, "text-anchor": m.end ? "end" : "start" }, g).textContent = m.label;
+			// En linéaire, les points récents sont collés en haut : étiquettes
+			// sous le point, décalées pour ne pas se chevaucher.
+			const below = LINEAR && i > 0;
+			el("text", {
+				x: x(days) + (m.end ? -9 : 9),
+				y: below ? y(L) + 20 + (m.end ? 0 : (i - 1) * 16) : y(L) - 10,
+				"text-anchor": m.end ? "end" : "start",
+			}, g).textContent = m.label;
 
 			const near = nearestEvent(L);
 			const card = document.createElement("div");
@@ -340,7 +364,7 @@
 				`<div class="hist">${days === 0 ? "le Big Bang" : describe(L)}</div>` +
 				`<div class="event">${days === 0 ? "Naissance de l'Univers : " + link(near) : m.end ? "Aujourd'hui" : "Événement proche : " + link(near)}</div>`;
 			cards.appendChild(card);
-		}
+		});
 
 		// Tableau : chaque repère et le jour réel qui lui correspond.
 		const nearSet = new Set(MARKERS.map((m) => nearestEvent(lookback((m.date - START) / DAY)).name));
@@ -392,6 +416,11 @@
 
 	document.getElementById("lmin").addEventListener("change", (e) => {
 		LMIN = Number(e.target.value);
+		draw();
+	});
+	document.getElementById("yscale").addEventListener("change", (e) => {
+		LINEAR = e.target.value === "linear";
+		document.getElementById("linear-note").hidden = !LINEAR;
 		draw();
 	});
 	let resizeTimer;
