@@ -3,252 +3,322 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Du Big Bang à aujourd'hui en deux mois</title>
-<meta name="description" content="Deux mois de temps réel (1er août – 1er octobre 2026) projetés sur toute l'histoire, du Big Bang à aujourd'hui, en échelle logarithmique.">
+<title>Big Bang en deux mois</title>
+<meta name="description" content="Mes dates, étirées du Big Bang à aujourd'hui.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌌</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;800&display=swap" rel="stylesheet">
 <style>
 	:root {
-		--bg: #f7f4ee;
-		--panel: #fffdf8;
-		--ink: #1f2430;
-		--muted: #6b6f7a;
-		--line: #d9d3c7;
-		--grid: #ece6da;
-		--curve: #3c5a9a;
-		--accent: #c2563a;
-		--mark: #2f7d6b;
-		--hover: #8a5cc2;
-		--link: #2f5fb3;
+		--bg: #ebe6f2;
+		--sh-dark: #c9c1d6;
+		--sh-light: #ffffff;
+		--ink: #4a4060;
+		--muted: #8c82a3;
+		--faint: #d8d1e3;
+		--accent: #e07a9f;
+		--accent-2: #9b87e0;
+		--link: #7b62d1;
 	}
 	@media (prefers-color-scheme: dark) {
 		:root:not([data-theme="light"]) {
-			--bg: #16181d;
-			--panel: #1d2027;
-			--ink: #e8e6e1;
-			--muted: #9a9ca3;
-			--line: #343844;
-			--grid: #262a33;
-			--curve: #8fb0f0;
-			--accent: #f08a6a;
-			--mark: #6cc7b0;
-			--hover: #c4a2f0;
-			--link: #8fb0f0;
+			--bg: #2b2735;
+			--sh-dark: #1d1a24;
+			--sh-light: #39344a;
+			--ink: #ece6f7;
+			--muted: #a79dbf;
+			--faint: #3a3448;
+			--accent: #f29ab9;
+			--accent-2: #b9a8f2;
+			--link: #c4b3ff;
 		}
+	}
+	:root[data-theme="dark"] {
+		--bg: #2b2735;
+		--sh-dark: #1d1a24;
+		--sh-light: #39344a;
+		--ink: #ece6f7;
+		--muted: #a79dbf;
+		--faint: #3a3448;
+		--accent: #f29ab9;
+		--accent-2: #b9a8f2;
+		--link: #c4b3ff;
 	}
 	* { box-sizing: border-box; }
 	body {
 		margin: 0;
 		background: var(--bg);
 		color: var(--ink);
-		font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+		font: 16px/1.5 "Nunito", system-ui, -apple-system, "Segoe UI", sans-serif;
 	}
-	main { max-width: 1080px; margin: 0 auto; padding: 28px 16px 48px; }
-	h1 { font-size: 1.6rem; margin: 0 0 4px; letter-spacing: -0.01em; line-height: 1.25; }
-	h2 { font-size: 1.1rem; margin: 32px 0 10px; }
-	.lead { color: var(--muted); margin: 0 0 20px; max-width: 70ch; }
-	a { color: var(--link); }
-	.panel {
-		background: var(--panel);
-		border: 1px solid var(--line);
-		border-radius: 12px;
-		padding: 16px 12px 12px;
-	}
-	.chart-wrap { position: relative; }
-	svg { display: block; width: 100%; height: auto; overflow: visible; touch-action: pan-y; }
-	.tick text { fill: var(--muted); font-size: 12px; }
-	.axis-title { fill: var(--ink); font-size: 13px; font-weight: 600; }
-	.grid line { stroke: var(--grid); }
-	.axis line { stroke: var(--line); }
-	.curve { fill: none; stroke: var(--curve); stroke-width: 3; }
-	.event-dot { fill: var(--muted); opacity: 0.5; }
-	.marker line { stroke: var(--mark); stroke-dasharray: 4 4; }
-	.marker circle { fill: var(--mark); stroke: var(--panel); stroke-width: 2; }
-	.marker text { fill: var(--mark); font-size: 13px; font-weight: 600; }
-	.marker.end circle { fill: var(--accent); }
-	.marker.end text { fill: var(--accent); }
-	.marker.end line { stroke: var(--accent); }
-	.hover line { stroke: var(--hover); }
-	.hover circle { fill: var(--hover); }
-	#tip {
-		position: absolute;
-		pointer-events: none;
-		background: var(--ink);
-		color: var(--bg);
-		font-size: 13px;
-		padding: 8px 10px;
-		border-radius: 8px;
-		width: max-content;
-		max-width: min(260px, 80vw);
-		transform: translate(-50%, calc(-100% - 12px));
-		opacity: 0;
-		transition: opacity 0.1s;
-	}
-	#tip b { display: block; }
-	.note { color: var(--muted); font-size: 13px; margin: 10px 4px 0; }
-	.controls { display: flex; flex-wrap: wrap; gap: 8px 24px; align-items: center; margin: 14px 4px 0; color: var(--muted); font-size: 14px; }
-	select { font: inherit; color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 4px 8px; max-width: 100%; }
-	.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-top: 20px; }
-	.card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; }
-	.card .real { font-size: 13px; color: var(--muted); }
-	.card .hist { font-size: 1.12rem; font-weight: 650; margin: 2px 0 6px; line-height: 1.3; }
-	.card .event { font-size: 14px; }
-	.card.end { border-color: var(--accent); }
-	table { width: 100%; border-collapse: collapse; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; font-size: 14px; }
-	th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--grid); vertical-align: top; }
-	th { color: var(--muted); font-weight: 600; font-size: 13px; }
-	tr:last-child td { border-bottom: none; }
-	tr.near td { background: color-mix(in srgb, var(--mark) 10%, transparent); }
-	td.when { white-space: nowrap; color: var(--muted); }
-	.how { margin-top: 28px; color: var(--muted); font-size: 14px; max-width: 75ch; }
-	.how code { background: var(--grid); padding: 1px 5px; border-radius: 4px; }
+	main { max-width: 980px; margin: 0 auto; padding: 32px 16px 48px; }
+	.raised { background: var(--bg); border-radius: 28px; box-shadow: 9px 9px 18px var(--sh-dark), -9px -9px 18px var(--sh-light); }
+	.inset { background: var(--bg); box-shadow: inset 4px 4px 8px var(--sh-dark), inset -4px -4px 8px var(--sh-light); }
 
-	/* Mobile : texte un peu plus petit, tableau compact. */
-	@media (max-width: 640px) {
-		main { padding: 20px 12px 40px; }
+	header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 26px; }
+	h1 { margin: 0; font-size: 1.6rem; font-weight: 800; letter-spacing: -0.01em; }
+	.chips { display: flex; flex-wrap: wrap; gap: 10px; }
+	.chip { border-radius: 999px; padding: 6px 14px; font-size: 14px; color: var(--muted); }
+	.chip b { color: var(--ink); }
+
+	.types { display: flex; flex-wrap: wrap; gap: 6px; padding: 6px; border-radius: 999px; width: fit-content; max-width: 100%; margin: 0 auto 22px; }
+	.types button {
+		font: inherit; font-size: 14px; font-weight: 600; color: var(--muted);
+		background: var(--bg); border: 0; border-radius: 999px; padding: 8px 16px; cursor: pointer;
+		box-shadow: 4px 4px 8px var(--sh-dark), -4px -4px 8px var(--sh-light);
+		transition: box-shadow .15s, color .15s;
+	}
+	.types button[aria-pressed="true"] { color: var(--accent); box-shadow: inset 3px 3px 6px var(--sh-dark), inset -3px -3px 6px var(--sh-light); }
+	.types button:focus-visible, .dot:focus-visible { outline: 2px solid var(--accent-2); outline-offset: 3px; }
+
+	.chart { padding: 18px 12px 10px; }
+	svg { display: block; width: 100%; height: auto; overflow: visible; }
+	.tick { fill: var(--muted); font-size: 12px; }
+	.grid { stroke: var(--faint); stroke-width: 1; }
+	.groove { fill: none; stroke: var(--sh-dark); stroke-width: 9; stroke-linecap: round; opacity: .45; }
+	.curve { fill: none; stroke: url(#grad); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+	.dot { cursor: pointer; outline: none; }
+	.dot circle { fill: var(--bg); filter: url(#neu); transition: stroke .15s; }
+	.dot.on circle { stroke: var(--accent); stroke-width: 2.5; }
+	.dot text { font-size: 13px; pointer-events: none; }
+
+	.detail { margin-top: 26px; padding: 22px 24px; display: grid; grid-template-columns: auto 1fr; gap: 6px 18px; align-items: start; }
+	.detail .emo { grid-row: span 4; width: 64px; height: 64px; border-radius: 50%; display: grid; place-items: center; font-size: 30px; }
+	.detail .when { color: var(--muted); font-size: 14px; }
+	.detail .what { font-size: 1.2rem; font-weight: 800; line-height: 1.3; }
+	.detail .epoch { color: var(--accent); font-weight: 700; }
+	.detail .event { margin-top: 8px; padding: 12px 16px; border-radius: 18px; grid-column: 2; }
+	.detail .event a { color: var(--link); font-weight: 700; text-decoration: none; }
+	.detail .event a:hover { text-decoration: underline; }
+	.detail .event p { margin: 4px 0 0; font-size: 14px; }
+	.detail .event .ago { color: var(--muted); font-size: 13px; }
+
+	@media (max-width: 600px) {
+		main { padding: 22px 14px 36px; }
 		h1 { font-size: 1.3rem; }
-		.lead { font-size: 15px; }
-		.panel { padding: 12px 6px 10px; }
-		th, td { padding: 7px 8px; }
-		td.when { white-space: normal; }
+		.chart { padding: 12px 4px 6px; }
+		.types button { padding: 7px 12px; font-size: 13px; }
+		.detail { padding: 18px; grid-template-columns: 1fr; }
+		.detail .emo { grid-row: auto; width: 52px; height: 52px; font-size: 24px; }
+		.detail .event { grid-column: 1; }
 	}
 </style>
 </head>
 <body>
 <main>
-	<h1>Du Big Bang à aujourd'hui en deux mois</h1>
-	<p class="lead">Les deux mois qui vont du 1<sup>er</sup> août au 1<sup>er</sup> octobre 2026 (axe horizontal) sont étirés sur toute l'histoire de l'Univers (axe vertical) selon une courbe logarithmique : le 1<sup>er</sup> août est le Big Bang, le 1<sup>er</sup> octobre est aujourd'hui. Survole ou touche la courbe pour voir à quelle époque correspond chaque jour.</p>
+	<header>
+		<h1>Big Bang en deux mois 🌌</h1>
+		<div class="chips">
+			<span class="chip inset"><b id="count"></b> moments</span>
+			<span class="chip inset">mis à jour le <b id="updated"></b></span>
+		</div>
+	</header>
 
-	<div class="panel">
-		<div class="chart-wrap">
-			<svg id="chart" role="img" aria-labelledby="chart-title">
-				<title id="chart-title">Courbe logarithmique : temps réel (août – octobre 2026) contre temps historique (Big Bang – aujourd'hui)</title>
-			</svg>
-			<div id="tip"></div>
-		</div>
-		<p class="note" id="linear-note">Axe vertical linéaire : tout ce qui s'est passé depuis l'apparition des humains tient dans l'épaisseur du trait, en haut. Les points du 29 août et du 14 septembre y sont donc collés contre « aujourd'hui » — passe l'axe en échelle logarithmique pour les voir se séparer.</p>
-		<div class="controls">
-			<label>Axe vertical :
-				<select id="yscale">
-					<option value="linear" selected>linéaire</option>
-					<option value="log">logarithmique</option>
-				</select>
-			</label>
-			<label>Point d'arrivée (le 1<sup>er</sup> octobre) :
-				<select id="lmin">
-					<option value="0.0416667">il y a 1 heure</option>
-					<option value="1" selected>il y a 1 jour</option>
-					<option value="30.436875">il y a 1 mois</option>
-					<option value="365.2425">il y a 1 an</option>
-				</select>
-			</label>
-			<span>La courbe est logarithmique : elle ne peut pas atteindre « il y a 0 seconde », il faut fixer une ancienneté minimale.</span>
-		</div>
+	<div class="types raised" id="types" role="group" aria-label="Type de courbe"></div>
+
+	<div class="chart raised">
+		<svg id="chart" role="img" aria-label="Courbe : mes dates projetées sur l'histoire de l'Univers">
+			<defs>
+				<filter id="neu" x="-60%" y="-60%" width="220%" height="220%">
+					<feDropShadow dx="2.5" dy="2.5" stdDeviation="2" style="flood-color: var(--sh-dark)"/>
+					<feDropShadow dx="-2.5" dy="-2.5" stdDeviation="2" style="flood-color: var(--sh-light)"/>
+				</filter>
+				<linearGradient id="grad" x1="0" x2="1" y1="0" y2="0">
+					<stop offset="0" style="stop-color: var(--accent-2)"/>
+					<stop offset="1" style="stop-color: var(--accent)"/>
+				</linearGradient>
+			</defs>
+		</svg>
 	</div>
 
-	<div class="cards" id="cards"></div>
-
-	<h2>Tous les repères</h2>
-	<table>
-		<thead><tr><th>Temps réel</th><th>Événement</th><th>Il y a</th></tr></thead>
-		<tbody id="events"></tbody>
-	</table>
-
-	<div class="how">
-		<p><strong>Comment c'est calculé.</strong> Le temps historique est mesuré en ancienneté (« il y a combien de temps »). Son logarithme décroît en ligne droite avec le temps réel : chaque jour qui passe divise l'ancienneté par le même facteur. Avec l'arrivée à « il y a 1 jour », ce facteur est d'environ ×1,6 par jour : en 61 jours, on passe de 13,8 milliards d'années à 1 jour.</p>
-		<p>Formule : <code>log(ancienneté) = log(13,8 Ga) × (1 − t) + log(arrivée) × t</code>, avec <code>t</code> la fraction écoulée entre le 1<sup>er</sup> août et le 1<sup>er</sup> octobre. Les événements sont les repères connus les plus proches sur cette échelle — approximatifs par nature.</p>
-	</div>
+	<section class="detail raised" id="detail" aria-live="polite"></section>
 </main>
 
 <script>
 (() => {
-	const DAY = 86400000;
-	const YEAR = 365.2425; // jours
-	const NOW_YEAR = 2026.75; // 1er octobre 2026
-	const START = Date.UTC(2026, 7, 1); // 1er août 2026
-	const END = Date.UTC(2026, 9, 1); // 1er octobre 2026
-	const SPAN = (END - START) / DAY; // 61 jours
-	const LMAX = 13.8e9 * YEAR; // âge de l'Univers, en jours
-	const MARKERS = [
-		{ date: Date.UTC(2026, 7, 1), label: "1 août" },
-		{ date: Date.UTC(2026, 7, 29), label: "29 août" },
-		{ date: Date.UTC(2026, 8, 14), label: "14 sept." },
-		{ date: Date.UTC(2026, 9, 1), label: "1 oct.", end: true },
-	];
-	// Repères connus : ancienneté (années avant le 1er octobre 2026), nom,
-	// titre de la page Wikipédia (fr) — titres vérifiés. Années avant notre ère
-	// en numérotation astronomique (-752 = 753 av. J.-C.).
-	const ago = (year) => NOW_YEAR - year;
-	const EVENTS = [
-		[13.8e9, "Big Bang", "Big Bang"],
-		[13.6e9, "Premières étoiles", "Étoile de population III"],
-		[4.6e9, "Formation du Soleil et de la Terre", "Formation et évolution du Système solaire"],
-		[3.8e9, "Premières traces de vie", "Origine de la vie"],
-		[2.4e9, "Grande oxydation", "Grande Oxydation"],
-		[541e6, "Explosion cambrienne", "Explosion cambrienne"],
-		[252e6, "Grande extinction du Permien-Trias", "Extinction Permien-Trias"],
-		[230e6, "Premiers dinosaures", "Dinosauria"],
-		[66e6, "Disparition des dinosaures", "Extinction Crétacé-Paléogène"],
-		[7e6, "Apparition de la lignée humaine", "Hominini"],
-		[3.2e6, "Lucy", "Lucy (australopithèque)"],
-		[2.6e6, "Premiers outils de pierre", "Oldowayen"],
-		[300e3, "Apparition d'Homo sapiens", "Homo sapiens"],
-		[60e3, "Homo sapiens sort d'Afrique", "Origine africaine de l'Homme moderne"],
-		[36e3, "Peintures de la grotte Chauvet", "Grotte Chauvet"],
-		[20e3, "Dernier maximum glaciaire", "Dernier maximum glaciaire"],
-		[17e3, "Peintures de Lascaux", "Grotte de Lascaux"],
-		[11.7e3, "Fin de la dernière glaciation", "Holocène"],
-		[10e3, "Débuts de l'agriculture", "Révolution néolithique"],
-		[5.2e3, "Invention de l'écriture", "Histoire de l'écriture"],
-		[4.5e3, "Pyramides de Gizeh", "Pyramides de Gizeh"],
-		[ago(-752), "Fondation de Rome", "Fondation de Rome"],
-		[ago(1), "An 1 de notre ère", "Ère chrétienne"],
-		[ago(476), "Chute de l'Empire romain d'Occident", "Déclin de l'Empire romain d'Occident"],
-		[ago(1450), "Imprimerie de Gutenberg", "Imprimerie"],
-		[ago(1492), "Christophe Colomb en Amérique", "Christophe Colomb"],
-		[ago(1789), "Révolution française", "Révolution française"],
-		[ago(1914), "Première Guerre mondiale", "Première Guerre mondiale"],
-		[ago(1969.55), "Premiers pas sur la Lune", "Apollo 11"],
-		[ago(1989.85), "Chute du mur de Berlin", "Chute du mur de Berlin"],
-		[ago(2007.5), "Premier iPhone", "IPhone"],
-		[ago(2017.33), "Élection présidentielle française", "Élection présidentielle française de 2017"],
-		[ago(2020.2), "Pandémie de Covid-19", "Pandémie de Covid-19"],
-		[ago(2026.5), "Coupe du monde de football 2026", "Coupe du monde de football 2026"],
-	].map(([years, name, wiki]) => ({ days: years * YEAR, name, url: "https://fr.wikipedia.org/wiki/" + encodeURIComponent(wiki.replace(/ /g, "_")) }));
+	// ───── Mes dates : ajoute une ligne ici, la page se recalcule seule. ─────
+	// La dernière date est le point d'arrivée (« maintenant ») et la date de mise à jour.
+	const MOMENTS = [
+		["2026-08-01", "🧥", "vestiaire"],
+		["2026-08-09", "🎷", "blues"],
+		["2026-08-26", "🎸", "guitare"],
+		["2026-08-28", "🦎", "Escher"],
+		["2026-09-02", "🕊️", "baptême"],
+		["2026-09-06", "🌾", "voyage à la campagne, avec la Marie Jeanne et la Thaïlande fusion"],
+		["2026-09-08", "🍒", "crème glacée cerise noire"],
+		["2026-09-10", "♟️", "échecs au parc"],
+		["2026-09-22", "🎤", "poésie jive"],
+		["2026-09-27", "🎶", "concert"],
+		["2026-10-01", "🪕", "ukulele et logarithme"],
+	].map(([d, emo, name]) => ({ t: Date.parse(d + "T00:00:00Z"), emo, name }));
 
-	let LMIN = 1;
-	let LINEAR = true; // axe vertical linéaire (la courbe, elle, reste logarithmique)
-	const frac = (lookDays) => (Math.log10(LMAX) - Math.log10(lookDays)) / (Math.log10(LMAX) - Math.log10(LMIN));
-	const lookback = (days) => {
-		const t = Math.min(Math.max(days / SPAN, 0), 1);
-		return Math.pow(10, Math.log10(LMAX) * (1 - t) + Math.log10(LMIN) * t);
+	const DAY = 86400000, YEAR = 365.2425;
+	const START = MOMENTS[0].t, END = MOMENTS[MOMENTS.length - 1].t;
+	const SPAN = (END - START) / DAY;
+	const END_YEAR = 1970 + (END / DAY) / YEAR;
+	const LMAX = 13.8e9 * YEAR, LMIN = 1; // ancienneté en jours : Big Bang → 1 jour avant la dernière date
+	const LOGMAX = Math.log10(LMAX), LOGMIN = Math.log10(LMIN);
+
+	// Types de courbe : t (temps réel, 0 → 1) ↦ u (progression sur l'échelle logarithmique, 0 → 1).
+	const TYPES = {
+		log: { label: "Logarithmique", f: (t) => t },
+		exp: { label: "Exponentielle", f: (t) => (Math.exp(4 * t) - 1) / (Math.exp(4) - 1) },
+		sig: { label: "Sigmoïde", f: (t) => { const s = (x) => 1 / (1 + Math.exp(-10 * (x - 0.5))); return (s(t) - s(0)) / (s(1) - s(0)); } },
+		sin: { label: "Sinusoïde", f: (t) => t - Math.sin(6 * Math.PI * t) / (6 * Math.PI) },
 	};
+	let type = "log";
+	try { const s = localStorage.getItem("bb-type"); if (TYPES[s]) type = s; } catch (e) {}
+	let selected = MOMENTS.length - 1;
 
-	const fmtNum = (n, d = 0) => n.toLocaleString("fr-FR", { maximumFractionDigits: d });
-	function describe(days) {
-		const years = days / YEAR;
-		if (years >= 1e9) return `il y a ${fmtNum(years / 1e9, 1)} milliard${years >= 2e9 ? "s" : ""} d'années`;
-		if (years >= 1e6) return `il y a ${fmtNum(years / 1e6, 1)} million${years >= 2e6 ? "s" : ""} d'années`;
-		if (years >= 10000) return `il y a ${fmtNum(Math.round(years / 100) * 100)} ans`;
-		if (years >= 100) {
-			const y = Math.round(NOW_YEAR - years);
-			return `il y a ${fmtNum(years)} ans · ${y <= 0 ? `${fmtNum(1 - y)} av. J.-C.` : `en ${y}`}`;
-		}
-		const date = new Date(END - days * DAY).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
-		if (years >= 1) return `il y a ${fmtNum(years, 1)} ans · ${date}`;
-		if (days >= 1) return `il y a ${fmtNum(days, 1)} jour${days >= 2 ? "s" : ""} · ${date}`;
-		return `il y a ${fmtNum(days * 24, 1)} heure${days * 24 >= 2 ? "s" : ""}`;
-	}
-	function nearestEvent(days) {
+	// ───── Repères (niches) ─────
+	// ya : années avant ; y : année (astronomique, -584 = 585 av. J.-C.) ; d : date exacte.
+	const wiki = (title) => "https://fr.wikipedia.org/w/index.php?title=Sp%C3%A9cial:Recherche&go=Go&search=" + encodeURIComponent(title);
+	const EVENTS = [
+		{ ya: 13.8e9, n: "Les trois premières minutes", p: "Hydrogène, hélium et une pincée de lithium sont forgés en quelques minutes.", w: "Nucléosynthèse primordiale" },
+		{ ya: 13.79e9, n: "Le fond diffus cosmologique", p: "L'Univers devient transparent : la plus vieille lumière qu'on puisse voir.", w: "Fond diffus cosmologique" },
+		{ ya: 13.4e9, n: "GN-z11, une galaxie bébé", p: "Vue 400 millions d'années à peine après le Big Bang.", w: "GN-z11" },
+		{ ya: 10e9, n: "La Voie lactée avale Gaïa-Encelade", p: "Une galaxie naine engloutie ; ses étoiles tournent encore à contre-sens.", w: "Gaia-Enceladus" },
+		{ ya: 4.568e9, n: "Les grains blancs de la météorite d'Allende", p: "Ses inclusions sont les plus vieux solides du Système solaire.", w: "Météorite d'Allende" },
+		{ ya: 4.5e9, n: "Théia percute la Terre", p: "De la collision naît la Lune.", w: "Théia (planète)" },
+		{ ya: 4.4e9, n: "Les zircons de Jack Hills", p: "Minuscules cristaux australiens : la plus vieille matière terrestre connue.", w: "Jack Hills" },
+		{ ya: 3.48e9, n: "Les stromatolithes du Pilbara", p: "Des tapis de microbes : les plus anciennes traces de vie bien acceptées.", w: "Stromatolithe" },
+		{ ya: 2.1e9, n: "Le biote de Franceville", p: "Au Gabon, peut-être les premiers êtres multicellulaires.", w: "Biote de Franceville" },
+		{ ya: 1.95e9, n: "Le réacteur nucléaire naturel d'Oklo", p: "Un gisement d'uranium gabonais se met à fissionner tout seul… pendant des centaines de milliers d'années.", w: "Réacteur nucléaire naturel d'Oklo" },
+		{ ya: 1.05e9, n: "Bangiomorpha, l'algue sexuée", p: "Une petite algue rouge : la plus ancienne preuve de reproduction sexuée.", w: "Bangiomorpha pubescens" },
+		{ ya: 650e6, n: "La Terre boule de neige", p: "La planète gelée presque des pôles à l'équateur.", w: "Terre boule de neige" },
+		{ ya: 558e6, n: "Dickinsonia", p: "Un drôle de disque côtelé, l'un des plus vieux animaux confirmés — grâce à son cholestérol fossile.", w: "Dickinsonia" },
+		{ ya: 508e6, n: "Les schistes de Burgess", p: "Hallucigenia, Opabinia aux cinq yeux : le bestiaire étrange du Cambrien.", w: "Schistes de Burgess" },
+		{ ya: 375e6, n: "Tiktaalik", p: "Un poisson à « poignets » qui prépare la sortie des eaux.", w: "Tiktaalik" },
+		{ ya: 300e6, n: "Meganeura, la libellule géante", p: "Environ 70 cm d'envergure, dans des forêts de prêles géantes.", w: "Meganeura" },
+		{ ya: 252e6, n: "La Grande Mort", p: "Environ 90 % des espèces marines disparaissent à la fin du Permien.", w: "Extinction Permien-Trias" },
+		{ ya: 231e6, n: "Eoraptor", p: "Un petit dinosaure argentin, parmi les tout premiers.", w: "Eoraptor" },
+		{ ya: 150e6, n: "Archaeopteryx", p: "Plumes, dents et griffes : le dinosaure-oiseau de Solnhofen.", w: "Archaeopteryx" },
+		{ ya: 125e6, n: "Archaefructus, une des premières fleurs", p: "Une plante aquatique chinoise aux fleurs sans pétales.", w: "Archaefructus" },
+		{ ya: 66e6, n: "L'astéroïde de Chicxulub", p: "Un impact au Yucatán met fin aux dinosaures non aviens.", w: "Cratère de Chicxulub" },
+		{ ya: 56e6, n: "Le coup de chaud Paléocène-Éocène", p: "Un réchauffement brutal de 5 à 8 °C.", w: "Maximum thermique du passage Paléocène-Éocène" },
+		{ ya: 47e6, n: "Ida, le primate de Messel", p: "Un petit primate fossilisé presque intact dans un lac allemand.", w: "Darwinius masillae" },
+		{ ya: 34e6, n: "La Grande Coupure", p: "Le climat se refroidit et la faune d'Europe change d'un coup.", w: "Grande Coupure" },
+		{ ya: 5.33e6, n: "Le remplissage de la Méditerranée", p: "L'Atlantique déborde à Gibraltar et remplit une Méditerranée asséchée.", w: "Inondation zancléenne" },
+		{ ya: 3.66e6, n: "Les empreintes de Laetoli", p: "Des hominines marchent dans une cendre volcanique fraîche, en Tanzanie.", w: "Empreintes de pas de Laetoli" },
+		{ ya: 1.77e6, n: "Les crânes de Dmanissi", p: "Parmi les premiers humains hors d'Afrique, dans le Caucase.", w: "Dmanissi" },
+		{ ya: 1e6, n: "Le feu de Wonderwerk", p: "Cendres et os brûlés : une des plus anciennes traces de feu maîtrisé.", w: "Grotte de Wonderwerk" },
+		{ ya: 773e3, n: "Le Nord et le Sud échangent leur place", p: "Dernière inversion du champ magnétique terrestre.", w: "Inversion de Brunhes-Matuyama" },
+		{ ya: 430e3, n: "Excalibur, à la Sima de los Huesos", p: "Au fond d'un puits espagnol, des dizaines d'individus et un unique biface rouge.", w: "Sima de los Huesos" },
+		{ ya: 380e3, n: "Un campement sur la plage de Nice", p: "Terra Amata : des foyers parmi les plus anciens d'Europe.", w: "Terra Amata" },
+		{ ya: 315e3, n: "Djebel Irhoud", p: "Au Maroc, les plus anciens fossiles d'Homo sapiens connus.", w: "Djebel Irhoud" },
+		{ ya: 176e3, n: "Les cercles de Bruniquel", p: "Des Néandertaliens bâtissent des cercles de stalagmites au fond d'une grotte du Tarn-et-Garonne.", w: "Grotte de Bruniquel" },
+		{ ya: 100e3, n: "L'atelier d'ocre de Blombos", p: "Deux coquilles d'ormeau servent de pots de peinture.", w: "Grotte de Blombos" },
+		{ ya: 74e3, n: "La super-éruption du Toba", p: "Un volcan de Sumatra crache des milliers de km³ de cendres.", w: "Toba" },
+		{ ya: 55e3, n: "La « flûte » de Divje Babe", p: "Un fémur d'ourson percé : flûte néandertalienne, ou mâchonné par une hyène ?", w: "Flûte de Divje Babe" },
+		{ ya: 42e3, n: "Les flûtes du Jura souabe", p: "En os de vautour et en ivoire : les plus vieux instruments de musique connus.", w: "Flûte de Hohle Fels" },
+		{ ya: 40e3, n: "L'homme-lion de Hohlenstein-Stadel", p: "Sculpté dans l'ivoire de mammouth : une des plus vieilles créatures imaginaires.", w: "Homme-lion" },
+		{ ya: 36e3, n: "Le bison à huit pattes de Chauvet", p: "Des pattes multipliées pour suggérer le mouvement — de l'animation avant l'heure.", w: "Grotte Chauvet" },
+		{ ya: 29e3, n: "La Vénus de Dolní Věstonice", p: "La plus ancienne figurine en céramique connue.", w: "Vénus de Dolní Věstonice" },
+		{ ya: 20e3, n: "L'os d'Ishango", p: "Un os gravé d'encoches groupées, peut-être un des plus vieux outils de calcul.", w: "Os d'Ishango" },
+		{ ya: 17e3, n: "La scène du Puits, à Lascaux", p: "Un homme à tête d'oiseau face à un bison : la scène la plus mystérieuse de Lascaux.", w: "Grotte de Lascaux" },
+		{ ya: 14.7e3, n: "Le réchauffement du Bølling-Allerød", p: "La fin de la glaciation s'accélère d'un coup.", w: "Bølling-Allerød" },
+		{ ya: 12.9e3, n: "Le Dryas récent", p: "Brusque retour du froid, nommé d'après une petite fleur de toundra.", w: "Dryas récent" },
+		{ ya: 11.6e3, n: "Göbekli Tepe", p: "Des piliers sculptés de renards et de vautours, 6 000 ans avant Stonehenge.", w: "Göbekli Tepe" },
+		{ ya: 9.1e3, n: "Çatal Höyük", p: "Une ville sans rues : on entre dans les maisons par le toit.", w: "Çatal Höyük" },
+		{ ya: 8.15e3, n: "Le glissement de Storegga", p: "Un pan du plateau norvégien s'effondre ; tsunami jusqu'en Écosse.", w: "Glissements de Storegga" },
+		{ ya: 5.3e3, n: "Ötzi", p: "Mort dans les Alpes avec 61 tatouages et tout son équipement.", w: "Ötzi" },
+		{ y: -2500, n: "Le cercle de sarsens de Stonehenge", p: "Les grands blocs dressés en cercle.", w: "Stonehenge" },
+		{ y: -1749, n: "La réclamation à Ea-nasir", p: "Une tablette d'argile : la plus vieille plainte de client connue (du cuivre de mauvaise qualité !).", w: "Tablette de réclamation à Ea-nasir" },
+		{ y: -1399, n: "L'hymne hourrite n° 6", p: "Gravé à Ougarit : la plus ancienne mélodie notée presque complète.", w: "Hymnes hourrites" },
+		{ y: -924, n: "Le calendrier de Gézer", p: "Une petite tablette qui récite les mois des travaux agricoles.", w: "Calendrier de Gézer" },
+		{ y: -775, n: "Corèbe, premier champion olympique", p: "Vainqueur du stade aux premiers Jeux connus ; on le dit cuisinier.", w: "Corèbe d'Élis" },
+		{ y: -584.6, n: "L'éclipse de Thalès", p: "Une éclipse interrompt la bataille entre Mèdes et Lydiens.", w: "Éclipse de Thalès" },
+		{ y: 79.8, n: "Le Vésuve ensevelit Pompéi", p: "Pline le Jeune en laisse un récit de témoin.", w: "Éruption du Vésuve en 79" },
+		{ y: 100, n: "L'épitaphe de Seikilos", p: "Une chanson complète gravée sur une tombe : « Tant que tu vis, brille ».", w: "Épitaphe de Seikilos" },
+		{ d: "1054-07-04", n: "L'étoile invitée de 1054", p: "Des astronomes chinois voient une étoile en plein jour ; il en reste la nébuleuse du Crabe.", w: "SN 1054" },
+		{ y: 1175, n: "Les pièces d'échecs de Lewis", p: "En ivoire de morse, aux mines boudeuses, retrouvées en Écosse.", w: "Pièces d'échecs de Lewis" },
+		{ d: "1518-07-14", n: "L'épidémie de danse de Strasbourg", p: "Des dizaines de personnes dansent sans pouvoir s'arrêter, pendant des semaines.", w: "Épidémie de danse de 1518" },
+		{ d: "1582-10-15", n: "Les dix jours disparus de 1582", p: "On se couche le jeudi 4 octobre, on se réveille le vendredi 15 : calendrier grégorien.", w: "Calendrier grégorien" },
+		{ y: 1614.5, n: "Napier publie les logarithmes", p: "La première table de logarithmes : des années de calculs à la main.", w: "John Napier" },
+		{ d: "1637-02-03", n: "La bulle des tulipes éclate", p: "À Haarlem, les bulbes ne trouvent soudain plus preneur.", w: "Tulipomanie" },
+		{ y: 1686, n: "Le Procope sert des glaces", p: "Le café parisien popularise sorbets et glaces.", w: "Le Procope" },
+		{ d: "1858-07-15", n: "La Grande Puanteur de Londres", p: "La Tamise empeste au point qu'on imbibe les rideaux du Parlement de chlorure de chaux.", w: "Grande Puanteur" },
+		{ d: "1860-04-09", n: "« Au clair de la lune », première voix enregistrée", p: "Scott de Martinville l'enregistre au phonautographe… sans pouvoir la réécouter.", w: "Phonautographe" },
+		{ d: "1888-10-14", n: "Roundhay Garden Scene", p: "Deux secondes de film : des gens qui tournent en rond dans un jardin de Leeds.", w: "Roundhay Garden Scene" },
+		{ d: "1902-09-01", n: "Le Voyage dans la Lune de Méliès", p: "L'obus dans l'œil de la Lune.", w: "Le Voyage dans la Lune" },
+		{ d: "1924-02-12", n: "Création de Rhapsody in Blue", p: "À New York, avec le fameux glissando de clarinette.", w: "Rhapsody in Blue" },
+		{ d: "1938-10-30", n: "La Guerre des mondes à la radio", p: "Orson Welles fait croire à une invasion martienne.", w: "La Guerre des mondes (radio)" },
+		{ d: "1962-02-20", n: "Friendship 7", p: "John Glenn fait trois fois le tour de la Terre.", w: "Mercury-Atlas 6" },
+		{ d: "1962-05-02", n: "Le tournoi des candidats de Curaçao", p: "Huit grands maîtres, sept semaines d'échecs sous les tropiques.", w: "Tournoi des candidats de 1962" },
+		{ d: "1972-07-11", n: "Fischer contre Spassky à Reykjavik", p: "Le « match du siècle », en pleine guerre froide.", w: "Championnat du monde d'échecs 1972" },
+		{ d: "1977-08-15", n: "Le signal Wow!", p: "72 secondes d'un signal radio venu de l'espace, jamais retrouvé.", w: "Signal Wow!" },
+		{ d: "1983-09-26", n: "Stanislav Petrov", p: "Il juge qu'une alerte de missiles est une fausse alarme — et a raison.", w: "Stanislav Petrov" },
+		{ d: "1991-08-06", n: "Le premier site web", p: "info.cern.ch explique… ce qu'est le Web.", w: "Info.cern.ch" },
+		{ d: "1997-05-11", n: "Deep Blue bat Kasparov", p: "Première défaite d'un champion du monde face à une machine en match.", w: "Deep Blue" },
+		{ d: "2014-11-12", n: "Philae rebondit sur une comète", p: "Deux rebonds avant de se coincer à l'ombre d'une falaise.", w: "Philae (sonde spatiale)" },
+		{ d: "2016-03-10", n: "Le coup 37 d'AlphaGo", p: "Un coup que personne n'aurait joué, contre Lee Sedol.", w: "AlphaGo" },
+		{ d: "2019-04-10", n: "Première image d'un trou noir", p: "L'anneau orange de M87*.", w: "M87*" },
+		{ d: "2021-12-25", n: "Décollage du télescope James-Webb", p: "Un cadeau de Noël plié comme un origami.", w: "Télescope spatial James-Webb" },
+		{ d: "2024-12-07", n: "Notre-Dame rouvre ses portes", p: "Cinq ans après l'incendie.", w: "Notre-Dame de Paris" },
+		{ d: "2025-05-08", n: "Habemus papam : Léon XIV", p: "La fumée blanche au deuxième jour du conclave.", w: "Léon XIV" },
+		{ d: "2025-10-19", n: "Le casse du Louvre", p: "Des bijoux de la Couronne volés en quelques minutes dans la galerie d'Apollon.", w: "Vol au musée du Louvre en 2025" },
+		{ d: "2026-02-06", n: "Ouverture des JO de Milan-Cortina", p: "Les Jeux d'hiver partagés entre deux villes.", w: "Jeux olympiques d'hiver de 2026" },
+		{ d: "2026-07-19", n: "Finale de la Coupe du monde 2026", p: "La première Coupe du monde à 48 équipes se termine au MetLife Stadium.", w: "Coupe du monde de football 2026" },
+		{ d: "2026-08-12", n: "Éclipse totale sur l'Espagne", p: "La première éclipse totale visible en Europe continentale depuis 1999.", w: "Éclipse solaire du 12 août 2026" },
+	].map((e) => ({
+		days: e.ya ? e.ya * YEAR : e.d ? (END - Date.parse(e.d + "T00:00:00Z")) / DAY : (END_YEAR - e.y) * YEAR,
+		name: e.n, note: e.p, url: wiki(e.w),
+	}));
+
+	// ───── Calcul ─────
+	const fracT = (m) => (m.t - START) / DAY / SPAN;
+	const lookback = (t) => Math.pow(10, LOGMAX + (LOGMIN - LOGMAX) * TYPES[type].f(Math.min(Math.max(t, 0), 1)));
+	const uOf = (days) => (LOGMAX - Math.log10(days)) / (LOGMAX - LOGMIN);
+
+	function nearest(days, self) {
+		// Mes propres dates servent aussi de repères (pour les dernières semaines).
+		const mine = MOMENTS.filter((m, i) => i !== self && m.t < END).map((m) => ({
+			days: (END - m.t) / DAY, name: `${m.emo} Toi : ${m.name}`, note: "Un de tes propres moments — la courbe se mord la queue.", url: null,
+		}));
 		let best = null;
-		for (const e of EVENTS) {
+		for (const e of EVENTS.concat(mine)) {
+			if (e.days <= 0) continue;
 			const dist = Math.abs(Math.log10(e.days) - Math.log10(days));
 			if (!best || dist < best.dist) best = { ...e, dist };
 		}
 		return best;
 	}
-	const dateFr = (t, opts = { day: "numeric", month: "long" }) => new Date(t).toLocaleDateString("fr-FR", { ...opts, timeZone: "UTC" });
-	const link = (e) => `<a href="${e.url}" target="_blank" rel="noopener">${e.name}</a>`;
 
-	// ---- Dessin (format large ou haut selon l'écran) ----
+	const num = (n, d = 0) => n.toLocaleString("fr-FR", { maximumFractionDigits: d });
+	const dateFr = (t, month = "long") => {
+		const d = new Date(t);
+		const day = d.getUTCDate();
+		return `${day === 1 ? "1er" : day} ${d.toLocaleDateString("fr-FR", { month, timeZone: "UTC" })}`;
+	};
+	function describe(days) {
+		const years = days / YEAR;
+		if (years >= 1e9) return `il y a ${num(years / 1e9, 2)} milliards d'années`;
+		if (years >= 1e6) return `il y a ${num(years / 1e6, 1)} million${years >= 2e6 ? "s" : ""} d'années`;
+		if (years >= 10000) return `il y a ${num(Math.round(years / 100) * 100)} ans`;
+		if (years >= 100) {
+			const y = Math.floor(END_YEAR - years);
+			return `il y a ${num(years)} ans · ${y <= 0 ? `vers ${num(1 - y)} av. J.-C.` : `vers ${y}`}`;
+		}
+		const t = END - days * DAY;
+		const full = `${dateFr(t)} ${new Date(t).getUTCFullYear()}`;
+		if (years >= 1) return `il y a ${num(years, 1)} ans · ${full}`;
+		if (days >= 10) return `il y a ${num(days)} jours · ${full}`;
+		return `il y a ${num(days, 1)} jour${days >= 2 ? "s" : ""} · ${full}`;
+	}
+
+	// ───── En-tête & boutons ─────
+	document.getElementById("count").textContent = MOMENTS.length;
+	document.getElementById("updated").textContent = `${dateFr(END)} ${new Date(END).getUTCFullYear()}`;
+	const typesEl = document.getElementById("types");
+	for (const [k, v] of Object.entries(TYPES)) {
+		const b = document.createElement("button");
+		b.type = "button"; b.textContent = v.label; b.dataset.k = k;
+		b.addEventListener("click", () => { type = k; try { localStorage.setItem("bb-type", k); } catch (e) {} render(); });
+		typesEl.appendChild(b);
+	}
+
+	// ───── Dessin ─────
 	const svg = document.getElementById("chart");
 	const NS = "http://www.w3.org/2000/svg";
 	const el = (name, attrs, parent = svg) => {
@@ -258,177 +328,72 @@
 		return e;
 	};
 
-	function draw() {
-		while (svg.childNodes.length > 1) svg.removeChild(svg.lastChild);
-		const narrow = svg.parentElement.clientWidth < 600;
-		const W = narrow ? 400 : 1000;
-		const H = narrow ? 600 : 560;
-		const M = narrow ? { l: 82, r: 14, t: 20, b: 64 } : { l: 150, r: 30, t: 24, b: 56 };
+	function render() {
+		for (const b of typesEl.children) b.setAttribute("aria-pressed", b.dataset.k === type);
+		[...svg.children].forEach((c) => c.tagName !== "defs" && c.remove());
+
+		const narrow = svg.parentElement.clientWidth < 560;
+		const W = narrow ? 360 : 900, H = narrow ? 460 : 470;
+		const M = narrow ? { l: 74, r: 16, t: 18, b: 34 } : { l: 104, r: 26, t: 22, b: 36 };
 		const iw = W - M.l - M.r, ih = H - M.t - M.b;
 		svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
-		const x = (days) => M.l + (days / SPAN) * iw;
-		// Axe vertical : aujourd'hui en haut, Big Bang en bas. Linéaire (par
-		// défaut) : position proportionnelle à l'ancienneté. Logarithmique :
-		// proportionnelle à son logarithme.
-		const y = (lookDays) => (LINEAR ? M.t + (lookDays / LMAX) * ih : M.t + (1 - frac(lookDays)) * ih);
+		const x = (t) => M.l + t * iw;
+		const y = (days) => M.t + (1 - uOf(days)) * ih;
+		const r = narrow ? 11 : 14;
 
-		// Graduations de Y.
-		const grid = el("g", { class: "grid" });
-		const ticks = el("g", { class: "tick" });
-		const linearTicks = [
-			[13.8e9 * YEAR, "Big Bang", "Big Bang"],
-			...[12, 10, 8, 6, 4, 2].map((g) => [g * 1e9 * YEAR, `il y a ${g} Md ans`, `${g} Md ans`]),
-			[0, "aujourd'hui", "aujourd'hui"],
-		];
-		const yTicks = LINEAR ? linearTicks : [
-			[13.8e9 * YEAR, "Big Bang", "Big Bang"],
-			[1e9 * YEAR, "1 milliard d'années", "1 Md ans"],
-			[1e8 * YEAR, "100 millions d'années", "100 M ans"],
-			[1e7 * YEAR, "10 millions d'années", "10 M ans"],
-			[1e6 * YEAR, "1 million d'années", "1 M ans"],
-			[1e5 * YEAR, "100 000 ans", "100 000 ans"],
-			[1e4 * YEAR, "10 000 ans", "10 000 ans"],
-			[1e3 * YEAR, "1 000 ans", "1 000 ans"],
-			[100 * YEAR, "100 ans", "100 ans"],
-			[10 * YEAR, "10 ans", "10 ans"],
-			[YEAR, "1 an", "1 an"],
-			[30.436875, "1 mois", "1 mois"],
-			[1, "1 jour", "1 jour"],
-			[1 / 24, "1 heure", "1 heure"],
-		].filter(([d]) => d >= LMIN * 0.999);
-		for (const [d, long, short] of yTicks) {
-			const yy = y(d);
-			el("line", { x1: M.l, x2: W - M.r, y1: yy, y2: yy }, grid);
-			el("text", { x: M.l - 8, y: yy + 4, "text-anchor": "end" }, ticks).textContent = narrow ? short : long;
+		for (const [d, label] of [[LMAX, "Big Bang"], [1e9 * YEAR, "1 Md ans"], [1e6 * YEAR, "1 M ans"], [1e3 * YEAR, "1 000 ans"], [YEAR, "1 an"], [1, "1 jour"]]) {
+			el("line", { class: "grid", x1: M.l, x2: W - M.r, y1: y(d), y2: y(d) });
+			el("text", { class: "tick", x: M.l - r - 6, y: y(d) + 4, "text-anchor": "end" }).textContent = label;
 		}
-		// Graduations de X.
-		const xDates = narrow
-			? [Date.UTC(2026, 7, 1), Date.UTC(2026, 8, 1), Date.UTC(2026, 9, 1)]
-			: [Date.UTC(2026, 7, 1), Date.UTC(2026, 7, 15), Date.UTC(2026, 8, 1), Date.UTC(2026, 8, 15), Date.UTC(2026, 9, 1)];
-		for (const t of xDates) {
-			const xx = x((t - START) / DAY);
-			el("line", { x1: xx, x2: xx, y1: M.t, y2: H - M.b }, grid);
-			const anchor = t === START ? "start" : t === END ? "end" : "middle";
-			el("text", { x: xx, y: H - M.b + 20, "text-anchor": narrow ? anchor : "middle" }, ticks).textContent = dateFr(t, narrow ? { day: "numeric", month: "short" } : undefined);
-		}
-		const ax = el("g", { class: "axis" });
-		el("line", { x1: M.l, x2: W - M.r, y1: H - M.b, y2: H - M.b }, ax);
-		el("line", { x1: M.l, x2: M.l, y1: M.t, y2: H - M.b }, ax);
-		el("text", { class: "axis-title", x: M.l + iw / 2, y: H - 12, "text-anchor": "middle" }).textContent = "Temps réel (2026)";
-		if (!narrow) {
-			el("text", { class: "axis-title", x: 18, y: M.t + ih / 2, transform: `rotate(-90 18 ${M.t + ih / 2})`, "text-anchor": "middle" }).textContent =
-				LINEAR ? "Temps historique (du Big Bang à aujourd'hui)" : "Temps historique (ancienneté, échelle log)";
+		const mid = Date.UTC(new Date(START).getUTCFullYear(), new Date(START).getUTCMonth() + 1, 1);
+		for (const [t, a] of [[START, "start"], [mid, "middle"], [END, "end"]]) {
+			if (t > END) continue;
+			el("text", { class: "tick", x: x((t - START) / DAY / SPAN), y: H - 8, "text-anchor": a }).textContent = dateFr(t, "short");
 		}
 
-		// Repères historiques le long de la courbe (cliquables).
-		const ev = el("g", {});
-		for (const e of EVENTS) {
-			if (e.days < LMIN || e.days > LMAX) continue;
-			const a = el("a", { href: e.url, target: "_blank" }, ev);
-			el("circle", { class: "event-dot", cx: x(frac(e.days) * SPAN), cy: y(e.days), r: narrow ? 3.5 : 3 }, a);
-			el("title", {}, a).textContent = e.name;
-		}
-
-		// La courbe.
 		let d = "";
-		for (let i = 0; i <= 240; i++) {
-			const days = (i / 240) * SPAN;
-			d += `${i ? "L" : "M"}${x(days).toFixed(1)},${y(lookback(days)).toFixed(1)}`;
+		for (let i = 0; i <= 300; i++) {
+			const t = i / 300;
+			d += `${i ? "L" : "M"}${x(t).toFixed(1)},${y(lookback(t)).toFixed(1)}`;
 		}
+		el("path", { class: "groove", d });
 		el("path", { class: "curve", d });
 
-		// Dates demandées : sur le graphique, et en cartes.
-		const cards = document.getElementById("cards");
-		cards.innerHTML = "";
-		MARKERS.forEach((m, i) => {
-			const days = (m.date - START) / DAY;
-			const L = lookback(days);
-			const g = el("g", { class: `marker${m.end ? " end" : ""}` });
-			el("line", { x1: x(days), x2: x(days), y1: y(L), y2: H - M.b }, g);
-			el("line", { x1: M.l, x2: x(days), y1: y(L), y2: y(L) }, g);
-			el("circle", { cx: x(days), cy: y(L), r: 6 }, g);
-			// En linéaire, les points récents sont collés en haut : étiquettes
-			// sous le point, décalées pour ne pas se chevaucher.
-			const below = LINEAR && i > 0;
-			el("text", {
-				x: x(days) + (m.end ? -9 : 9),
-				y: below ? y(L) + 20 + (m.end ? 0 : (i - 1) * 16) : y(L) - 10,
-				"text-anchor": m.end ? "end" : "start",
-			}, g).textContent = m.label;
-
-			const near = nearestEvent(L);
-			const card = document.createElement("div");
-			card.className = `card${m.end ? " end" : ""}`;
-			card.innerHTML =
-				`<div class="real">${dateFr(m.date)} 2026</div>` +
-				`<div class="hist">${days === 0 ? "le Big Bang" : describe(L)}</div>` +
-				`<div class="event">${days === 0 ? "Naissance de l'Univers : " + link(near) : m.end ? "Aujourd'hui" : "Événement proche : " + link(near)}</div>`;
-			cards.appendChild(card);
+		MOMENTS.forEach((m, i) => {
+			const t = fracT(m);
+			const g = el("g", { class: "dot" + (i === selected ? " on" : ""), tabindex: 0, role: "button", "aria-label": `${dateFr(m.t)} : ${m.name}` });
+			el("circle", { cx: x(t), cy: y(lookback(t)), r }, g);
+			el("text", { x: x(t), y: y(lookback(t)) + (narrow ? 4.5 : 5), "text-anchor": "middle", style: `font-size:${narrow ? 11 : 14}px` }, g).textContent = m.emo;
+			const pick = () => { selected = i; render(); };
+			g.addEventListener("click", pick);
+			g.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pick(); } });
 		});
+		// Le point choisi passe devant les autres.
+		const on = svg.querySelector(".dot.on"); if (on) svg.appendChild(on);
 
-		// Tableau : chaque repère et le jour réel qui lui correspond.
-		const nearSet = new Set(MARKERS.map((m) => nearestEvent(lookback((m.date - START) / DAY)).name));
-		const tbody = document.getElementById("events");
-		tbody.innerHTML = "";
-		for (const e of EVENTS) {
-			if (e.days < LMIN) continue;
-			const real = START + frac(e.days) * SPAN * DAY;
-			const tr = document.createElement("tr");
-			if (nearSet.has(e.name)) tr.className = "near";
-			const when = new Date(real).toLocaleString("fr-FR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "UTC" });
-			tr.innerHTML = `<td class="when">${when}</td><td>${link(e)}</td><td>${describe(e.days).replace(/^il y a /, "")}</td>`;
-			tbody.appendChild(tr);
-		}
-
-		// Survol / toucher.
-		const hover = el("g", { class: "hover", style: "display:none" });
-		const hl = el("line", { y1: M.t, y2: H - M.b }, hover);
-		const hc = el("circle", { r: 5 }, hover);
-		const zone = el("rect", { x: M.l, y: M.t, width: iw, height: ih, fill: "transparent" });
-		const tip = document.getElementById("tip");
-		const show = (evt) => {
-			const pt = svg.createSVGPoint();
-			pt.x = evt.clientX;
-			pt.y = evt.clientY;
-			const p = pt.matrixTransform(svg.getScreenCTM().inverse());
-			const days = Math.min(Math.max(((p.x - M.l) / iw) * SPAN, 0), SPAN);
-			const L = lookback(days);
-			hover.style.display = "";
-			hl.setAttribute("x1", x(days));
-			hl.setAttribute("x2", x(days));
-			hc.setAttribute("cx", x(days));
-			hc.setAttribute("cy", y(L));
-			const real = new Date(START + days * DAY).toLocaleString("fr-FR", { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit", timeZone: "UTC" });
-			tip.innerHTML = `<b>${real}</b>${days < 0.01 ? "le Big Bang" : describe(L)}<br><span style="opacity:.75">≈ ${nearestEvent(L).name}</span>`;
-			const box = svg.getBoundingClientRect();
-			const left = Math.min(Math.max((x(days) / W) * box.width, 90), box.width - 90);
-			tip.style.left = `${left}px`;
-			tip.style.top = `${(y(L) / H) * box.height}px`;
-			tip.style.opacity = 1;
-		};
-		zone.addEventListener("pointermove", show);
-		zone.addEventListener("pointerdown", show);
-		zone.addEventListener("pointerleave", () => {
-			hover.style.display = "none";
-			tip.style.opacity = 0;
-		});
+		showDetail();
 	}
 
-	document.getElementById("lmin").addEventListener("change", (e) => {
-		LMIN = Number(e.target.value);
-		draw();
+	function showDetail() {
+		const m = MOMENTS[selected];
+		const days = lookback(fracT(m));
+		const e = nearest(days, selected);
+		const evName = e.url ? `<a href="${e.url}" target="_blank" rel="noopener">${e.name}</a>` : `<b>${e.name}</b>`;
+		document.getElementById("detail").innerHTML =
+			`<div class="emo inset">${m.emo}</div>` +
+			`<div class="when">${dateFr(m.t)} ${new Date(m.t).getUTCFullYear()}</div>` +
+			`<div class="what">${m.name}</div>` +
+			`<div class="epoch">↦ ${describe(days)}</div>` +
+			`<div class="event inset">${evName}<p>${e.note}</p><p class="ago">${describe(e.days)}</p></div>`;
+	}
+
+	render();
+	let lastNarrow = null;
+	addEventListener("resize", () => {
+		const n = svg.parentElement.clientWidth < 560;
+		if (n !== lastNarrow) { lastNarrow = n; render(); }
 	});
-	document.getElementById("yscale").addEventListener("change", (e) => {
-		LINEAR = e.target.value === "linear";
-		document.getElementById("linear-note").hidden = !LINEAR;
-		draw();
-	});
-	let resizeTimer;
-	window.addEventListener("resize", () => {
-		clearTimeout(resizeTimer);
-		resizeTimer = setTimeout(draw, 120);
-	});
-	draw();
+	lastNarrow = svg.parentElement.clientWidth < 560;
 })();
 </script>
 </body>
