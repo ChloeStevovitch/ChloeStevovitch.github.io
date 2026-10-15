@@ -530,14 +530,20 @@
 	const tOf = (days) => { let a = 0, b = 1; for (let i = 0; i < 60; i++) { const m = (a + b) / 2; if (lookback(m) > days) a = m; else b = m; } return a; };
 	const uOf = (days) => (LOGMAX - Math.log10(days)) / (LOGMAX - LOGMIN);
 
-	function nearest(days, self) {
-		let best = null;
-		for (const e of EVENTS) {
-			if (e.days <= 0) continue;
-			const dist = Math.abs(Math.log10(e.days) - Math.log10(days));
-			if (!best || dist < best.dist) best = { ...e, dist };
-		}
-		return best;
+	// Un repère différent pour chaque moment : appariement qui garde l'ordre
+	// chronologique et minimise l'écart total (programmation dynamique).
+	function assign() {
+		const ev = EVENTS.filter((e) => e.days > 0).sort((a, b) => b.days - a.days);
+		const ms = MOMENTS.map((m, i) => ({ i, l: Math.log10(lookback(fracT(m))) }));
+		const n = ms.length, k = ev.length, cost = (a, b) => Math.abs(ms[a].l - Math.log10(ev[b].days));
+		// dp[a][b] : meilleur coût pour les a premiers moments avec les b premiers repères.
+		const dp = Array.from({ length: n + 1 }, () => new Array(k + 1).fill(Infinity));
+		for (let b = 0; b <= k; b++) dp[0][b] = 0;
+		for (let a = 1; a <= n; a++)
+			for (let b = a; b <= k; b++) dp[a][b] = Math.min(dp[a][b - 1], dp[a - 1][b - 1] + cost(a - 1, b - 1));
+		const out = [];
+		for (let a = n, b = k; a > 0; b--) if (dp[a][b] !== dp[a][b - 1]) { out[ms[a - 1].i] = ev[b - 1]; a--; }
+		return out;
 	}
 
 	const num = (n, d = 0) => n.toLocaleString("fr-FR", { maximumFractionDigits: d });
@@ -675,7 +681,7 @@
 	function showDetail() {
 		const m = MOMENTS[selected];
 		const days = lookback(fracT(m));
-		const e = nearest(days, selected);
+		const e = assign()[selected];
 		const evName = e.url ? `<a href="${e.url}" target="_blank" rel="noopener">${e.name}</a>` : `<span class="ev-name">${e.name}</span>`;
 		document.getElementById("detail").innerHTML =
 			`<div class="emo inset">${m.emo}</div>` +
