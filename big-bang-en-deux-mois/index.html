@@ -3,534 +3,291 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Big Bang en deux mois</title>
-<meta name="description" content="Mes dates, étirées du Big Bang à aujourd'hui.">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌌</text></svg>">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;800&display=swap" rel="stylesheet">
+<title>Du Big Bang à aujourd'hui depuis le 8 octobre</title>
+<meta name="description" content="Le temps réel depuis le 8 octobre 2026 projeté sur toute l'histoire, du Big Bang à aujourd'hui, selon une courbe logarithmique — réactualisé chaque jour.">
 <style>
 	:root {
-		--bg: #ebe6f2;
-		--sh-dark: #c9c1d6;
-		--sh-light: #ffffff;
-		--ink: #4a4060;
-		--muted: #8c82a3;
-		--faint: #d8d1e3;
-		--accent: #e07a9f;
-		--accent-2: #9b87e0;
-		--link: #7b62d1;
+		--bg: #f7f4ee;
+		--panel: #fffdf8;
+		--ink: #1f2430;
+		--muted: #6b6f7a;
+		--line: #d9d3c7;
+		--grid: #ece6da;
+		--curve: #3c5a9a;
+		--accent: #c2563a;
+		--mark: #2f7d6b;
+		--hover: #8a5cc2;
+		--link: #2f5fb3;
 	}
 	@media (prefers-color-scheme: dark) {
 		:root:not([data-theme="light"]) {
-			--bg: #2b2735;
-			--sh-dark: #1d1a24;
-			--sh-light: #39344a;
-			--ink: #ece6f7;
-			--muted: #a79dbf;
-			--faint: #3a3448;
-			--accent: #f29ab9;
-			--accent-2: #b9a8f2;
-			--link: #c4b3ff;
+			--bg: #16181d;
+			--panel: #1d2027;
+			--ink: #e8e6e1;
+			--muted: #9a9ca3;
+			--line: #343844;
+			--grid: #262a33;
+			--curve: #8fb0f0;
+			--accent: #f08a6a;
+			--mark: #6cc7b0;
+			--hover: #c4a2f0;
+			--link: #8fb0f0;
 		}
-	}
-	:root[data-theme="dark"] {
-		--bg: #2b2735;
-		--sh-dark: #1d1a24;
-		--sh-light: #39344a;
-		--ink: #ece6f7;
-		--muted: #a79dbf;
-		--faint: #3a3448;
-		--accent: #f29ab9;
-		--accent-2: #b9a8f2;
-		--link: #c4b3ff;
 	}
 	* { box-sizing: border-box; }
 	body {
 		margin: 0;
 		background: var(--bg);
 		color: var(--ink);
-		font: 16px/1.5 "Nunito", system-ui, -apple-system, "Segoe UI", sans-serif;
+		font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 	}
-	main { max-width: 980px; margin: 0 auto; padding: 32px 16px 48px; }
-	.raised { background: var(--bg); border-radius: 28px; box-shadow: 9px 9px 18px var(--sh-dark), -9px -9px 18px var(--sh-light); }
-	.inset { background: var(--bg); box-shadow: inset 4px 4px 8px var(--sh-dark), inset -4px -4px 8px var(--sh-light); }
-
-	header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 26px; }
-	h1 { margin: 0; font-size: 1.6rem; font-weight: 800; letter-spacing: -0.01em; }
-	.chips { display: flex; flex-wrap: wrap; gap: 10px; }
-	.chip { border-radius: 999px; padding: 6px 14px; font-size: 14px; color: var(--muted); }
-	.chip b { color: var(--ink); }
-
-	.types { display: flex; flex-wrap: wrap; gap: 6px; padding: 6px; border-radius: 999px; width: fit-content; max-width: 100%; margin: 0 auto 22px; }
-	.types button {
-		font: inherit; font-size: 14px; font-weight: 600; color: var(--muted);
-		background: var(--bg); border: 0; border-radius: 999px; padding: 8px 16px; cursor: pointer;
-		box-shadow: 4px 4px 8px var(--sh-dark), -4px -4px 8px var(--sh-light);
-		transition: box-shadow .15s, color .15s;
+	main { max-width: 1080px; margin: 0 auto; padding: 28px 16px 48px; }
+	h1 { font-size: 1.6rem; margin: 0 0 4px; letter-spacing: -0.01em; line-height: 1.25; }
+	h2 { font-size: 1.1rem; margin: 32px 0 10px; }
+	.lead { color: var(--muted); margin: 0 0 20px; max-width: 70ch; }
+	a { color: var(--link); }
+	.panel {
+		background: var(--panel);
+		border: 1px solid var(--line);
+		border-radius: 12px;
+		padding: 16px 12px 12px;
 	}
-	.types button[aria-pressed="true"] { color: var(--accent); box-shadow: inset 3px 3px 6px var(--sh-dark), inset -3px -3px 6px var(--sh-light); }
-	.types button:focus-visible, .dot:focus-visible { outline: 2px solid var(--accent-2); outline-offset: 3px; }
+	.chart-wrap { position: relative; }
+	svg { display: block; width: 100%; height: auto; overflow: visible; touch-action: pan-y; }
+	.tick text { fill: var(--muted); font-size: 12px; }
+	.axis-title { fill: var(--ink); font-size: 13px; font-weight: 600; }
+	.grid line { stroke: var(--grid); }
+	.axis line { stroke: var(--line); }
+	.curve { fill: none; stroke: var(--curve); stroke-width: 3; }
+	.event-dot { fill: var(--muted); opacity: 0.5; }
+	.marker line { stroke: var(--mark); stroke-dasharray: 4 4; }
+	.marker circle { fill: var(--mark); stroke: var(--panel); stroke-width: 2; }
+	.marker text { fill: var(--mark); font-size: 13px; font-weight: 600; }
+	.marker.end circle { fill: var(--accent); }
+	.marker.end text { fill: var(--accent); }
+	.marker.end line { stroke: var(--accent); }
+	.hover line { stroke: var(--hover); }
+	.hover circle { fill: var(--hover); }
+	#tip {
+		position: absolute;
+		pointer-events: none;
+		background: var(--ink);
+		color: var(--bg);
+		font-size: 13px;
+		padding: 8px 10px;
+		border-radius: 8px;
+		width: max-content;
+		max-width: min(260px, 80vw);
+		transform: translate(-50%, calc(-100% - 12px));
+		opacity: 0;
+		transition: opacity 0.1s;
+	}
+	#tip b { display: block; }
+	.note { color: var(--muted); font-size: 13px; margin: 10px 4px 0; }
+	.controls { display: flex; flex-wrap: wrap; gap: 8px 24px; align-items: center; margin: 14px 4px 0; color: var(--muted); font-size: 14px; }
+	select { font: inherit; color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 4px 8px; max-width: 100%; }
+	.card .what { font-style: italic; color: var(--muted); margin: 2px 0 6px; }
+	.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-top: 20px; }
+	.card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; }
+	.card .real { font-size: 13px; color: var(--muted); }
+	.card .hist { font-size: 1.12rem; font-weight: 650; margin: 2px 0 6px; line-height: 1.3; }
+	.card .event { font-size: 14px; }
+	.card.end { border-color: var(--accent); }
+	table { width: 100%; border-collapse: collapse; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; font-size: 14px; }
+	th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--grid); vertical-align: top; }
+	th { color: var(--muted); font-weight: 600; font-size: 13px; }
+	tr:last-child td { border-bottom: none; }
+	tr.near td { background: color-mix(in srgb, var(--mark) 10%, transparent); }
+	td.when { white-space: nowrap; color: var(--muted); }
+	.how { margin-top: 28px; color: var(--muted); font-size: 14px; max-width: 75ch; }
+	.how code { background: var(--grid); padding: 1px 5px; border-radius: 4px; }
 
-	.chart { padding: 18px 12px 10px; }
-	svg { display: block; width: 100%; height: auto; overflow: visible; }
-	.tick { fill: var(--muted); font-size: 12px; }
-	.grid { stroke: var(--faint); stroke-width: 1; }
-	.groove { fill: none; stroke: var(--sh-dark); stroke-width: 9; stroke-linecap: round; opacity: .45; }
-	.curve { fill: none; stroke: url(#grad); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
-	.dot { cursor: pointer; outline: none; }
-	.dot circle { fill: var(--bg); filter: url(#neu); transition: stroke .15s; }
-	.dot.on circle { stroke: var(--accent); stroke-width: 2.5; }
-	.dot text { font-size: 13px; pointer-events: none; }
-
-	.detail { margin-top: 26px; padding: 22px 24px; display: grid; grid-template-columns: auto 1fr; gap: 6px 18px; align-items: start; }
-	.detail .emo { grid-row: span 4; width: 64px; height: 64px; border-radius: 50%; display: grid; place-items: center; font-size: 30px; }
-	.detail .when { color: var(--muted); font-size: 14px; }
-	.detail .what { font-size: 1.2rem; font-weight: 800; line-height: 1.3; }
-	.detail .epoch { color: var(--accent); font-weight: 700; }
-	.detail .event { margin-top: 8px; padding: 12px 16px; border-radius: 18px; grid-column: 2; }
-	.detail .event a, .detail .event .ev-name { color: var(--link); font-weight: 700; text-decoration: none; }
-	.detail .event a:hover { text-decoration: underline; }
-	.detail .event p { margin: 4px 0 0; font-size: 14px; }
-	.detail .event .ago { color: var(--muted); font-size: 13px; }
-
-	@media (max-width: 600px) {
-		main { padding: 22px 14px 36px; }
+	/* Mobile : texte un peu plus petit, tableau compact. */
+	@media (max-width: 640px) {
+		main { padding: 20px 12px 40px; }
 		h1 { font-size: 1.3rem; }
-		.chart { padding: 12px 4px 6px; }
-		.types button { padding: 7px 12px; font-size: 13px; }
-		.detail { padding: 18px; grid-template-columns: 1fr; }
-		.detail .emo { grid-row: auto; width: 52px; height: 52px; font-size: 24px; }
-		.detail .event { grid-column: 1; }
+		.lead { font-size: 15px; }
+		.panel { padding: 12px 6px 10px; }
+		th, td { padding: 7px 8px; }
+		td.when { white-space: normal; }
 	}
 </style>
 </head>
 <body>
 <main>
-	<header>
-		<h1>Big Bang en deux mois 🌌</h1>
-		<div class="chips">
-			<span class="chip inset"><b id="count"></b> moments</span>
-			<span class="chip inset">mis à jour le <b id="updated"></b></span>
+	<h1>Du Big Bang à aujourd'hui depuis le 8 octobre</h1>
+	<p class="lead">Le temps qui s'écoule du 8 octobre 2026 à aujourd'hui (<span class="today-date"></span>, axe horizontal) est étiré sur toute l'histoire de l'Univers (axe vertical) selon une courbe logarithmique : le 8 octobre est le Big Bang, aujourd'hui est aujourd'hui. Chaque jour, la période s'allonge et la courbe se recalcule : les journées du 9, 10, 12 et 13 octobre restent fixes, mais l'époque qui leur correspond change. Survole ou touche la courbe pour voir à quelle époque correspond chaque jour.</p>
+
+	<div class="panel">
+		<div class="chart-wrap">
+			<svg id="chart" role="img" aria-labelledby="chart-title">
+				<title id="chart-title">Courbe logarithmique : temps réel (depuis le 8 octobre 2026) contre temps historique (Big Bang – aujourd'hui)</title>
+			</svg>
+			<div id="tip"></div>
 		</div>
-	</header>
-
-	<div class="types raised" id="types" role="group" aria-label="Type de courbe"></div>
-
-	<div class="chart raised">
-		<svg id="chart" role="img" aria-label="Courbe : mes dates projetées sur l'histoire de l'Univers">
-			<defs>
-				<filter id="neu" x="-60%" y="-60%" width="220%" height="220%">
-					<feDropShadow dx="2.5" dy="2.5" stdDeviation="2" style="flood-color: var(--sh-dark)"/>
-					<feDropShadow dx="-2.5" dy="-2.5" stdDeviation="2" style="flood-color: var(--sh-light)"/>
-				</filter>
-				<linearGradient id="grad" x1="0" x2="1" y1="0" y2="0">
-					<stop offset="0" style="stop-color: var(--accent-2)"/>
-					<stop offset="1" style="stop-color: var(--accent)"/>
-				</linearGradient>
-			</defs>
-		</svg>
+		<p class="note" id="linear-note">Axe vertical linéaire : à l'échelle de toute l'histoire, ce qui s'est passé depuis l'apparition des humains tient dans l'épaisseur du trait, en haut. Utilise le <strong>zoom</strong> pour agrandir la partie plate de la courbe — elle reprend alors la même forme, à une autre échelle — ou passe l'axe en échelle logarithmique.</p>
+		<div class="controls">
+			<label>Zoom sur :
+				<select id="zoom">
+					<option value="13.8e9" selected>toute l'histoire</option>
+					<option value="1e9">le dernier milliard d'années</option>
+					<option value="1e6">le dernier million d'années</option>
+					<option value="1e5">les 100 000 dernières années</option>
+					<option value="1e4">les 10 000 dernières années</option>
+					<option value="1e3">les 1 000 dernières années</option>
+					<option value="100">les 100 dernières années</option>
+					<option value="10">les 10 dernières années</option>
+					<option value="1">la dernière année</option>
+				</select>
+			</label>
+			<label>Axe vertical :
+				<select id="yscale">
+					<option value="linear" selected>linéaire</option>
+					<option value="log">logarithmique</option>
+				</select>
+			</label>
+			<label>Point d'arrivée (aujourd'hui) :
+				<select id="lmin">
+					<option value="0.0416667">il y a 1 heure</option>
+					<option value="1" selected>il y a 1 jour</option>
+					<option value="30.436875">il y a 1 mois</option>
+					<option value="365.2425">il y a 1 an</option>
+				</select>
+			</label>
+			<span>La courbe est logarithmique : elle ne peut pas atteindre « il y a 0 seconde », il faut fixer une ancienneté minimale.</span>
+		</div>
 	</div>
 
-	<section class="detail raised" id="detail" aria-live="polite"></section>
+	<div class="cards" id="cards"></div>
+
+	<h2>Tous les repères</h2>
+	<table>
+		<thead><tr><th>Temps réel</th><th>Événement</th><th>Il y a</th></tr></thead>
+		<tbody id="events"></tbody>
+	</table>
+
+	<div class="how">
+		<p><strong>Comment c'est calculé.</strong> Le temps historique est mesuré en ancienneté (« il y a combien de temps »). Son logarithme décroît en ligne droite avec le temps réel : chaque jour qui passe divise l'ancienneté par le même facteur. Aujourd'hui, avec l'arrivée à « il y a 1 jour », ce facteur est d'environ ×<span class="factor"></span> par jour : en <span class="span-days"></span> jours, on passe de 13,8 milliards d'années à 1 jour. Demain, la période aura un jour de plus et le facteur sera un peu plus petit.</p>
+		<p>Formule : <code>log(ancienneté) = log(13,8 Ga) × (1 − t) + log(arrivée) × t</code>, avec <code>t</code> la fraction écoulée entre le 8 octobre et aujourd'hui. Les événements sont les repères connus les plus proches sur cette échelle — approximatifs par nature.</p>
+	</div>
 </main>
 
 <script>
 (() => {
-	// ───── Mes dates : ajoute une ligne ici, la page se recalcule seule. ─────
-	// La dernière date est le point d'arrivée (« maintenant ») et la date de mise à jour.
-	const MOMENTS = [
-		["2026-08-01", "🧥", "vestiaire"],
-		["2026-08-09", "🎷", "blues"],
-		["2026-08-26", "🎸", "guitare"],
-		["2026-08-28", "🦎", "Escher"],
-		["2026-09-02", "🕊️", "baptême"],
-		["2026-09-06", "🌾", "voyage à la campagne, avec la Marie Jeanne et la Thaïlande fusion"],
-		["2026-09-08", "🍒", "crème glacée cerise noire"],
-		["2026-09-10", "♟️", "échecs au parc"],
-		["2026-09-22", "🎤", "poésie jive"],
-		["2026-09-27", "🎶", "concert"],
-		["2026-10-01", "🪕", "ukulele et logarithme"],
-	].map(([d, emo, name]) => ({ t: Date.parse(d + "T00:00:00Z"), emo, name }));
+	const DAY = 86400000;
+	const YEAR = 365.2425; // jours
+	const START = Date.UTC(2026, 9, 8); // 8 octobre 2026 : le Big Bang
+	// Aujourd'hui (début de la journée) : l'autre bout de la courbe. Recalculé
+	// à chaque ouverture, et à minuit si la page reste ouverte.
+	let END, SPAN, NOW_YEAR, EVENTS, MARKERS;
+	function setToday() {
+		const now = new Date();
+		let today = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+		// ?date=AAAA-MM-JJ dans l'adresse : voir la page telle qu'elle sera ce jour-là.
+		const forced = new URLSearchParams(location.search).get("date");
+		if (forced && /^\d{4}-\d{2}-\d{2}$/.test(forced)) today = Date.parse(forced + "T00:00:00Z");
+		END = Math.max(today, Date.UTC(2026, 9, 14)); // jamais avant le 14 octobre 2026
+		SPAN = (END - START) / DAY;
+		const y = new Date(END).getUTCFullYear();
+		const jan1 = Date.UTC(y, 0, 1);
+		NOW_YEAR = y + (END - jan1) / (Date.UTC(y + 1, 0, 1) - jan1);
+		MARKERS = [
+			{ date: Date.UTC(2026, 9, 8), label: "8 oct.", what: "Sortie au jardin botanique échouée, champignon et Boustan" },
+			{ date: Date.UTC(2026, 9, 9), label: "9 oct.", what: "École buissonnière, guitare et herbe" },
+			{ date: Date.UTC(2026, 9, 10), label: "10 oct.", what: "Café Bialetti, puis chill post-uku, Clair Obscur" },
+			{ date: Date.UTC(2026, 9, 12), label: "12 oct.", what: "Sortie vélo lavalloise, pomme et accident" },
+			{ date: Date.UTC(2026, 9, 13), label: "13 oct.", what: "Musculation, tarte à la courge et Harry Potter" },
+			{ date: END, label: "aujourd'hui", end: true },
+		];
+		EVENTS = buildEvents();
+		const fmt = new Date(END).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
+		document.querySelectorAll(".today-date").forEach((e) => (e.textContent = fmt));
+		document.querySelectorAll(".span-days").forEach((e) => (e.textContent = fmtNum(SPAN)));
+		document.querySelectorAll(".factor").forEach((e) => (e.textContent = fmtNum(Math.pow(LMAX / 1, 1 / SPAN), 2)));
+	}
+	const LMAX = 13.8e9 * YEAR; // âge de l'Univers, en jours
+	// Repères connus : ancienneté (années avant aujourd'hui), nom,
+	// titre de la page Wikipédia (fr) — titres vérifiés. Années avant notre ère
+	// en numérotation astronomique (-752 = 753 av. J.-C.).
+	const ago = (year) => NOW_YEAR - year;
+	const buildEvents = () => [
+		[13.8e9, "Big Bang", "Big Bang"],
+		[13.6e9, "Premières étoiles", "Étoile de population III"],
+		[4.6e9, "Formation du Soleil et de la Terre", "Formation et évolution du Système solaire"],
+		[3.8e9, "Premières traces de vie", "Origine de la vie"],
+		[2.4e9, "Grande oxydation", "Grande Oxydation"],
+		[541e6, "Explosion cambrienne", "Explosion cambrienne"],
+		[252e6, "Grande extinction du Permien-Trias", "Extinction Permien-Trias"],
+		[230e6, "Premiers dinosaures", "Dinosauria"],
+		[66e6, "Disparition des dinosaures", "Extinction Crétacé-Paléogène"],
+		[7e6, "Apparition de la lignée humaine", "Hominini"],
+		[3.2e6, "Lucy", "Lucy (australopithèque)"],
+		[2.6e6, "Premiers outils de pierre", "Oldowayen"],
+		[300e3, "Apparition d'Homo sapiens", "Homo sapiens"],
+		[60e3, "Homo sapiens sort d'Afrique", "Origine africaine de l'Homme moderne"],
+		[36e3, "Peintures de la grotte Chauvet", "Grotte Chauvet"],
+		[20e3, "Dernier maximum glaciaire", "Dernier maximum glaciaire"],
+		[17e3, "Peintures de Lascaux", "Grotte de Lascaux"],
+		[11.7e3, "Fin de la dernière glaciation", "Holocène"],
+		[10e3, "Débuts de l'agriculture", "Révolution néolithique"],
+		[5.2e3, "Invention de l'écriture", "Histoire de l'écriture"],
+		[4.5e3, "Pyramides de Gizeh", "Pyramides de Gizeh"],
+		[ago(-752), "Fondation de Rome", "Fondation de Rome"],
+		[ago(1), "An 1 de notre ère", "Ère chrétienne"],
+		[ago(476), "Chute de l'Empire romain d'Occident", "Déclin de l'Empire romain d'Occident"],
+		[ago(1163), "Début de la construction de Notre-Dame de Paris", "Cathédrale Notre-Dame de Paris"],
+		[ago(1270), "Huitième croisade, mort de Saint Louis", "Huitième croisade"],
+		[ago(1450), "Imprimerie de Gutenberg", "Imprimerie"],
+		[ago(1492), "Christophe Colomb en Amérique", "Christophe Colomb"],
+		[ago(1789), "Révolution française", "Révolution française"],
+		[ago(1914), "Première Guerre mondiale", "Première Guerre mondiale"],
+		[ago(1969.55), "Premiers pas sur la Lune", "Apollo 11"],
+		[ago(1989.85), "Chute du mur de Berlin", "Chute du mur de Berlin"],
+		[ago(2007.5), "Premier iPhone", "IPhone"],
+		[ago(2015.95), "Accord de Paris sur le climat", "Accord de Paris sur le climat"],
+		[ago(2017.33), "Élection présidentielle française", "Élection présidentielle française de 2017"],
+		[ago(2020.2), "Pandémie de Covid-19", "Pandémie de Covid-19"],
+		[ago(2026.5), "Coupe du monde de football 2026", "Coupe du monde de football 2026"],
+	].map(([years, name, wiki]) => ({ days: years * YEAR, name, url: "https://fr.wikipedia.org/wiki/" + encodeURIComponent(wiki.replace(/ /g, "_")) }));
+	// Les années de la Révolution, de la Coupe du monde… sont fixes : leur
+	// ancienneté grandit chaque jour.
 
-	const DAY = 86400000, YEAR = 365.2425;
-	const START = MOMENTS[0].t, END = MOMENTS[MOMENTS.length - 1].t;
-	const SPAN = (END - START) / DAY;
-	const END_YEAR = 1970 + (END / DAY) / YEAR;
-	const LMAX = 13.8e9 * YEAR, LMIN = 1; // ancienneté en jours : Big Bang → 1 jour avant la dernière date
-	const LOGMAX = Math.log10(LMAX), LOGMIN = Math.log10(LMIN);
-
-	// Types de courbe : t (temps réel, 0 → 1) ↦ u (progression sur l'échelle logarithmique, 0 → 1).
-	const TYPES = {
-		log: { label: "Logarithmique", f: (t) => t },
-		exp: { label: "Exponentielle", f: (t) => (Math.exp(4 * t) - 1) / (Math.exp(4) - 1) },
-		sig: { label: "Sigmoïde", f: (t) => { const s = (x) => 1 / (1 + Math.exp(-10 * (x - 0.5))); return (s(t) - s(0)) / (s(1) - s(0)); } },
-		sin: { label: "Sinusoïde", f: (t) => t - Math.sin(6 * Math.PI * t) / (6 * Math.PI) },
+	let LMIN = 1;
+	let ZOOM = 13.8e9 * 365.2425; // ancienneté (jours) en bas de l'axe vertical : le zoom
+	let LINEAR = true; // axe vertical linéaire (la courbe, elle, reste logarithmique)
+	const frac = (lookDays) => (Math.log10(LMAX) - Math.log10(lookDays)) / (Math.log10(LMAX) - Math.log10(LMIN));
+	const lookback = (days) => {
+		const t = Math.min(Math.max(days / SPAN, 0), 1);
+		return Math.pow(10, Math.log10(LMAX) * (1 - t) + Math.log10(LMIN) * t);
 	};
-	let type = "log";
-	try { const s = localStorage.getItem("bb-type"); if (TYPES[s]) type = s; } catch (e) {}
-	let selected = MOMENTS.length - 1;
 
-	// ───── Repères (niches) ─────
-	// ya : années avant ; y : année (astronomique, -584 = 585 av. J.-C.) ; d : date exacte.
-	const wiki = (title) => "https://fr.wikipedia.org/w/index.php?title=Sp%C3%A9cial:Recherche&go=Go&search=" + encodeURIComponent(title);
-	const EVENTS = [
-		{ ya: 13.8e9, n: "Les trois premières minutes", p: "Hydrogène, hélium et une pincée de lithium sont forgés en quelques minutes.", w: "Nucléosynthèse primordiale" },
-		{ ya: 13.79e9, n: "Le fond diffus cosmologique", p: "L'Univers devient transparent : la plus vieille lumière qu'on puisse voir.", w: "Fond diffus cosmologique" },
-		{ ya: 13.4e9, n: "GN-z11, une galaxie bébé", p: "Vue 400 millions d'années à peine après le Big Bang.", w: "GN-z11" },
-		{ ya: 10e9, n: "La Voie lactée avale Gaïa-Encelade", p: "Une galaxie naine engloutie ; ses étoiles tournent encore à contre-sens.", w: "Gaia-Enceladus" },
-		{ ya: 4.568e9, n: "Les grains blancs de la météorite d'Allende", p: "Ses inclusions sont les plus vieux solides du Système solaire.", w: "Météorite d'Allende" },
-		{ ya: 4.5e9, n: "Théia percute la Terre", p: "De la collision naît la Lune.", w: "Théia (planète)" },
-		{ ya: 4.4e9, n: "Les zircons de Jack Hills", p: "Minuscules cristaux australiens : la plus vieille matière terrestre connue.", w: "Jack Hills" },
-		{ ya: 3.48e9, n: "Les stromatolithes du Pilbara", p: "Des tapis de microbes : les plus anciennes traces de vie bien acceptées.", w: "Stromatolithe" },
-		{ ya: 2.1e9, n: "Le biote de Franceville", p: "Au Gabon, peut-être les premiers êtres multicellulaires.", w: "Biote de Franceville" },
-		{ ya: 1.95e9, n: "Le réacteur nucléaire naturel d'Oklo", p: "Un gisement d'uranium gabonais se met à fissionner tout seul… pendant des centaines de milliers d'années.", w: "Réacteur nucléaire naturel d'Oklo" },
-		{ ya: 1.05e9, n: "Bangiomorpha, l'algue sexuée", p: "Une petite algue rouge : la plus ancienne preuve de reproduction sexuée.", w: "Bangiomorpha pubescens" },
-		{ ya: 650e6, n: "La Terre boule de neige", p: "La planète gelée presque des pôles à l'équateur.", w: "Terre boule de neige" },
-		{ ya: 558e6, n: "Dickinsonia", p: "Un drôle de disque côtelé, l'un des plus vieux animaux confirmés — grâce à son cholestérol fossile.", w: "Dickinsonia" },
-		{ ya: 508e6, n: "Les schistes de Burgess", p: "Hallucigenia, Opabinia aux cinq yeux : le bestiaire étrange du Cambrien.", w: "Schistes de Burgess" },
-		{ ya: 375e6, n: "Tiktaalik", p: "Un poisson à « poignets » qui prépare la sortie des eaux.", w: "Tiktaalik" },
-		{ ya: 300e6, n: "Meganeura, la libellule géante", p: "Environ 70 cm d'envergure, dans des forêts de prêles géantes.", w: "Meganeura" },
-		{ ya: 252e6, n: "La Grande Mort", p: "Environ 90 % des espèces marines disparaissent à la fin du Permien.", w: "Extinction Permien-Trias" },
-		{ ya: 231e6, n: "Eoraptor", p: "Un petit dinosaure argentin, parmi les tout premiers.", w: "Eoraptor" },
-		{ ya: 150e6, n: "Archaeopteryx", p: "Plumes, dents et griffes : le dinosaure-oiseau de Solnhofen.", w: "Archaeopteryx" },
-		{ ya: 125e6, n: "Archaefructus, une des premières fleurs", p: "Une plante aquatique chinoise aux fleurs sans pétales.", w: "Archaefructus" },
-		{ ya: 66e6, n: "L'astéroïde de Chicxulub", p: "Un impact au Yucatán met fin aux dinosaures non aviens.", w: "Cratère de Chicxulub" },
-		{ ya: 56e6, n: "Le coup de chaud Paléocène-Éocène", p: "Un réchauffement brutal de 5 à 8 °C.", w: "Maximum thermique du passage Paléocène-Éocène" },
-		{ ya: 47e6, n: "Ida, le primate de Messel", p: "Un petit primate fossilisé presque intact dans un lac allemand.", w: "Darwinius masillae" },
-		{ ya: 34e6, n: "La Grande Coupure", p: "Le climat se refroidit et la faune d'Europe change d'un coup.", w: "Grande Coupure" },
-		{ ya: 5.33e6, n: "Le remplissage de la Méditerranée", p: "L'Atlantique déborde à Gibraltar et remplit une Méditerranée asséchée.", w: "Inondation zancléenne" },
-		{ ya: 3.66e6, n: "Les empreintes de Laetoli", p: "Des hominines marchent dans une cendre volcanique fraîche, en Tanzanie.", w: "Empreintes de pas de Laetoli" },
-		{ ya: 1.77e6, n: "Les crânes de Dmanissi", p: "Parmi les premiers humains hors d'Afrique, dans le Caucase.", w: "Dmanissi" },
-		{ ya: 1e6, n: "Le feu de Wonderwerk", p: "Cendres et os brûlés : une des plus anciennes traces de feu maîtrisé.", w: "Grotte de Wonderwerk" },
-		{ ya: 773e3, n: "Le Nord et le Sud échangent leur place", p: "Dernière inversion du champ magnétique terrestre.", w: "Inversion de Brunhes-Matuyama" },
-		{ ya: 430e3, n: "Excalibur, à la Sima de los Huesos", p: "Au fond d'un puits espagnol, des dizaines d'individus et un unique biface rouge.", w: "Sima de los Huesos" },
-		{ ya: 380e3, n: "Un campement sur la plage de Nice", p: "Terra Amata : des foyers parmi les plus anciens d'Europe.", w: "Terra Amata" },
-		{ ya: 315e3, n: "Djebel Irhoud", p: "Au Maroc, les plus anciens fossiles d'Homo sapiens connus.", w: "Djebel Irhoud" },
-		{ ya: 176e3, n: "Les cercles de Bruniquel", p: "Des Néandertaliens bâtissent des cercles de stalagmites au fond d'une grotte du Tarn-et-Garonne.", w: "Grotte de Bruniquel" },
-		{ ya: 100e3, n: "L'atelier d'ocre de Blombos", p: "Deux coquilles d'ormeau servent de pots de peinture.", w: "Grotte de Blombos" },
-		{ ya: 74e3, n: "La super-éruption du Toba", p: "Un volcan de Sumatra crache des milliers de km³ de cendres.", w: "Toba" },
-		{ ya: 55e3, n: "La « flûte » de Divje Babe", p: "Un fémur d'ourson percé : flûte néandertalienne, ou mâchonné par une hyène ?", w: "Flûte de Divje Babe" },
-		{ ya: 42e3, n: "Les flûtes du Jura souabe", p: "En os de vautour et en ivoire : les plus vieux instruments de musique connus.", w: "Flûte de Hohle Fels" },
-		{ ya: 40e3, n: "L'homme-lion de Hohlenstein-Stadel", p: "Sculpté dans l'ivoire de mammouth : une des plus vieilles créatures imaginaires.", w: "Homme-lion" },
-		{ ya: 36e3, n: "Le bison à huit pattes de Chauvet", p: "Des pattes multipliées pour suggérer le mouvement — de l'animation avant l'heure.", w: "Grotte Chauvet" },
-		{ ya: 29e3, n: "La Vénus de Dolní Věstonice", p: "La plus ancienne figurine en céramique connue.", w: "Vénus de Dolní Věstonice" },
-		{ ya: 20e3, n: "L'os d'Ishango", p: "Un os gravé d'encoches groupées, peut-être un des plus vieux outils de calcul.", w: "Os d'Ishango" },
-		{ ya: 17e3, n: "La scène du Puits, à Lascaux", p: "Un homme à tête d'oiseau face à un bison : la scène la plus mystérieuse de Lascaux.", w: "Grotte de Lascaux" },
-		{ ya: 14.7e3, n: "Le réchauffement du Bølling-Allerød", p: "La fin de la glaciation s'accélère d'un coup.", w: "Bølling-Allerød" },
-		{ ya: 12.9e3, n: "Le Dryas récent", p: "Brusque retour du froid, nommé d'après une petite fleur de toundra.", w: "Dryas récent" },
-		{ ya: 11.6e3, n: "Göbekli Tepe", p: "Des piliers sculptés de renards et de vautours, 6 000 ans avant Stonehenge.", w: "Göbekli Tepe" },
-		{ ya: 9.1e3, n: "Çatal Höyük", p: "Une ville sans rues : on entre dans les maisons par le toit.", w: "Çatal Höyük" },
-		{ ya: 8.15e3, n: "Le glissement de Storegga", p: "Un pan du plateau norvégien s'effondre ; tsunami jusqu'en Écosse.", w: "Glissements de Storegga" },
-		{ ya: 5.3e3, n: "Ötzi", p: "Mort dans les Alpes avec 61 tatouages et tout son équipement.", w: "Ötzi" },
-		{ y: -2500, n: "Le cercle de sarsens de Stonehenge", p: "Les grands blocs dressés en cercle.", w: "Stonehenge" },
-		{ y: -1749, n: "La réclamation à Ea-nasir", p: "Une tablette d'argile : la plus vieille plainte de client connue (du cuivre de mauvaise qualité !).", w: "Tablette de réclamation à Ea-nasir" },
-		{ y: -1399, n: "L'hymne hourrite n° 6", p: "Gravé à Ougarit : la plus ancienne mélodie notée presque complète.", w: "Hymnes hourrites" },
-		{ y: -924, n: "Le calendrier de Gézer", p: "Une petite tablette qui récite les mois des travaux agricoles.", w: "Calendrier de Gézer" },
-		{ y: -775, n: "Corèbe, premier champion olympique", p: "Vainqueur du stade aux premiers Jeux connus ; on le dit cuisinier.", w: "Corèbe d'Élis" },
-		{ y: -584.6, n: "L'éclipse de Thalès", p: "Une éclipse interrompt la bataille entre Mèdes et Lydiens.", w: "Éclipse de Thalès" },
-		// — Moins de 2 000 ans : repères serrés pour limiter l'écart. —
-		{ y: 43, n: "Claude débarque en Bretagne", p: "Rome conquiert le sud de l'île… avec des éléphants.", w: "Conquête romaine de la Bretagne" },
-		{ d: "0064-07-19", n: "Le grand incendie de Rome", p: "Six jours de feu ; Néron, dit-on, chante pendant ce temps.", w: "Grand incendie de Rome" },
-		{ d: "0079-10-24", n: "Le Vésuve ensevelit Pompéi", p: "Pline le Jeune en laisse un récit de témoin.", w: "Éruption du Vésuve en 79" },
-		{ y: 80.5, n: "L'inauguration du Colisée", p: "Cent jours de jeux pour l'ouverture de l'amphithéâtre flavien.", w: "Colisée" },
-		{ y: 100, n: "L'épitaphe de Seikilos", p: "Une chanson complète gravée sur une tombe : « Tant que tu vis, brille ».", w: "Épitaphe de Seikilos" },
-		{ y: 105, n: "Cai Lun et le papier", p: "Un eunuque de la cour Han présente à l'empereur un papier fait d'écorce et de vieux filets.", w: "Cai Lun" },
-		{ y: 122, n: "Le mur d'Hadrien", p: "Une muraille de 117 km en travers de la Bretagne.", w: "Mur d'Hadrien" },
-		{ y: 126, n: "Le Panthéon de Rome", p: "Sa coupole en béton reste la plus grande non armée du monde.", w: "Panthéon de Rome" },
-		{ y: 150, n: "L'Almageste de Ptolémée", p: "Le catalogue du ciel qui fera autorité pendant 1 400 ans.", w: "Almageste" },
-		{ d: "0185-12-07", n: "La supernova de 185", p: "Des astronomes chinois voient une « étoile invitée » pendant huit mois.", w: "SN 185" },
-		{ y: 212, n: "L'édit de Caracalla", p: "Tous les hommes libres de l'Empire deviennent citoyens romains.", w: "Édit de Caracalla" },
-		{ y: 271, n: "Le mur d'Aurélien", p: "Rome, inquiète, s'entoure de 19 km de remparts.", w: "Mur d'Aurélien" },
-		{ y: 313, n: "L'édit de Milan", p: "Constantin et Licinius proclament la liberté de culte.", w: "Édit de Milan" },
-		{ d: "0330-05-11", n: "Constantinople inaugurée", p: "Byzance devient la « Nouvelle Rome ».", w: "Constantinople" },
-		{ d: "0365-07-21", n: "Le tsunami d'Alexandrie", p: "Un séisme près de la Crète ; des bateaux se retrouvent sur les toits.", w: "Séisme de 365 en Crète" },
-		{ d: "0410-08-24", n: "Alaric pille Rome", p: "Première prise de la Ville depuis 800 ans.", w: "Sac de Rome (410)" },
-		{ y: 415, n: "La mort d'Hypatie", p: "Mathématicienne et astronome d'Alexandrie.", w: "Hypatie" },
-		{ d: "0451-06-20", n: "Attila aux champs Catalauniques", p: "La grande bataille qui arrête les Huns en Gaule.", w: "Bataille des champs Catalauniques" },
-		{ y: 476.7, n: "Romulus Augustule déposé", p: "Le dernier empereur d'Occident est un adolescent.", w: "Romulus Augustule" },
-		{ y: 496.9, n: "Le baptême de Clovis", p: "À Reims, par l'évêque Remi — la date exacte reste débattue.", w: "Baptême de Clovis" },
-		{ y: 529, n: "Benoît au Mont-Cassin", p: "Naissance de la règle bénédictine.", w: "Abbaye du Mont-Cassin" },
-		{ y: 536, n: "536, la pire année pour être en vie", p: "Un voile volcanique cache le Soleil pendant 18 mois.", w: "Changements climatiques de 535-536" },
-		{ d: "0537-12-27", n: "Sainte-Sophie consacrée", p: "« Salomon, je t'ai surpassé », aurait dit Justinien.", w: "Sainte-Sophie (Istanbul)" },
-		{ y: 541, n: "La peste de Justinien", p: "Première pandémie de peste connue.", w: "Peste de Justinien" },
-		{ d: "0622-07-16", n: "L'Hégire", p: "Le départ de Mahomet vers Médine, an 1 du calendrier musulman.", w: "Hégire" },
-		{ d: "0732-10-25", n: "La bataille de Poitiers", p: "Charles Martel arrête l'avancée omeyyade.", w: "Bataille de Poitiers (732)" },
-		{ y: 762, n: "La fondation de Bagdad", p: "Une ville parfaitement ronde.", w: "Bagdad" },
-		{ y: 774.5, n: "L'événement de Miyake", p: "Les arbres enregistrent un pic de carbone 14 venu du Soleil.", w: "Événement de Miyake" },
-		{ d: "0793-06-08", n: "Les Vikings à Lindisfarne", p: "Le raid qui ouvre l'âge viking.", w: "Raid de Lindisfarne" },
-		{ d: "0800-12-25", n: "Charlemagne couronné empereur", p: "Le jour de Noël, à Saint-Pierre de Rome.", w: "Charlemagne" },
-		{ y: 820, n: "Al-Khwârizmî écrit l'algèbre", p: "Son nom latinisé donnera le mot « algorithme ».", w: "Al-Khwârizmî" },
-		{ d: "0843-08-10", n: "Le traité de Verdun", p: "L'empire carolingien partagé en trois.", w: "Traité de Verdun" },
-		{ d: "0868-05-11", n: "Le Sūtra du diamant", p: "Le plus ancien livre imprimé daté qui nous soit parvenu.", w: "Sûtra du diamant" },
-		{ d: "0885-11-24", n: "Les Vikings assiègent Paris", p: "Plus de 300 navires remontent la Seine.", w: "Siège de Paris (885-886)" },
-		{ d: "0910-09-11", n: "La fondation de Cluny", p: "Naissance de l'abbaye la plus puissante d'Occident.", w: "Abbaye de Cluny" },
-		{ y: 911, n: "Rollon reçoit la Normandie", p: "Traité de Saint-Clair-sur-Epte.", w: "Traité de Saint-Clair-sur-Epte" },
-		{ d: "0962-02-02", n: "Otton Ier couronné", p: "Naissance du Saint-Empire.", w: "Otton Ier du Saint-Empire" },
-		{ d: "0987-07-03", n: "Hugues Capet sacré roi", p: "Début des Capétiens.", w: "Hugues Capet" },
-		{ y: 1000, n: "Leif Erikson au Vinland", p: "Des Vikings en Amérique, cinq siècles avant Colomb.", w: "Leif Erikson" },
-		{ d: "1006-05-01", n: "La supernova de 1006", p: "L'étoile la plus brillante jamais notée : on lisait à sa lumière.", w: "SN 1006" },
-		{ y: 1031, n: "Le Dit du Genji circule", p: "Murasaki Shikibu écrit au début du XIe siècle un des premiers romans.", w: "Le Dit du Genji" },
-		{ d: "1054-07-04", n: "L'étoile invitée de 1054", p: "Visible en plein jour ; il en reste la nébuleuse du Crabe.", w: "SN 1054" },
-		{ d: "1066-10-14", n: "La bataille d'Hastings", p: "Et la comète de Halley brodée sur la tapisserie de Bayeux.", w: "Bataille d'Hastings" },
-		{ d: "1077-01-28", n: "L'humiliation de Canossa", p: "L'empereur attend trois jours dans la neige le pardon du pape.", w: "Pénitence de Canossa" },
-		{ y: 1086, n: "Le Domesday Book", p: "Le grand recensement de l'Angleterre, jusqu'aux cochons.", w: "Domesday Book" },
-		{ y: 1088, n: "L'université de Bologne", p: "La plus ancienne université d'Europe en activité.", w: "Université de Bologne" },
-		{ d: "1095-11-27", n: "L'appel de Clermont", p: "Urbain II prêche la première croisade.", w: "Concile de Clermont" },
-		{ d: "1120-11-25", n: "Le naufrage de la Blanche-Nef", p: "L'héritier d'Angleterre se noie : l'équipage avait trop bu.", w: "Naufrage de la Blanche-Nef" },
-		{ d: "1144-06-11", n: "Le chœur de Saint-Denis", p: "La lumière entre : naissance de l'art gothique.", w: "Basilique Saint-Denis" },
-		{ y: 1163, n: "Première pierre de Notre-Dame", p: "Le chantier durera près de deux siècles.", w: "Notre-Dame de Paris" },
-		{ y: 1175, n: "Les pièces d'échecs de Lewis", p: "En ivoire de morse, aux mines boudeuses, retrouvées en Écosse.", w: "Pièces d'échecs de Lewis" },
-		{ d: "1204-04-13", n: "Le sac de Constantinople", p: "La quatrième croisade pille… une ville chrétienne.", w: "Sac de Constantinople (1204)" },
-		{ d: "1215-06-15", n: "La Magna Carta", p: "Le roi Jean accepte de limiter son pouvoir.", w: "Magna Carta" },
-		{ d: "1248-04-26", n: "La Sainte-Chapelle consacrée", p: "Un reliquaire de verre à taille de bâtiment.", w: "Sainte-Chapelle" },
-		{ y: 1271.9, n: "Marco Polo part pour la Chine", p: "Il a 17 ans ; il reviendra 24 ans plus tard.", w: "Marco Polo" },
-		{ y: 1298, n: "Le Devisement du monde", p: "Marco Polo, prisonnier à Gênes, dicte ses voyages.", w: "Le Devisement du monde" },
-		{ d: "1307-10-13", n: "L'arrestation des Templiers", p: "Un vendredi 13 — origine supposée de la superstition.", w: "Procès de l'ordre du Temple" },
-		{ y: 1321, n: "Dante achève la Divine Comédie", p: "Il meurt la même année à Ravenne.", w: "La Divine Comédie" },
-		{ y: 1325, n: "La fondation de Tenochtitlan", p: "Un aigle sur un cactus dévorant un serpent.", w: "Tenochtitlan" },
-		{ d: "1346-08-26", n: "La bataille de Crécy", p: "Les arcs longs anglais déciment la chevalerie française.", w: "Bataille de Crécy" },
-		{ y: 1348.5, n: "La Peste noire en Europe", p: "Un tiers à la moitié de la population emportée.", w: "Peste noire" },
-		{ y: 1368, n: "Les Ming au pouvoir", p: "Un ancien moine mendiant devient empereur.", w: "Dynastie Ming" },
-		{ y: 1378, n: "Le Grand Schisme", p: "Deux papes, puis trois, en même temps.", w: "Grand Schisme d'Occident" },
-		{ y: 1405.5, n: "Les flottes de Zheng He", p: "Des « bateaux-trésors » géants jusqu'à l'Afrique.", w: "Zheng He" },
-		{ d: "1415-10-25", n: "Azincourt", p: "La boue et les archers anglais.", w: "Bataille d'Azincourt" },
-		{ d: "1429-05-08", n: "Jeanne d'Arc libère Orléans", p: "Elle a 17 ans.", w: "Siège d'Orléans" },
-		{ d: "1436-03-25", n: "La coupole de Brunelleschi", p: "Florence consacre son dôme, bâti sans cintre.", w: "Dôme de Florence" },
-		{ d: "1453-05-29", n: "La chute de Constantinople", p: "Mehmed II fait passer ses navires par la terre.", w: "Chute de Constantinople" },
-		{ y: 1455, n: "La Bible de Gutenberg", p: "Le premier grand livre imprimé en Europe.", w: "Bible de Gutenberg" },
-		{ y: 1478, n: "Le Printemps de Botticelli", p: "Une allée de nymphes et 500 espèces de plantes.", w: "Le Printemps (Botticelli)" },
-		{ y: 1488, n: "Dias passe le cap de Bonne-Espérance", p: "Il l'appelle d'abord « cap des Tempêtes ».", w: "Bartolomeu Dias" },
-		{ d: "1492-10-12", n: "Colomb aux Bahamas", p: "Il croit être arrivé en Asie.", w: "Christophe Colomb" },
-		{ d: "1498-05-20", n: "Vasco de Gama à Calicut", p: "La route des épices par la mer.", w: "Vasco de Gama" },
-		{ y: 1503.5, n: "Léonard commence la Joconde", p: "Il ne s'en séparera jamais.", w: "La Joconde" },
-		{ d: "1512-10-31", n: "Le plafond de la Sixtine dévoilé", p: "Quatre ans de Michel-Ange sur un échafaudage.", w: "Plafond de la chapelle Sixtine" },
-		{ d: "1515-09-13", n: "Marignan", p: "La date que tout le monde retient.", w: "Bataille de Marignan" },
-		{ d: "1517-10-31", n: "Les 95 thèses de Luther", p: "Le début de la Réforme.", w: "95 thèses" },
-		{ d: "1518-07-14", n: "L'épidémie de danse de Strasbourg", p: "Des dizaines de personnes dansent sans pouvoir s'arrêter, pendant des semaines.", w: "Épidémie de danse de 1518" },
-		{ d: "1522-09-06", n: "Retour du tour du monde", p: "Le Victoria rentre avec 18 survivants sur 237.", w: "Expédition de Magellan" },
-		{ y: 1543, n: "Copernic met le Soleil au centre", p: "Il reçoit, dit-on, son livre imprimé sur son lit de mort.", w: "De revolutionibus orbium coelestium" },
-		{ y: 1569, n: "La projection de Mercator", p: "La carte qui fait le Groenland aussi grand que l'Afrique.", w: "Projection de Mercator" },
-		{ d: "1572-11-11", n: "L'étoile nouvelle de Tycho Brahe", p: "Une supernova prouve que le ciel change.", w: "SN 1572" },
-		{ d: "1582-10-15", n: "Les dix jours disparus de 1582", p: "On se couche le jeudi 4 octobre, on se réveille le vendredi 15 : calendrier grégorien.", w: "Calendrier grégorien" },
-		{ d: "1588-07-29", n: "L'Invincible Armada", p: "La flotte espagnole défaite, puis dispersée par les tempêtes.", w: "Invincible Armada" },
-		{ y: 1599.5, n: "Le théâtre du Globe", p: "La troupe de Shakespeare s'installe à Londres.", w: "Théâtre du Globe" },
-		{ d: "1605-11-05", n: "La conspiration des Poudres", p: "Guy Fawkes arrêté sous le Parlement.", w: "Conspiration des Poudres" },
-		{ d: "1610-01-07", n: "Galilée voit les lunes de Jupiter", p: "Quatre petits points qui tournent autour d'une planète.", w: "Satellites galiléens" },
-		{ y: 1614.5, n: "Napier publie les logarithmes", p: "La première table de logarithmes : des années de calculs à la main.", w: "John Napier" },
-		{ d: "1620-11-21", n: "Le Mayflower accoste", p: "102 passagers au cap Cod.", w: "Mayflower" },
-		{ d: "1633-06-22", n: "Galilée abjure", p: "« Et pourtant elle tourne » — une phrase sans doute inventée.", w: "Procès de Galilée" },
-		{ d: "1637-02-03", n: "La bulle des tulipes éclate", p: "À Haarlem, les bulbes ne trouvent soudain plus preneur.", w: "Tulipomanie" },
-		{ y: 1654.5, n: "Pascal et Fermat inventent les probabilités", p: "Tout part d'un problème de jeu de dés.", w: "Problème des partis" },
-		{ d: "1666-09-02", n: "Le grand incendie de Londres", p: "Parti d'une boulangerie de Pudding Lane.", w: "Grand incendie de Londres" },
-		{ d: "1682-05-06", n: "La cour s'installe à Versailles", p: "Louis XIV quitte Paris pour de bon.", w: "Château de Versailles" },
-		{ y: 1686, n: "Le Procope sert des glaces", p: "Le café parisien popularise sorbets et glaces.", w: "Le Procope" },
-		{ d: "1687-07-05", n: "Les Principia de Newton", p: "La gravitation universelle mise en équations.", w: "Philosophiæ naturalis principia mathematica" },
-		{ y: 1697, n: "Les Contes de Perrault", p: "Cendrillon, le Petit Chaperon rouge, la Barbe bleue.", w: "Contes de ma mère l'Oye" },
-		{ d: "1715-09-01", n: "Mort de Louis XIV", p: "Après 72 ans de règne, record européen.", w: "Louis XIV" },
-		{ y: 1720.5, n: "La banqueroute de Law", p: "Le papier-monnaie français s'effondre.", w: "Système de Law" },
-		{ d: "1726-10-28", n: "Les Voyages de Gulliver", p: "Lilliput entre dans les librairies.", w: "Les Voyages de Gulliver" },
-		{ d: "1755-11-01", n: "Le séisme de Lisbonne", p: "Séisme, tsunami et incendie le jour de la Toussaint.", w: "Séisme de 1755 à Lisbonne" },
-		{ d: "1759-03-13", n: "Le retour de la comète de Halley", p: "Pile comme Halley l'avait prédit, après sa mort.", w: "Comète de Halley" },
-		{ d: "1773-12-16", n: "La Boston Tea Party", p: "342 caisses de thé jetées dans le port.", w: "Boston Tea Party" },
-		{ d: "1776-07-04", n: "La Déclaration d'indépendance", p: "Les treize colonies se déclarent libres.", w: "Déclaration d'indépendance des États-Unis" },
-		{ d: "1783-09-19", n: "Un mouton, un canard et un coq en ballon", p: "Les premiers passagers d'une montgolfière, devant Louis XVI.", w: "Montgolfière" },
-		{ d: "1786-08-08", n: "Première ascension du mont Blanc", p: "Balmat et Paccard au sommet.", w: "Mont Blanc" },
-		{ d: "1789-07-14", n: "La prise de la Bastille", p: "Sept prisonniers seulement à l'intérieur.", w: "Prise de la Bastille" },
-		{ d: "1793-08-10", n: "Le Louvre devient musée", p: "Le « Muséum central des arts » ouvre au public.", w: "Musée du Louvre" },
-		{ d: "1799-07-15", n: "La pierre de Rosette découverte", p: "Par des soldats de Bonaparte, en Égypte.", w: "Pierre de Rosette" },
-		{ d: "1804-12-02", n: "Le sacre de Napoléon", p: "Il se pose lui-même la couronne sur la tête.", w: "Sacre de Napoléon Ier" },
-		{ d: "1815-04-10", n: "L'éruption du Tambora", p: "La plus puissante éruption de l'histoire écrite.", w: "Tambora" },
-		{ d: "1815-06-18", n: "Waterloo", p: "« Morne plaine », écrira Hugo.", w: "Bataille de Waterloo" },
-		{ y: 1816.5, n: "L'année sans été", p: "Neige en juin ; Mary Shelley invente Frankenstein.", w: "Année sans été" },
-		{ d: "1822-09-27", n: "Champollion déchiffre les hiéroglyphes", p: "Sa Lettre à M. Dacier ; « Je tiens l'affaire ! »", w: "Jean-François Champollion" },
-		{ d: "1824-05-07", n: "La Neuvième de Beethoven", p: "Sourd, il ne réalise les applaudissements qu'en se retournant.", w: "Symphonie no 9 de Beethoven" },
-		{ y: 1827, n: "La première photographie", p: "Niépce : « Point de vue du Gras », huit heures de pose ou plus.", w: "Point de vue du Gras" },
-		{ d: "1830-09-15", n: "Le premier train de voyageurs", p: "Liverpool–Manchester, inauguré avec un accident.", w: "Liverpool and Manchester Railway" },
-		{ d: "1839-08-19", n: "Le daguerréotype offert au monde", p: "La France rend le procédé public.", w: "Daguerréotype" },
-		{ d: "1840-05-06", n: "Le Penny Black", p: "Le premier timbre-poste.", w: "Penny Black" },
-		{ d: "1846-09-23", n: "La découverte de Neptune", p: "Trouvée par le calcul, avant d'être vue.", w: "Neptune (planète)" },
-		{ d: "1851-05-01", n: "Le Crystal Palace", p: "La Grande Exposition de Londres, dans un palais de verre.", w: "Crystal Palace" },
-		{ d: "1857-04-01", n: "Les Fleurs du mal", p: "Baudelaire sera condamné pour six poèmes.", w: "Les Fleurs du mal" },
-		{ d: "1858-07-15", n: "La Grande Puanteur de Londres", p: "La Tamise empeste au point qu'on imbibe les rideaux du Parlement de chlorure de chaux.", w: "Grande Puanteur" },
-		{ d: "1859-09-01", n: "L'événement de Carrington", p: "Une tempête solaire : aurores aux tropiques, télégraphes en feu.", w: "Éruption solaire de 1859" },
-		{ d: "1860-04-09", n: "« Au clair de la lune », première voix enregistrée", p: "Scott de Martinville l'enregistre au phonautographe… sans pouvoir la réécouter.", w: "Phonautographe" },
-		{ d: "1863-05-15", n: "Le Salon des refusés", p: "Le Déjeuner sur l'herbe fait scandale.", w: "Salon des refusés" },
-		{ d: "1869-11-17", n: "L'ouverture du canal de Suez", p: "L'impératrice Eugénie en tête du cortège.", w: "Canal de Suez" },
-		{ d: "1874-04-15", n: "La première exposition impressionniste", p: "Impression, soleil levant donne son nom au mouvement.", w: "Exposition impressionniste de 1874" },
-		{ d: "1876-03-10", n: "Le premier coup de téléphone", p: "« Monsieur Watson, venez ici. »", w: "Alexander Graham Bell" },
-		{ d: "1883-08-27", n: "Krakatoa", p: "Le bruit le plus fort de l'histoire, entendu à 4 800 km.", w: "Éruption du Krakatoa en 1883" },
-		{ d: "1886-10-28", n: "La statue de la Liberté inaugurée", p: "Un cadeau de la France, en pièces détachées.", w: "Statue de la Liberté" },
-		{ d: "1888-10-14", n: "Roundhay Garden Scene", p: "Deux secondes de film : des gens qui tournent en rond dans un jardin de Leeds.", w: "Roundhay Garden Scene" },
-		{ d: "1889-03-31", n: "La tour Eiffel achevée", p: "Eiffel monte les 1 710 marches pour y planter le drapeau.", w: "Tour Eiffel" },
-		{ d: "1895-12-28", n: "La première séance des Lumière", p: "Au Salon indien du Grand Café, boulevard des Capucines.", w: "Auguste et Louis Lumière" },
-		{ d: "1902-09-01", n: "Le Voyage dans la Lune de Méliès", p: "L'obus dans l'œil de la Lune.", w: "Le Voyage dans la Lune" },
-		{ d: "1903-07-01", n: "Le premier Tour de France", p: "Six étapes, dont certaines de plus de 400 km.", w: "Tour de France 1903" },
-		{ d: "1903-12-17", n: "Le vol des frères Wright", p: "12 secondes, 37 mètres.", w: "Wright Flyer" },
-		{ d: "1908-06-30", n: "L'explosion de la Toungouska", p: "80 millions d'arbres couchés en Sibérie.", w: "Événement de la Toungouska" },
-		{ d: "1909-07-25", n: "Blériot traverse la Manche", p: "37 minutes, sans boussole.", w: "Louis Blériot" },
-		{ d: "1911-08-21", n: "Le vol de la Joconde", p: "Elle disparaît du Louvre pendant plus de deux ans.", w: "Vol de La Joconde" },
-		{ d: "1912-04-15", n: "Le naufrage du Titanic", p: "Pendant que l'orchestre joue.", w: "Naufrage du Titanic" },
-		{ d: "1913-05-29", n: "Le scandale du Sacre du printemps", p: "Huées et bagarre au Théâtre des Champs-Élysées.", w: "Le Sacre du printemps" },
-		{ d: "1918-11-11", n: "L'armistice", p: "À 11 heures, les cloches sonnent.", w: "Armistice de 1918" },
-		{ d: "1922-11-26", n: "Le tombeau de Toutânkhamon ouvert", p: "« Je vois des choses merveilleuses », dit Carter.", w: "Tombe de Toutânkhamon" },
-		{ d: "1924-02-12", n: "Création de Rhapsody in Blue", p: "À New York, avec le fameux glissando de clarinette.", w: "Rhapsody in Blue" },
-		{ d: "1927-05-21", n: "Lindbergh atterrit au Bourget", p: "Première traversée de l'Atlantique en solitaire.", w: "Charles Lindbergh" },
-		{ d: "1928-09-28", n: "Fleming et la pénicilline", p: "Une moisissure dans une boîte de Petri oubliée.", w: "Pénicilline" },
-		{ d: "1930-02-18", n: "La découverte de Pluton", p: "Nommée par une écolière de 11 ans.", w: "Pluton (planète naine)" },
-		{ d: "1936-06-20", n: "Les premiers congés payés", p: "Deux semaines ; les Français découvrent la mer.", w: "Congés payés" },
-		{ d: "1938-10-30", n: "La Guerre des mondes à la radio", p: "Orson Welles fait croire à une invasion martienne.", w: "La Guerre des mondes (radio)" },
-		{ d: "1940-09-12", n: "Quatre ados découvrent Lascaux", p: "En cherchant leur chien, dit la légende.", w: "Grotte de Lascaux" },
-		{ d: "1944-06-06", n: "Le Débarquement", p: "Le jour J en Normandie.", w: "Débarquement de Normandie" },
-		{ d: "1945-05-08", n: "La fin de la guerre en Europe", p: "Victoire en Europe.", w: "Jour de la Victoire" },
-		{ d: "1947-10-14", n: "Le mur du son franchi", p: "Chuck Yeager, avec deux côtes cassées.", w: "Bell X-1" },
-		{ d: "1953-05-29", n: "Le sommet de l'Everest", p: "Hillary et Tenzing Norgay.", w: "Mont Everest" },
-		{ d: "1957-10-04", n: "Spoutnik", p: "Un « bip-bip » en orbite.", w: "Spoutnik 1" },
-		{ d: "1961-04-12", n: "Gagarine dans l'espace", p: "« Poekhali ! » (« On y va ! »)", w: "Vostok 1" },
-		{ d: "1962-02-20", n: "Friendship 7", p: "John Glenn fait trois fois le tour de la Terre.", w: "Mercury-Atlas 6" },
-		{ d: "1962-05-02", n: "Le tournoi des candidats de Curaçao", p: "Huit grands maîtres, sept semaines d'échecs sous les tropiques.", w: "Tournoi des candidats de 1962" },
-		{ d: "1962-10-05", n: "Love Me Do", p: "Le premier single des Beatles.", w: "Love Me Do" },
-		{ d: "1965-03-18", n: "La première sortie dans l'espace", p: "Leonov flotte 12 minutes… et peine à rentrer.", w: "Voskhod 2" },
-		{ d: "1967-06-01", n: "Sgt. Pepper's", p: "L'album concept des Beatles.", w: "Sgt. Pepper's Lonely Hearts Club Band" },
-		{ d: "1969-03-02", n: "Le premier vol du Concorde", p: "À Toulouse.", w: "Concorde (avion)" },
-		{ d: "1969-07-21", n: "Premiers pas sur la Lune", p: "Un petit pas pour l'homme.", w: "Apollo 11" },
-		{ d: "1972-07-11", n: "Fischer contre Spassky à Reykjavik", p: "Le « match du siècle », en pleine guerre froide.", w: "Championnat du monde d'échecs 1972" },
-		{ d: "1974-11-24", n: "La découverte de Lucy", p: "Baptisée d'après Lucy in the Sky with Diamonds.", w: "Lucy (australopithèque)" },
-		{ d: "1977-08-15", n: "Le signal Wow!", p: "72 secondes d'un signal radio venu de l'espace, jamais retrouvé.", w: "Signal Wow!" },
-		{ d: "1977-09-05", n: "Le lancement de Voyager 1", p: "Avec son disque d'or, toujours en route.", w: "Voyager 1" },
-		{ d: "1981-09-27", n: "Le TGV entre en service", p: "Paris–Lyon en 2 h 40.", w: "TGV Sud-Est" },
-		{ d: "1983-09-26", n: "Stanislav Petrov", p: "Il juge qu'une alerte de missiles est une fausse alarme — et a raison.", w: "Stanislav Petrov" },
-		{ d: "1984-01-24", n: "Le premier Macintosh", p: "Il dit « Hello » sur scène.", w: "Macintosh 128K" },
-		{ d: "1985-07-13", n: "Live Aid", p: "Concerts simultanés à Londres et Philadelphie.", w: "Live Aid" },
-		{ d: "1986-04-26", n: "Tchernobyl", p: "Le réacteur 4 explose.", w: "Catastrophe nucléaire de Tchernobyl" },
-		{ d: "1989-11-09", n: "La chute du mur de Berlin", p: "Rostropovitch y joue du violoncelle deux jours plus tard.", w: "Chute du mur de Berlin" },
-		{ d: "1990-02-14", n: "Le point bleu pâle", p: "Voyager 1 se retourne et photographie la Terre.", w: "Pale Blue Dot" },
-		{ d: "1991-08-06", n: "Le premier site web", p: "info.cern.ch explique… ce qu'est le Web.", w: "Info.cern.ch" },
-		{ d: "1994-05-06", n: "Le tunnel sous la Manche", p: "Inauguré par Élisabeth II et François Mitterrand.", w: "Tunnel sous la Manche" },
-		{ d: "1996-07-05", n: "La naissance de Dolly", p: "La brebis clonée, nommée d'après Dolly Parton.", w: "Dolly (brebis)" },
-		{ d: "1997-05-11", n: "Deep Blue bat Kasparov", p: "Première défaite d'un champion du monde face à une machine en match.", w: "Deep Blue" },
-		{ d: "1998-07-12", n: "La France championne du monde", p: "3-0, deux têtes de Zidane.", w: "Finale de la Coupe du monde de football 1998" },
-		{ d: "1999-08-11", n: "L'éclipse totale de 1999", p: "La France entière lève les yeux avec des lunettes en carton.", w: "Éclipse solaire du 11 août 1999" },
-		{ d: "2002-01-01", n: "L'euro dans les poches", p: "Les pièces et billets arrivent.", w: "Euro" },
-		{ d: "2003-10-24", n: "Le dernier vol commercial du Concorde", p: "New York–Londres, une dernière fois.", w: "Concorde (avion)" },
-		{ d: "2006-08-24", n: "Pluton n'est plus une planète", p: "Rétrogradée en « planète naine » à Prague.", w: "Pluton (planète naine)" },
-		{ d: "2007-01-09", n: "Le premier iPhone présenté", p: "« Un iPod, un téléphone, un communicateur Internet. »", w: "IPhone (1re génération)" },
-		{ d: "2008-09-10", n: "Le premier faisceau du LHC", p: "Et la fin du monde n'a pas eu lieu.", w: "Grand collisionneur de hadrons" },
-		{ d: "2010-04-15", n: "Le nuage de l'Eyjafjallajökull", p: "Un volcan au nom imprononçable cloue l'Europe au sol.", w: "Éruption de l'Eyjafjallajökull en 2010" },
-		{ d: "2012-07-04", n: "Le boson de Higgs", p: "Annoncé au CERN, en Comic Sans.", w: "Boson de Higgs" },
-		{ d: "2012-10-14", n: "Le saut de Baumgartner", p: "Chute libre depuis 39 km d'altitude.", w: "Felix Baumgartner" },
-		{ d: "2013-02-15", n: "Le météore de Tcheliabinsk", p: "Filmé par des centaines de caméras de voiture.", w: "Superbolide de Tcheliabinsk" },
-		{ d: "2014-11-12", n: "Philae rebondit sur une comète", p: "Deux rebonds avant de se coincer à l'ombre d'une falaise.", w: "Philae (sonde spatiale)" },
-		{ d: "2015-07-14", n: "New Horizons survole Pluton", p: "Un cœur géant à sa surface.", w: "New Horizons" },
-		{ d: "2015-09-14", n: "Les premières ondes gravitationnelles", p: "Le « chirp » de deux trous noirs qui fusionnent.", w: "GW150914" },
-		{ d: "2016-03-10", n: "Le coup 37 d'AlphaGo", p: "Un coup que personne n'aurait joué, contre Lee Sedol.", w: "AlphaGo" },
-		{ d: "2017-08-17", n: "Deux étoiles à neutrons fusionnent", p: "Ondes gravitationnelles et lumière, vues ensemble.", w: "GW170817" },
-		{ d: "2017-10-19", n: "ʻOumuamua", p: "Le premier objet interstellaire repéré, en forme de cigare.", w: "ʻOumuamua" },
-		{ d: "2018-07-15", n: "La France à nouveau championne du monde", p: "4-2 contre la Croatie, sous l'orage.", w: "Finale de la Coupe du monde de football 2018" },
-		{ d: "2019-04-10", n: "Première image d'un trou noir", p: "L'anneau orange de M87*.", w: "M87*" },
-		{ d: "2019-04-15", n: "L'incendie de Notre-Dame", p: "La flèche s'effondre en direct.", w: "Incendie de Notre-Dame de Paris" },
-		{ d: "2020-03-17", n: "Le premier confinement", p: "Les applaudissements de 20 heures.", w: "Confinement de 2020 en France" },
-		{ d: "2020-12-21", n: "La grande conjonction", p: "Jupiter et Saturne presque collées dans le ciel.", w: "Grande conjonction de 2020" },
-		{ d: "2021-03-23", n: "L'Ever Given bloque Suez", p: "Une pelleteuse minuscule face à un porte-conteneurs géant.", w: "Obstruction du canal de Suez en 2021" },
-		{ d: "2021-04-19", n: "Ingenuity vole sur Mars", p: "Premier vol motorisé sur une autre planète.", w: "Ingenuity (hélicoptère)" },
-		{ d: "2021-12-25", n: "Décollage du télescope James-Webb", p: "Un cadeau de Noël plié comme un origami.", w: "Télescope spatial James-Webb" },
-		{ d: "2022-07-12", n: "Les premières images de James-Webb", p: "Les « falaises cosmiques » de la nébuleuse de la Carène.", w: "Télescope spatial James-Webb" },
-		{ d: "2022-09-26", n: "DART percute un astéroïde", p: "Et dévie bel et bien Dimorphos.", w: "Double Asteroid Redirection Test" },
-		{ d: "2022-11-30", n: "ChatGPT est lancé", p: "Un million d'utilisateurs en cinq jours.", w: "ChatGPT" },
-		{ d: "2022-12-18", n: "La finale Argentine–France", p: "3-3, triplé de Mbappé, victoire argentine aux tirs au but.", w: "Finale de la Coupe du monde de football 2022" },
-		{ d: "2023-05-06", n: "Le couronnement de Charles III", p: "Avec la pierre du Destin sous le trône.", w: "Couronnement de Charles III et Camilla" },
-		{ d: "2023-07-21", n: "Barbenheimer", p: "Barbie et Oppenheimer sortent le même jour.", w: "Barbenheimer" },
-		{ d: "2024-04-08", n: "L'éclipse totale nord-américaine", p: "Du Mexique au Canada.", w: "Éclipse solaire du 8 avril 2024" },
-		{ d: "2024-05-10", n: "Des aurores boréales jusqu'en Provence", p: "La plus forte tempête solaire depuis 2003.", w: "Tempête solaire de mai 2024" },
-		{ d: "2024-07-26", n: "La cérémonie sur la Seine", p: "JO de Paris : Céline Dion sur la tour Eiffel, sous la pluie.", w: "Cérémonie d'ouverture des Jeux olympiques d'été de 2024" },
-		{ d: "2024-10-13", n: "SpaceX rattrape sa fusée au vol", p: "Le booster de Starship saisi par des « baguettes ».", w: "Starship (SpaceX)" },
-		{ d: "2024-12-07", n: "Notre-Dame rouvre ses portes", p: "Cinq ans après l'incendie.", w: "Notre-Dame de Paris" },
-		{ d: "2025-04-21", n: "La mort du pape François", p: "Le lundi de Pâques.", w: "François (pape)" },
-		{ d: "2025-04-28", n: "La grande panne ibérique", p: "L'Espagne et le Portugal privés d'électricité pendant des heures.", w: "Panne électrique de 2025 en Espagne et au Portugal" },
-		{ d: "2025-05-08", n: "Habemus papam : Léon XIV", p: "La fumée blanche au deuxième jour du conclave.", w: "Léon XIV" },
-		{ d: "2025-09-07", n: "Une lune de sang", p: "Éclipse totale de Lune visible d'Europe, d'Asie et d'Afrique.", w: "Éclipse lunaire du 7 septembre 2025" },
-		{ d: "2025-10-19", n: "Le casse du Louvre", p: "Des bijoux de la Couronne volés en quelques minutes dans la galerie d'Apollon.", w: "Vol au musée du Louvre en 2025" },
-		{ d: "2025-11-10", n: "La COP30 à Belém", p: "La conférence sur le climat, aux portes de l'Amazonie.", w: "Conférence de Belém de 2025 sur les changements climatiques" },
-		{ d: "2025-12-21", n: "Le solstice d'hiver", p: "La nuit la plus longue de l'année.", w: "Solstice de décembre" },
-		{ d: "2026-02-06", n: "Ouverture des JO de Milan-Cortina", p: "Les Jeux d'hiver partagés entre deux villes.", w: "Jeux olympiques d'hiver de 2026" },
-		{ d: "2026-02-17", n: "Le Nouvel An chinois", p: "Entrée dans l'année du Cheval de feu.", w: "Nouvel An chinois" },
-		{ d: "2026-03-20", n: "L'équinoxe de printemps", p: "Le printemps commence officiellement.", w: "Équinoxe de mars" },
-		{ d: "2026-04-05", n: "Pâques", p: "Chasse aux œufs dans les jardins.", w: "Pâques" },
-		{ d: "2026-03-15", n: "Les municipales", p: "Premier tour des élections municipales en France.", w: "Élections municipales françaises de 2026" },
-		{ d: "2026-05-16", n: "La finale de l'Eurovision à Vienne", p: "70e concours, en Autriche.", w: "Concours Eurovision de la chanson 2026" },
-		{ d: "2026-06-11", n: "Coup d'envoi de la Coupe du monde", p: "Au stade Azteca de Mexico.", w: "Coupe du monde de football 2026" },
-		{ d: "2026-06-21", n: "La Fête de la musique", p: "Le solstice en musique, dans toutes les rues.", w: "Fête de la musique" },
-		{ d: "2026-07-04", n: "Grand départ du Tour à Barcelone", p: "Le même jour que les 250 ans des États-Unis.", w: "Tour de France 2026" },
-		{ d: "2026-07-14", n: "Le 14 Juillet", p: "Feux d'artifice et bals des pompiers.", w: "Fête nationale française" },
-		{ d: "2026-07-19", n: "Finale de la Coupe du monde 2026", p: "La première Coupe du monde à 48 équipes se termine au MetLife Stadium.", w: "Coupe du monde de football 2026" },
-		{ d: "2026-07-26", n: "Arrivée du Tour à Paris", p: "Le maillot jaune sur les Champs-Élysées.", w: "Tour de France 2026" },
-		{ d: "2026-08-12", n: "Éclipse totale sur l'Espagne", p: "La première éclipse totale visible en Europe continentale depuis 1999, la nuit des Perséides.", w: "Éclipse solaire du 12 août 2026" },
-		{ d: "2026-08-28", n: "Éclipse partielle de Lune", p: "La Lune presque entièrement dans l'ombre de la Terre.", w: "Éclipse lunaire du 28 août 2026" },
-		{ d: "2026-09-01", n: "La rentrée des classes", p: "Cartables neufs et odeur de colle.", w: "Rentrée scolaire" },
-		{ d: "2026-09-11", n: "Roch Hachana", p: "Le Nouvel An juif, avec pommes et miel.", w: "Roch Hachana" },
-		{ d: "2026-09-19", n: "Les Journées du patrimoine", p: "Les lieux d'habitude fermés ouvrent leurs portes.", w: "Journées européennes du patrimoine" },
-		{ d: "2026-09-23", n: "L'équinoxe d'automne", p: "Jour et nuit à égalité.", w: "Équinoxe de septembre" },
-		{ d: "2026-09-25", n: "La fête de la Mi-Automne", p: "Gâteaux de lune et lanternes sous la pleine lune.", w: "Fête de la mi-automne" },
-		{ d: "2026-09-29", n: "La Saint-Michel", p: "Fête de l'archange ; autrefois, le jour des loyers et des foires.", w: "Saint-Michel (fête)" },
-		{ d: "2026-09-30", n: "La Journée mondiale de la traduction", p: "À la Saint-Jérôme, patron des traducteurs.", w: "Journée mondiale de la traduction" },
-	].map((e) => ({
-		days: e.ya ? e.ya * YEAR : e.d ? (END - Date.parse(e.d + "T00:00:00Z")) / DAY : (END_YEAR - e.y) * YEAR,
-		name: e.n, note: e.p, url: wiki(e.w),
-	}));
-
-	// ───── Calcul ─────
-	const fracT = (m) => (m.t - START) / DAY / SPAN;
-	const lookback = (t) => Math.pow(10, LOGMAX + (LOGMIN - LOGMAX) * TYPES[type].f(Math.min(Math.max(t, 0), 1)));
-	const uOf = (days) => (LOGMAX - Math.log10(days)) / (LOGMAX - LOGMIN);
-
-	function nearest(days, self) {
-		// Mes propres dates servent aussi de repères (pour les dernières semaines).
-		const mine = MOMENTS.filter((m, i) => i !== self && m.t < END).map((m) => ({
-			days: (END - m.t) / DAY, name: m.name, note: `${m.emo} Un de tes propres moments : la courbe se mord la queue.`, url: null,
-		}));
+	const fmtNum = (n, d = 0) => n.toLocaleString("fr-FR", { maximumFractionDigits: d });
+	function describe(days) {
+		const years = days / YEAR;
+		if (years >= 1e9) return `il y a ${fmtNum(years / 1e9, 1)} milliard${years >= 2e9 ? "s" : ""} d'années`;
+		if (years >= 1e6) return `il y a ${fmtNum(years / 1e6, 1)} million${years >= 2e6 ? "s" : ""} d'années`;
+		if (years >= 10000) return `il y a ${fmtNum(Math.round(years / 100) * 100)} ans`;
+		if (years >= 100) {
+			const y = Math.round(NOW_YEAR - years);
+			return `il y a ${fmtNum(years)} ans · ${y <= 0 ? `${fmtNum(1 - y)} av. J.-C.` : `en ${y}`}`;
+		}
+		const date = new Date(END - days * DAY).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
+		if (years >= 1) return `il y a ${fmtNum(years, 1)} ans · ${date}`;
+		if (days >= 1) return `il y a ${fmtNum(days, 1)} jour${days >= 2 ? "s" : ""} · ${date}`;
+		return `il y a ${fmtNum(days * 24, 1)} heure${days * 24 >= 2 ? "s" : ""}`;
+	}
+	function nearestEvent(days) {
 		let best = null;
-		for (const e of EVENTS.concat(mine)) {
-			if (e.days <= 0) continue;
+		for (const e of EVENTS) {
 			const dist = Math.abs(Math.log10(e.days) - Math.log10(days));
 			if (!best || dist < best.dist) best = { ...e, dist };
 		}
 		return best;
 	}
+	const dateFr = (t, opts = { day: "numeric", month: "long" }) => new Date(t).toLocaleDateString("fr-FR", { ...opts, timeZone: "UTC" });
+	const link = (e) => `<a href="${e.url}" target="_blank" rel="noopener">${e.name}</a>`;
 
-	const num = (n, d = 0) => n.toLocaleString("fr-FR", { maximumFractionDigits: d });
-	const dateFr = (t, month = "long") => {
-		const d = new Date(t);
-		const day = d.getUTCDate();
-		return `${day === 1 ? "1er" : day} ${d.toLocaleDateString("fr-FR", { month, timeZone: "UTC" })}`;
-	};
-	function describe(days) {
-		const years = days / YEAR;
-		if (years >= 1e9) return `il y a ${num(years / 1e9, 2)} milliards d'années`;
-		if (years >= 1e6) return `il y a ${num(years / 1e6, 1)} million${years >= 2e6 ? "s" : ""} d'années`;
-		if (years >= 10000) return `il y a ${num(Math.round(years / 100) * 100)} ans`;
-		if (years >= 100) {
-			const y = Math.floor(END_YEAR - years);
-			return `il y a ${num(years)} ans · ${y <= 0 ? `vers ${num(1 - y)} av. J.-C.` : `vers ${y}`}`;
-		}
-		const whole = Math.max(1, Math.round(days));
-		const t = END - (years >= 1 ? days : whole) * DAY;
-		const full = `${dateFr(t)} ${new Date(t).getUTCFullYear()}`;
-		if (years >= 1) return `il y a ${num(years, 1)} ans · ${full}`;
-		return `il y a ${whole} jour${whole >= 2 ? "s" : ""} · ${full}`;
-	}
-
-	// ───── En-tête & boutons ─────
-	document.getElementById("count").textContent = MOMENTS.length;
-	document.getElementById("updated").textContent = `${dateFr(END)} ${new Date(END).getUTCFullYear()}`;
-	const typesEl = document.getElementById("types");
-	for (const [k, v] of Object.entries(TYPES)) {
-		const b = document.createElement("button");
-		b.type = "button"; b.textContent = v.label; b.dataset.k = k;
-		b.addEventListener("click", () => { type = k; try { localStorage.setItem("bb-type", k); } catch (e) {} render(); });
-		typesEl.appendChild(b);
-	}
-
-	// ───── Dessin ─────
+	// ---- Dessin (format large ou haut selon l'écran) ----
 	const svg = document.getElementById("chart");
 	const NS = "http://www.w3.org/2000/svg";
 	const el = (name, attrs, parent = svg) => {
@@ -540,81 +297,237 @@
 		return e;
 	};
 
-	function render() {
-		for (const b of typesEl.children) b.setAttribute("aria-pressed", b.dataset.k === type);
-		[...svg.children].forEach((c) => c.tagName !== "defs" && c.remove());
+	// Jour réel (depuis le 8 octobre) où la courbe atteint une ancienneté donnée.
+	const dayOf = (lookDays) => frac(lookDays) * SPAN;
 
-		const narrow = svg.parentElement.clientWidth < 560;
-		const W = narrow ? 360 : 900, H = narrow ? 460 : 470;
-		const M = narrow ? { l: 74, r: 16, t: 18, b: 34 } : { l: 104, r: 26, t: 22, b: 36 };
+	// Ancienneté en années, version courte (graduations).
+	function shortYears(years) {
+		if (years >= 1e9) return `${fmtNum(years / 1e9, 1)} Md ans`;
+		if (years >= 1e6) return `${fmtNum(years / 1e6, 1)} M ans`;
+		if (years >= 1) return `${fmtNum(years, years < 10 ? 1 : 0)} an${years >= 2 ? "s" : ""}`;
+		const days = years * YEAR;
+		if (days >= 30) return `${fmtNum(days / 30.44, 0)} mois`;
+		if (days >= 1) return `${fmtNum(days, 0)} jour${days >= 2 ? "s" : ""}`;
+		return `${fmtNum(days * 24, 0)} h`;
+	}
+	// Pas « rond » (1, 2 ou 5 × 10^k) pour environ n graduations sur [0, max].
+	function niceStep(max, n) {
+		const raw = max / n;
+		const p = Math.pow(10, Math.floor(Math.log10(raw)));
+		return [1, 2, 5, 10].map((k) => k * p).find((s) => s >= raw);
+	}
+
+	function draw() {
+		while (svg.childNodes.length > 1) svg.removeChild(svg.lastChild);
+		const narrow = svg.parentElement.clientWidth < 600;
+		const W = narrow ? 400 : 1000;
+		const H = narrow ? 600 : 560;
+		const M = narrow ? { l: 82, r: 14, t: 20, b: 64 } : { l: 150, r: 30, t: 24, b: 56 };
 		const iw = W - M.l - M.r, ih = H - M.t - M.b;
 		svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
-		const x = (t) => M.l + t * iw;
-		const y = (days) => M.t + (1 - uOf(days)) * ih;
-		const r = narrow ? 11 : 14;
 
-		for (const [d, label] of [[LMAX, "Big Bang"], [1e9 * YEAR, "1 Md ans"], [1e6 * YEAR, "1 M ans"], [1e3 * YEAR, "1 000 ans"], [YEAR, "1 an"], [1, "1 jour"]]) {
-			el("line", { class: "grid", x1: M.l, x2: W - M.r, y1: y(d), y2: y(d) });
-			el("text", { class: "tick", x: M.l - r - 6, y: y(d) + 4, "text-anchor": "end" }).textContent = label;
+		// Fenêtre affichée : du jour où la courbe vaut ZOOM jusqu'à aujourd'hui.
+		const Z = Math.min(ZOOM, LMAX);
+		const X0 = Z >= LMAX ? 0 : dayOf(Z);
+		const x = (days) => M.l + ((days - X0) / (SPAN - X0)) * iw;
+		// Axe vertical : aujourd'hui en haut, la limite du zoom en bas.
+		// Linéaire (par défaut) : proportionnel à l'ancienneté ; logarithmique :
+		// à son logarithme.
+		const y = (lookDays) =>
+			LINEAR
+				? M.t + (lookDays / Z) * ih
+				: M.t + ((Math.log10(Math.max(lookDays, LMIN)) - Math.log10(LMIN)) / (Math.log10(Z) - Math.log10(LMIN))) * ih;
+		const inView = (days) => days >= X0 - 1e-9 && days <= SPAN + 1e-9;
+
+		// Graduations de Y.
+		const grid = el("g", { class: "grid" });
+		const ticks = el("g", { class: "tick" });
+		const bottomLabel = Z >= LMAX ? "Big Bang" : `il y a ${shortYears(Z / YEAR)}`;
+		let yTicks;
+		if (LINEAR) {
+			const step = niceStep(Z / YEAR, narrow ? 5 : 6);
+			yTicks = [[Z, bottomLabel]];
+			for (let v = step; v < (Z / YEAR) * 0.94; v += step) yTicks.push([v * YEAR, `il y a ${shortYears(v)}`]);
+			yTicks.push([0, "aujourd'hui"]);
+		} else {
+			yTicks = [[Z, bottomLabel]];
+			for (const yrs of [1e9, 1e8, 1e7, 1e6, 1e5, 1e4, 1e3, 100, 10, 1]) {
+				if (yrs * YEAR < Z * 0.8 && yrs * YEAR > LMIN * 1.2) yTicks.push([yrs * YEAR, shortYears(yrs)]);
+			}
+			for (const [d, lab] of [[30.436875, "1 mois"], [1, "1 jour"], [1 / 24, "1 heure"]]) {
+				if (d < Z * 0.8 && d >= LMIN * 0.999) yTicks.push([d, lab]);
+			}
 		}
-		const mid = Date.UTC(new Date(START).getUTCFullYear(), new Date(START).getUTCMonth() + 1, 1);
-		for (const [t, a] of [[START, "start"], [mid, "middle"], [END, "end"]]) {
-			if (t > END) continue;
-			el("text", { class: "tick", x: x((t - START) / DAY / SPAN), y: H - 8, "text-anchor": a }).textContent = dateFr(t, "short");
+		for (const [d, label] of yTicks) {
+			const yy = y(d);
+			el("line", { x1: M.l, x2: W - M.r, y1: yy, y2: yy }, grid);
+			el("text", { x: M.l - 8, y: yy + 4, "text-anchor": "end" }, ticks).textContent = narrow ? label.replace(/^il y a /, "") : label;
 		}
 
+		// Graduations de X : des jours « ronds » dans la fenêtre affichée.
+		const t0 = START + X0 * DAY;
+		const rangeDays = (END - t0) / DAY;
+		const stepDays = [1, 2, 7, 14, 30.44, 61].find((s) => rangeDays / s <= (narrow ? 4 : 8)) ?? 91;
+		const xDates = [];
+		if (stepDays >= 30) {
+			for (let m = 0; ; m++) {
+				const first = Date.UTC(2026, 7 + m, 1);
+				if (first > END) break;
+				if (first >= t0 && END - first > 3 * DAY) xDates.push(first);
+			}
+		} else {
+			let t = Math.ceil(t0 / DAY) * DAY;
+			for (; t < END - (stepDays / 2) * DAY; t += stepDays * DAY) xDates.push(t);
+		}
+		if (X0 > 0 && !xDates.length) xDates.push(t0);
+		xDates.push(END);
+		for (const t of xDates) {
+			const xx = x((t - START) / DAY);
+			el("line", { x1: xx, x2: xx, y1: M.t, y2: H - M.b }, grid);
+			const anchor = xx < M.l + 20 ? "start" : xx > W - M.r - 20 ? "end" : "middle";
+			const fmt = stepDays < 1 ? { day: "numeric", month: "short", hour: "2-digit" } : narrow ? { day: "numeric", month: "short" } : undefined;
+			el("text", { x: xx, y: H - M.b + 20, "text-anchor": anchor }, ticks).textContent = dateFr(t, fmt);
+		}
+		const ax = el("g", { class: "axis" });
+		el("line", { x1: M.l, x2: W - M.r, y1: H - M.b, y2: H - M.b }, ax);
+		el("line", { x1: M.l, x2: M.l, y1: M.t, y2: H - M.b }, ax);
+		el("text", { class: "axis-title", x: M.l + iw / 2, y: H - 12, "text-anchor": "middle" }).textContent =
+			X0 > 0 ? `Temps réel (zoom : depuis le ${dateFr(t0, { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" })})` : "Temps réel (depuis le 8 octobre 2026)";
+		if (!narrow) {
+			el("text", { class: "axis-title", x: 18, y: M.t + ih / 2, transform: `rotate(-90 18 ${M.t + ih / 2})`, "text-anchor": "middle" }).textContent =
+				(LINEAR ? "Temps historique" : "Temps historique (échelle log)") + (Z >= LMAX ? " — du Big Bang à aujourd'hui" : " — zoom");
+		}
+
+		// Repères historiques le long de la courbe (cliquables).
+		const ev = el("g", {});
+		for (const e of EVENTS) {
+			if (e.days < LMIN || e.days > Z * 1.0001) continue;
+			const a = el("a", { href: e.url, target: "_blank" }, ev);
+			el("circle", { class: "event-dot", cx: x(dayOf(e.days)), cy: y(e.days), r: narrow ? 3.5 : 3 }, a);
+			el("title", {}, a).textContent = e.name;
+		}
+
+		// La courbe, sur la fenêtre affichée.
 		let d = "";
-		for (let i = 0; i <= 300; i++) {
-			const t = i / 300;
-			d += `${i ? "L" : "M"}${x(t).toFixed(1)},${y(lookback(t)).toFixed(1)}`;
+		for (let k = 0; k <= 300; k++) {
+			const days = X0 + (k / 300) * (SPAN - X0);
+			d += `${k ? "L" : "M"}${x(days).toFixed(1)},${y(lookback(days)).toFixed(1)}`;
 		}
-		el("path", { class: "groove", d });
 		el("path", { class: "curve", d });
 
-		MOMENTS.forEach((m, i) => {
-			const t = fracT(m);
-			const g = el("g", { class: "dot" + (i === selected ? " on" : ""), tabindex: 0, role: "button", "aria-label": `${dateFr(m.t)} : ${m.name}` });
-			el("circle", { cx: x(t), cy: y(lookback(t)), r }, g);
-			el("text", { x: x(t), y: y(lookback(t)) + (narrow ? 4.5 : 5), "text-anchor": "middle", style: `font-size:${narrow ? 11 : 14}px` }, g).textContent = m.emo;
-			const pick = () => { selected = i; render(); };
-			g.addEventListener("click", pick);
-			g.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pick(); } });
+		// Dates demandées : sur le graphique (si dans la fenêtre), et en cartes.
+		const cards = document.getElementById("cards");
+		cards.innerHTML = "";
+		const visible = MARKERS.filter((m) => inView((m.date - START) / DAY));
+		MARKERS.forEach((m) => {
+			const days = (m.date - START) / DAY;
+			const L = lookback(days);
+			if (inView(days)) {
+				const vi = visible.indexOf(m);
+				const g = el("g", { class: `marker${m.end ? " end" : ""}` });
+				el("line", { x1: x(days), x2: x(days), y1: y(L), y2: H - M.b }, g);
+				el("line", { x1: M.l, x2: x(days), y1: y(L), y2: y(L) }, g);
+				el("circle", { cx: x(days), cy: y(L), r: 6 }, g);
+				// Points collés en haut (sur un axe linéaire) : étiquettes sous le
+				// point, décalées pour ne pas se chevaucher.
+				const nearTop = y(L) < M.t + 30;
+				el("text", {
+					x: x(days) + (m.end ? -9 : 9),
+					y: nearTop ? y(L) + 20 + (m.end ? 0 : vi * 16) : y(L) - 10,
+					"text-anchor": m.end ? "end" : "start",
+				}, g).textContent = m.label;
+			}
+
+			const near = nearestEvent(L);
+			const card = document.createElement("div");
+			card.className = `card${m.end ? " end" : ""}`;
+			card.innerHTML =
+				`<div class="real">${m.end ? "Aujourd'hui, " : ""}${dateFr(m.date, { weekday: "long", day: "numeric", month: "long" })}</div>` +
+				(m.what ? `<div class="what">${m.what}</div>` : "") +
+				`<div class="hist">${days === 0 ? "le Big Bang" : describe(L)}</div>` +
+				`<div class="event">${days === 0 ? "Naissance de l'Univers : " + link(near) : m.end ? "Aujourd'hui" : "Événement proche : " + link(near)}</div>`;
+			cards.appendChild(card);
 		});
-		// Le point choisi passe devant les autres.
-		const on = svg.querySelector(".dot.on"); if (on) svg.appendChild(on);
 
-		showDetail();
+		// Tableau : chaque repère et le jour réel qui lui correspond.
+		const nearSet = new Set(MARKERS.map((m) => nearestEvent(lookback((m.date - START) / DAY)).name));
+		const tbody = document.getElementById("events");
+		tbody.innerHTML = "";
+		for (const e of EVENTS) {
+			if (e.days < LMIN) continue;
+			const real = START + dayOf(e.days) * DAY;
+			const tr = document.createElement("tr");
+			if (nearSet.has(e.name)) tr.className = "near";
+			const when = new Date(real).toLocaleString("fr-FR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "UTC" });
+			tr.innerHTML = `<td class="when">${when}</td><td>${link(e)}</td><td>${describe(e.days).replace(/^il y a /, "")}</td>`;
+			tbody.appendChild(tr);
+		}
+
+		// Survol / toucher.
+		const hover = el("g", { class: "hover", style: "display:none" });
+		const hl = el("line", { y1: M.t, y2: H - M.b }, hover);
+		const hc = el("circle", { r: 5 }, hover);
+		const zone = el("rect", { x: M.l, y: M.t, width: iw, height: ih, fill: "transparent" });
+		const tip = document.getElementById("tip");
+		const show = (evt) => {
+			const pt = svg.createSVGPoint();
+			pt.x = evt.clientX;
+			pt.y = evt.clientY;
+			const p = pt.matrixTransform(svg.getScreenCTM().inverse());
+			const days = Math.min(Math.max(X0 + ((p.x - M.l) / iw) * (SPAN - X0), X0), SPAN);
+			const L = lookback(days);
+			hover.style.display = "";
+			hl.setAttribute("x1", x(days));
+			hl.setAttribute("x2", x(days));
+			hc.setAttribute("cx", x(days));
+			hc.setAttribute("cy", y(L));
+			const real = new Date(START + days * DAY).toLocaleString("fr-FR", { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit", timeZone: "UTC" });
+			tip.innerHTML = `<b>${real}</b>${days < 0.01 ? "le Big Bang" : describe(L)}<br><span style="opacity:.75">≈ ${nearestEvent(L).name}</span>`;
+			const box = svg.getBoundingClientRect();
+			const left = Math.min(Math.max((x(days) / W) * box.width, 90), box.width - 90);
+			tip.style.left = `${left}px`;
+			tip.style.top = `${(y(L) / H) * box.height}px`;
+			tip.style.opacity = 1;
+		};
+		zone.addEventListener("pointermove", show);
+		zone.addEventListener("pointerdown", show);
+		zone.addEventListener("pointerleave", () => {
+			hover.style.display = "none";
+			tip.style.opacity = 0;
+		});
 	}
 
-	function gap(d) {
-		const y = d / YEAR;
-		if (y >= 1e6) return `${num(y / 1e6, 1)} M ans`;
-		if (y >= 2) return `${num(y)} ans`;
-		if (y >= 1) return "1 an";
-		const j = Math.round(d);
-		return j < 1 ? "moins d'un jour" : `${j} jour${j >= 2 ? "s" : ""}`;
-	}
-
-	function showDetail() {
-		const m = MOMENTS[selected];
-		const days = lookback(fracT(m));
-		const e = nearest(days, selected);
-		const evName = e.url ? `<a href="${e.url}" target="_blank" rel="noopener">${e.name}</a>` : `<span class="ev-name">${e.name}</span>`;
-		document.getElementById("detail").innerHTML =
-			`<div class="emo inset">${m.emo}</div>` +
-			`<div class="when">${dateFr(m.t)} ${new Date(m.t).getUTCFullYear()}</div>` +
-			`<div class="what">${m.name}</div>` +
-			`<div class="epoch">↦ ${describe(days)}</div>` +
-			`<div class="event inset">${evName}<p>${e.note}</p><p class="ago">${describe(e.days)} · écart : ${gap(Math.abs(e.days - days))}</p></div>`;
-	}
-
-	render();
-	let lastNarrow = null;
-	addEventListener("resize", () => {
-		const n = svg.parentElement.clientWidth < 560;
-		if (n !== lastNarrow) { lastNarrow = n; render(); }
+	document.getElementById("zoom").addEventListener("change", (e) => {
+		ZOOM = Number(e.target.value) * YEAR;
+		draw();
 	});
-	lastNarrow = svg.parentElement.clientWidth < 560;
+	document.getElementById("lmin").addEventListener("change", (e) => {
+		LMIN = Number(e.target.value);
+		draw();
+	});
+	document.getElementById("yscale").addEventListener("change", (e) => {
+		LINEAR = e.target.value === "linear";
+		document.getElementById("linear-note").hidden = !LINEAR;
+		draw();
+	});
+	let resizeTimer;
+	window.addEventListener("resize", () => {
+		clearTimeout(resizeTimer);
+		resizeTimer = setTimeout(draw, 120);
+	});
+	setToday();
+	draw();
+	// À minuit (heure locale), le jour change : on recalcule tout.
+	const scheduleMidnight = () => {
+		const now = new Date();
+		const next = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 5);
+		setTimeout(() => {
+			setToday();
+			draw();
+			scheduleMidnight();
+		}, next - now);
+	};
+	scheduleMidnight();
 })();
 </script>
 </body>
