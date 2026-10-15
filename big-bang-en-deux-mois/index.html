@@ -495,6 +495,30 @@
 		{ d: "2026-09-25", n: "La fête de la Mi-Automne", p: "Gâteaux de lune et lanternes sous la pleine lune.", w: "Fête de la mi-automne" },
 		{ d: "2026-09-29", n: "La Saint-Michel", p: "Fête de l'archange ; autrefois, le jour des loyers et des foires.", w: "Saint-Michel (fête)" },
 		{ d: "2026-09-30", n: "La Journée mondiale de la traduction", p: "À la Saint-Jérôme, patron des traducteurs.", w: "Journée mondiale de la traduction" },
+		// — Les dernières semaines : l'actualité, pour ne pas retomber sur mes propres moments. —
+		{ d: "2026-09-02", n: "Ülle Madise élue présidente de l'Estonie", p: "L'ancienne chancelière de justice prend la tête du pays.", w: "Élection présidentielle estonienne de 2026" },
+		{ d: "2026-09-04", n: "L'ONU adopte la projection Equal Earth", p: "Adieu Mercator : l'Afrique retrouve sa vraie taille sur les cartes.", w: "Projection Equal Earth" },
+		{ d: "2026-09-06", n: "L'astéroïde 2026 RW1 se désintègre", p: "Une boule de feu au-dessus de l'océan Indien.", w: "2026 RW1" },
+		{ d: "2026-09-06", n: "40,3 °C à Lavaur", p: "Record de chaleur pour un mois de septembre en France.", w: "Lavaur (Tarn)" },
+		{ d: "2026-09-13", n: "Les législatives suédoises", p: "La Suède vote pour renouveler son Parlement.", w: "Élections législatives suédoises de 2026" },
+		{ d: "2026-09-19", n: "Ouverture des Jeux asiatiques au Japon", p: "Aichi et Nagoya accueillent l'Asie entière.", w: "Jeux asiatiques de 2026" },
+		{ d: "2026-09-27", n: "Les sénatoriales", p: "La moitié du Sénat français renouvelée.", w: "Élections sénatoriales françaises de 2026" },
+		{ d: "2026-09-27", n: "Vučić démissionne", p: "Le président serbe quitte son poste ; Ana Brnabić assure l'intérim.", w: "Aleksandar Vučić" },
+		{ d: "2026-09-28", n: "Nasrin Sotoudeh reçoit le prix Václav-Havel", p: "L'avocate iranienne des droits humains est récompensée à Strasbourg.", w: "Nasrin Sotoudeh" },
+		{ d: "2026-09-29", n: "Première femme à la tête du gouvernement marocain", p: "Fatima Ezzahra El Mansouri nommée cheffe du gouvernement.", w: "Fatima Ezzahra El Mansouri" },
+		{ d: "2026-10-03", n: "Le tsar Samuel rentre en Bulgarie", p: "Ses restes reviennent de Grèce, mille ans après sa mort.", w: "Samuel (tsar de Bulgarie)" },
+		{ d: "2026-10-04", n: "Le Brésil vote", p: "Premier tour de la présidentielle et législatives.", w: "Élection présidentielle brésilienne de 2026" },
+		{ d: "2026-10-04", n: "Mondiaux de judo à Bakou", p: "Une semaine de tatamis en Azerbaïdjan.", w: "Championnats du monde de judo 2026" },
+		{ d: "2026-10-05", n: "Le Parti québécois remporte les élections", p: "Le Québec change de gouvernement.", w: "Élections générales québécoises de 2026" },
+		{ d: "2026-10-05", n: "Un Nobel pour l'optogénétique", p: "Allumer et éteindre des neurones avec de la lumière.", w: "Optogénétique" },
+		{ d: "2026-10-06", n: "Nobel de physique pour Francis Halzen", p: "Le père d'IceCube, un détecteur de neutrinos enfoui dans la glace de l'Antarctique.", w: "Francis Halzen" },
+		{ d: "2026-10-07", n: "Nobel de chimie pour Henri Kagan et Kensō Soai", p: "La chiralité : les molécules ont une main droite et une main gauche.", w: "Henri Kagan" },
+		{ d: "2026-10-08", n: "Nobel de littérature pour Anne Carson", p: "La poétesse canadienne qui traduit Sappho.", w: "Anne Carson" },
+		{ d: "2026-10-09", n: "Nobel de la paix pour Navanethem Pillay", p: "Ancienne Haute-Commissaire de l'ONU aux droits de l'homme.", w: "Navanethem Pillay" },
+		{ d: "2026-10-09", n: "Séisme au Panama", p: "Une secousse qui fait d'importants dégâts.", w: "Séisme de 2026 au Panama" },
+		{ d: "2026-10-12", n: "Nobel d'économie pour Woodford et Hall", p: "Taux d'intérêt, inflation et banques centrales.", w: "Michael Woodford" },
+		{ d: "2026-10-12", n: "Le marché des Enfants-Rouges en feu", p: "Le plus vieux marché couvert de Paris touché par un incendie.", w: "Marché des Enfants-Rouges" },
+		{ d: "2026-10-12", n: "Ouverture du Mondial de l'Auto", p: "Une semaine de voitures neuves Porte de Versailles.", w: "Mondial de l'Auto Paris" },
 	].map((e) => ({
 		days: e.ya ? e.ya * YEAR : e.d ? (END - Date.parse(e.d + "T00:00:00Z")) / DAY : (END_YEAR - e.y) * YEAR,
 		name: e.n, note: e.p, url: wiki(e.w),
@@ -507,12 +531,8 @@
 	const uOf = (days) => (LOGMAX - Math.log10(days)) / (LOGMAX - LOGMIN);
 
 	function nearest(days, self) {
-		// Mes propres dates servent aussi de repères (pour les dernières semaines).
-		const mine = MOMENTS.filter((m, i) => i !== self && m.t < END).map((m) => ({
-			days: (END - m.t) / DAY, name: m.name, note: `${m.emo} Un de tes propres moments : la courbe se mord la queue.`, url: null,
-		}));
 		let best = null;
-		for (const e of EVENTS.concat(mine)) {
+		for (const e of EVENTS) {
 			if (e.days <= 0) continue;
 			const dist = Math.abs(Math.log10(e.days) - Math.log10(days));
 			if (!best || dist < best.dist) best = { ...e, dist };
